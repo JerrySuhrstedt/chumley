@@ -1,7 +1,8 @@
 "use client";
 
 import type { HTMLAttributes } from "react";
-import { useDraggable } from "@dnd-kit/core";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { ChevronRight } from "lucide-react";
 import type { Lead, Template } from "@/db/schema";
 import { TapToContact } from "./tap-to-contact";
@@ -91,9 +92,9 @@ export function LeadCardView({
 }
 
 /**
- * Draggable wrapper. The card itself does not move — DragOverlay renders the
- * travelling copy above the board so it is never clipped by a column's
- * scroll container.
+ * Sortable wrapper. Cards other than the dragged one shift to open a gap as
+ * the pointer moves over them; the dragged card leaves a faded placeholder
+ * while DragOverlay renders the travelling copy above the board.
  */
 export function LeadCard({
   lead,
@@ -106,12 +107,24 @@ export function LeadCard({
   onClick: () => void;
   onMoveNext: (stage: LeadStage) => void;
 }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: lead.id,
-  });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: lead.id });
 
   return (
-    <div ref={setNodeRef} className={isDragging ? "opacity-40" : undefined}>
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Translate.toString(transform),
+        transition,
+      }}
+      className={isDragging ? "opacity-40" : undefined}
+    >
       <LeadCardView
         lead={lead}
         templates={templates}

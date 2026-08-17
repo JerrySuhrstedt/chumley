@@ -84,6 +84,28 @@ export async function updateLeadStage(id: string, stage: LeadStage) {
   revalidatePath("/");
 }
 
+/**
+ * Persist the full order of one stage's column after a drag. Passing the whole
+ * ordered list keeps positions contiguous and also moves the dragged card into
+ * this stage, so a cross-column drop is a single write.
+ */
+export async function reorderStage(stage: LeadStage, orderedIds: string[]) {
+  if (orderedIds.length === 0) return;
+
+  const { org } = await requireOrg();
+
+  await db.transaction(async (tx) => {
+    for (const [index, id] of orderedIds.entries()) {
+      await tx
+        .update(leads)
+        .set({ stage, position: index, updatedAt: new Date() })
+        .where(and(eq(leads.id, id), eq(leads.orgId, org.id)));
+    }
+  });
+
+  revalidatePath("/");
+}
+
 export async function deleteLead(id: string) {
   const { org } = await requireOrg();
 

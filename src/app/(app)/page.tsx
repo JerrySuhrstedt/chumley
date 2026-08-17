@@ -14,6 +14,7 @@ export default async function PipelinePage() {
     db.query.leads.findMany({
       where: eq(leads.orgId, current.org.id),
       with: { activities: true },
+      orderBy: (l, { asc }) => [asc(l.position), asc(l.createdAt)],
     }),
     db.select().from(templates).where(eq(templates.orgId, current.org.id)),
   ]);

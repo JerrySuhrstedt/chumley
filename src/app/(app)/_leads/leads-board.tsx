@@ -6,21 +6,25 @@ import {
   DndContext,
   DragOverlay,
   type DragEndEvent,
+  type DragOverEvent,
   type DragStartEvent,
   PointerSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import { arrayMove } from "@dnd-kit/sortable";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Activity, Lead, Template } from "@/db/schema";
-import { type LeadStage, updateLeadStage } from "./actions";
+import { type LeadStage, reorderStage } from "./actions";
 import { LeadCardView } from "./lead-card";
 import { LeadColumn } from "./lead-column";
 import { LeadDetailDialog } from "./lead-detail-dialog";
 import { STAGES } from "./stages";
 
 type LeadWithActivities = Lead & { activities: Activity[] };
+
+const STAGE_VALUES = STAGES.map((s) => s.value) as string[];
 
 export function LeadsBoard({
   leads,
@@ -55,17 +59,58 @@ export function LeadsBoard({
     );
   }, [localLeads, query]);
 
-  function moveStage(leadId: string, stage: LeadStage) {
-    setLocalLeads((prev) =>
-      prev.map((l) => (l.id === leadId ? { ...l, stage } : l))
-    );
+  /** A drop target is either a column (stage id) or another card (lead id). */
+  function stageOf(id: string, source: Lead[]): LeadStage | null {
+    if (STAGE_VALUES.includes(id)) return id as LeadStage;
+    return source.find((l) => l.id === id)?.stage ?? null;
+  }
+
+  function persist(stage: LeadStage, source: Lead[]) {
+    const orderedIds = source
+      .filter((l) => l.stage === stage)
+      .map((l) => l.id);
     startTransition(async () => {
-      await updateLeadStage(leadId, stage);
+      await reorderStage(stage, orderedIds);
     });
+  }
+
+  function moveStage(leadId: string, stage: LeadStage) {
+    const next = localLeads.map((l) =>
+      l.id === leadId ? { ...l, stage } : l
+    );
+    setLocalLeads(next);
+    persist(stage, next);
   }
 
   function handleDragStart(event: DragStartEvent) {
     setActiveId(String(event.active.id));
+  }
+
+  /**
+   * While dragging, move the card between columns in local state so the
+   * destination column opens a gap under the pointer.
+   */
+  function handleDragOver(event: DragOverEvent) {
+    const { active, over } = event;
+    if (!over) return;
+
+    const draggedId = String(active.id);
+    const overId = String(over.id);
+    if (draggedId === overId) return;
+
+    setLocalLeads((prev) => {
+      const dragged = prev.find((l) => l.id === draggedId);
+      const overStage = stageOf(overId, prev);
+      if (!dragged || !overStage || dragged.stage === overStage) return prev;
+
+      const withStage = prev.map((l) =>
+        l.id === draggedId ? { ...l, stage: overStage } : l
+      );
+
+      const from = withStage.findIndex((l) => l.id === draggedId);
+      const to = withStage.findIndex((l) => l.id === overId);
+      return to === -1 ? withStage : arrayMove(withStage, from, to);
+    });
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -73,12 +118,27 @@ export function LeadsBoard({
     setActiveId(null);
     if (!over) return;
 
-    const leadId = String(active.id);
-    const newStage = over.id as LeadStage;
-    const lead = localLeads.find((l) => l.id === leadId);
-    if (!lead || lead.stage === newStage) return;
+    const draggedId = String(active.id);
+    const overId = String(over.id);
 
-    moveStage(leadId, newStage);
+    const dragged = localLeads.find((l) => l.id === draggedId);
+    if (!dragged) return;
+
+    const destStage = stageOf(overId, localLeads) ?? dragged.stage;
+    let next = localLeads;
+
+    if (draggedId !== overId) {
+      const from = localLeads.findIndex((l) => l.id === draggedId);
+      const to = localLeads.findIndex((l) => l.id === overId);
+      if (to !== -1) next = arrayMove(localLeads, from, to);
+    }
+
+    next = next.map((l) =>
+      l.id === draggedId ? { ...l, stage: destStage } : l
+    );
+
+    setLocalLeads(next);
+    persist(destStage, next);
   }
 
   const selectedLead = localLeads.find((l) => l.id === selectedId) ?? null;
@@ -123,6 +183,7 @@ export function LeadsBoard({
         sensors={sensors}
         collisionDetection={closestCorners}
         onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
         onDragCancel={() => setActiveId(null)}
       >
@@ -141,6 +202,7 @@ export function LeadsBoard({
                 label={stage.label}
                 leads={filtered.filter((l) => l.stage === stage.value)}
                 templates={templates}
+                isDropTarget={!!activeLead && activeLead.stage === stage.value}
                 onCardClick={setSelectedId}
                 onMoveNext={moveStage}
               />

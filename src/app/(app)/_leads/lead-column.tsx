@@ -1,6 +1,10 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import type { Lead, Template } from "@/db/schema";
 import type { LeadStage } from "./actions";
 import { LeadCard } from "./lead-card";
@@ -11,6 +15,7 @@ export function LeadColumn({
   label,
   leads,
   templates,
+  isDropTarget = false,
   onCardClick,
   onMoveNext,
 }: {
@@ -18,18 +23,21 @@ export function LeadColumn({
   label: string;
   leads: Lead[];
   templates: Template[];
+  isDropTarget?: boolean;
   onCardClick: (leadId: string) => void;
   onMoveNext: (leadId: string, stage: LeadStage) => void;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: stage });
+  const { setNodeRef } = useDroppable({ id: stage });
 
   const total = leads.reduce((sum, l) => sum + Number(l.value ?? 0), 0);
 
   return (
     <div
       ref={setNodeRef}
-      className={`flex max-h-full w-full flex-col rounded-xl bg-[var(--board-column)] transition-shadow md:w-72 ${
-        isOver ? "ring-2 ring-white shadow-lg" : ""
+      className={`flex max-h-full w-full flex-col rounded-xl transition-all md:w-72 ${
+        isDropTarget
+          ? "bg-[var(--board-column-hover)] shadow-[0_0_0_3px_#fff,0_8px_20px_rgba(9,30,66,0.3)]"
+          : "bg-[var(--board-column)]"
       }`}
     >
       <div className="flex items-center justify-between px-3 pt-3 pb-2">
@@ -43,15 +51,24 @@ export function LeadColumn({
       </div>
 
       <div className="flex min-h-12 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-1">
-        {leads.map((lead) => (
-          <LeadCard
-            key={lead.id}
-            lead={lead}
-            templates={templates}
-            onClick={() => onCardClick(lead.id)}
-            onMoveNext={(next) => onMoveNext(lead.id, next)}
-          />
-        ))}
+        <SortableContext
+          items={leads.map((l) => l.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {leads.map((lead) => (
+            <LeadCard
+              key={lead.id}
+              lead={lead}
+              templates={templates}
+              onClick={() => onCardClick(lead.id)}
+              onMoveNext={(next) => onMoveNext(lead.id, next)}
+            />
+          ))}
+        </SortableContext>
+
+        {leads.length === 0 && isDropTarget && (
+          <div className="m-1 flex-1 rounded-lg border-2 border-dashed border-[var(--board-ink-muted)]/40" />
+        )}
       </div>
 
       <div className="p-2 pt-1">
