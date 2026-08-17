@@ -1,7 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
-import { formatDistanceToNow } from "date-fns";
+import { useRef, useState } from "react";
 import { Mail, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,11 +9,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import { DeleteButton } from "@/components/delete-button";
 import type { Activity, Lead, Template } from "@/db/schema";
 import { telDigits } from "@/lib/phone";
-import { addLeadNote, deleteLead } from "./actions";
+import { deleteLead, type ActivityType } from "./actions";
+import { ActivityItem } from "./activity-item";
+import { ActivityLogger } from "./activity-logger";
 import { LeadAvatar } from "./lead-avatar";
 import { LeadEditForm } from "./lead-edit-form";
 import { NextActionSection } from "./next-action-section";
@@ -44,17 +44,15 @@ export function LeadDetailDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const [editing, setEditing] = useState(false);
-  const noteAction = addLeadNote.bind(null, lead.id);
-  const [noteState, noteFormAction, notePending] = useActionState(noteAction, {
-    error: null,
-  });
-  const noteFormRef = useRef<HTMLFormElement>(null);
+  const [logType, setLogType] = useState<ActivityType>("note");
+  const logRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!noteState.error && !notePending) {
-      noteFormRef.current?.reset();
-    }
-  }, [noteState, notePending]);
+  // Reaching out scrolls the log panel into view so the note is the obvious
+  // next step once the dialer or mail client hands control back.
+  function handleContact(type: "call" | "text" | "email") {
+    setLogType(type);
+    logRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
 
   const activities = [...lead.activities].sort(
     (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
@@ -135,55 +133,36 @@ export function LeadDetailDialog({
                     lead={lead}
                     templates={templates}
                     size="default"
+                    onContact={handleContact}
                   />
+                  <p className="mt-2 text-xs text-slate-500">
+                    Reaching out opens the log below so you can record how it
+                    went.
+                  </p>
+                </section>
+
+                <section
+                  ref={logRef}
+                  className="rounded-lg border border-slate-200 bg-white p-4"
+                >
+                  <h3 className="mb-3 text-sm font-semibold text-slate-900">
+                    Log activity
+                  </h3>
+                  <ActivityLogger leadId={lead.id} initialType={logType} />
                 </section>
 
                 <section className="rounded-lg border border-slate-200 bg-white p-4">
                   <h3 className="mb-3 text-sm font-semibold text-slate-900">
                     History
                   </h3>
-
-                  <form
-                    ref={noteFormRef}
-                    action={noteFormAction}
-                    className="flex flex-col gap-2"
-                  >
-                    <Textarea
-                      name="body"
-                      placeholder={`Enter a note about ${lead.name.split(" ")[0]}`}
-                      rows={2}
-                      required
-                    />
-                    {noteState.error && (
-                      <p className="text-sm text-destructive">
-                        {noteState.error}
+                  <ul className="flex flex-col gap-4">
+                    {activities.length === 0 && (
+                      <p className="text-sm text-slate-500">
+                        No calls, emails, or notes logged yet.
                       </p>
                     )}
-                    <Button
-                      type="submit"
-                      size="sm"
-                      className="self-start"
-                      disabled={notePending}
-                    >
-                      {notePending ? "Saving..." : "Save note"}
-                    </Button>
-                  </form>
-
-                  <ul className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4">
-                    {activities.length === 0 && (
-                      <p className="text-sm text-slate-500">No history yet.</p>
-                    )}
                     {activities.map((activity) => (
-                      <li key={activity.id} className="text-sm">
-                        <p className="mb-0.5 text-xs text-slate-500">
-                          {formatDistanceToNow(activity.createdAt, {
-                            addSuffix: true,
-                          })}
-                        </p>
-                        <p className="whitespace-pre-wrap text-slate-800">
-                          {activity.body}
-                        </p>
-                      </li>
+                      <ActivityItem key={activity.id} activity={activity} />
                     ))}
                   </ul>
                 </section>

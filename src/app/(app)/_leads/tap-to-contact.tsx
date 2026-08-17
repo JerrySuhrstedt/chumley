@@ -14,11 +14,14 @@ export function TapToContact({
   templates,
   size = "icon",
   stopPropagation = false,
+  onContact,
 }: {
   lead: Lead;
   templates?: Template[];
   size?: "icon" | "default";
   stopPropagation?: boolean;
+  /** Fired alongside the tel:/sms:/mailto: hand-off so the caller can log it. */
+  onContact?: (type: "call" | "text" | "email") => void;
 }) {
   const smsTemplate = templates?.find((t) => t.channel === "sms");
   const emailTemplate = templates?.find((t) => t.channel === "email");
@@ -44,7 +47,7 @@ export function TapToContact({
   return (
     <div className="flex gap-1" onClick={stop}>
       <Button
-        render={<a href={telHref} />}
+        render={<a href={telHref} onClick={() => onContact?.("call")} />}
         variant="outline"
         size={size}
         disabled={!lead.phone}
@@ -55,7 +58,7 @@ export function TapToContact({
         {size === "default" && "Call"}
       </Button>
       <Button
-        render={<a href={smsHref} />}
+        render={<a href={smsHref} onClick={() => onContact?.("text")} />}
         variant="outline"
         size={size}
         disabled={!lead.phone}
@@ -66,7 +69,7 @@ export function TapToContact({
         {size === "default" && "Text"}
       </Button>
       <Button
-        render={<a href={mailHref} />}
+        render={<a href={mailHref} onClick={() => onContact?.("email")} />}
         variant="outline"
         size={size}
         disabled={!lead.email}

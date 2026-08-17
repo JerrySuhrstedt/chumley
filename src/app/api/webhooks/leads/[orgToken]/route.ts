@@ -1,7 +1,8 @@
 import { eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { leads, organizations } from "@/db/schema";
+import { activities, leads, organizations } from "@/db/schema";
 import { normalizePhone } from "@/lib/phone";
 
 function toNullable(value: unknown) {
@@ -47,6 +48,19 @@ export async function POST(
       value: toNullable(body.value),
     })
     .returning({ id: leads.id });
+
+  // An inbound submission is a real touchpoint showing intent, so it starts
+  // the timeline rather than arriving as a lead with no history.
+  await db.insert(activities).values({
+    orgId: org.id,
+    leadId: lead.id,
+    type: "form_submission",
+    body: toNullable(body.source)
+      ? `Submitted via ${toNullable(body.source)}`
+      : "Inbound form submission",
+  });
+
+  revalidatePath("/");
 
   return NextResponse.json({ id: lead.id }, { status: 201 });
 }

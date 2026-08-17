@@ -29,6 +29,28 @@ export const templateChannelEnum = pgEnum("template_channel", [
   "email",
 ]);
 
+export const activityTypeEnum = pgEnum("activity_type", [
+  "call",
+  "email",
+  "text",
+  "meeting",
+  "note",
+  // Recorded by the app rather than typed by a rep.
+  "stage_change",
+  "form_submission",
+]);
+
+/** Dispositions for calls and meetings. Null for everything else. */
+export const activityOutcomeEnum = pgEnum("activity_outcome", [
+  "connected",
+  "voicemail",
+  "no_answer",
+  "bad_number",
+  "held",
+  "rescheduled",
+  "no_show",
+]);
+
 export const organizations = pgTable("organizations", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
@@ -112,7 +134,10 @@ export const activities = pgTable("activities", {
   leadId: uuid("lead_id")
     .notNull()
     .references(() => leads.id, { onDelete: "cascade" }),
-  body: text("body").notNull(),
+  type: activityTypeEnum("type").notNull().default("note"),
+  outcome: activityOutcomeEnum("outcome"),
+  body: text("body").notNull().default(""),
+  createdBy: uuid("created_by"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
