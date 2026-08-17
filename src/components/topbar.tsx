@@ -1,28 +1,46 @@
-import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import Link from "next/link";
+import { Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { signOut } from "@/app/(app)/actions";
 
-export function Topbar({ userEmail }: { userEmail: string | null }) {
+export function Topbar({ orgName }: { orgName: string }) {
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b bg-background px-6">
-      <div className="relative w-full max-w-sm">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search contacts, companies, deals..."
-          className="pl-8"
+    <header className="flex h-14 shrink-0 items-center justify-between border-b bg-background px-4 md:px-6">
+      <Link href="/" className="text-sm font-semibold">
+        {orgName}
+      </Link>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button variant="ghost" size="icon" aria-label="Settings">
+              <Settings className="size-4" />
+            </Button>
+          }
         />
-      </div>
-      <div className="flex items-center gap-3">
-        {userEmail && (
-          <span className="text-sm text-muted-foreground">{userEmail}</span>
-        )}
-        <form action={signOut}>
-          <Button type="submit" variant="outline" size="sm">
-            Sign out
-          </Button>
-        </form>
-      </div>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem render={<Link href="/settings/team">Team</Link>} />
+          <DropdownMenuItem
+            render={<Link href="/settings/templates">Templates</Link>}
+          />
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            render={
+              <form action={signOut} className="w-full">
+                <button type="submit" className="w-full text-left">
+                  Sign out
+                </button>
+              </form>
+            }
+          />
+        </DropdownMenuContent>
+      </DropdownMenu>
     </header>
   );
 }

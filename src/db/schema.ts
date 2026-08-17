@@ -6,63 +6,79 @@ import {
   text,
   numeric,
   date,
-  boolean,
   timestamp,
+  unique,
 } from "drizzle-orm/pg-core";
 
-export const dealStageEnum = pgEnum("deal_stage", [
-  "lead",
+export const membershipRoleEnum = pgEnum("membership_role", [
+  "owner",
+  "member",
+]);
+
+export const leadStageEnum = pgEnum("lead_stage", [
+  "new_lead",
   "contacted",
-  "qualified",
   "proposal_sent",
   "won",
   "lost",
 ]);
 
-export const activityTypeEnum = pgEnum("activity_type", [
-  "note",
-  "call",
+export const templateChannelEnum = pgEnum("template_channel", [
+  "sms",
   "email",
-  "meeting",
 ]);
 
-export const companies = pgTable("companies", {
+export const organizations = pgTable("organizations", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
-  domain: text("domain"),
-  notes: text("notes"),
+  webhookToken: uuid("webhook_token").notNull().defaultRandom().unique(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
 });
 
-export const contacts = pgTable("contacts", {
+export const memberships = pgTable(
+  "memberships",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull(),
+    role: membershipRoleEnum("role").notNull().default("member"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [unique().on(table.orgId, table.userId)]
+);
+
+export const orgInvites = pgTable("org_invites", {
   id: uuid("id").primaryKey().defaultRandom(),
-  firstName: text("first_name").notNull(),
-  lastName: text("last_name"),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  createdBy: uuid("created_by").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const leads = pgTable("leads", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  companyName: text("company_name"),
   email: text("email"),
   phone: text("phone"),
-  companyId: uuid("company_id").references(() => companies.id, {
-    onDelete: "set null",
-  }),
-  notes: text("notes"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
-
-export const deals = pgTable("deals", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull(),
-  contactId: uuid("contact_id").references(() => contacts.id, {
-    onDelete: "set null",
-  }),
-  companyId: uuid("company_id").references(() => companies.id, {
-    onDelete: "set null",
-  }),
-  amount: numeric("amount", { precision: 12, scale: 2 }),
-  stage: dealStageEnum("stage").notNull().default("lead"),
-  closeDate: date("close_date"),
+  value: numeric("value", { precision: 12, scale: 2 }),
+  stage: leadStageEnum("stage").notNull().default("new_lead"),
+  ownerId: uuid("owner_id"),
+  nextActionText: text("next_action_text"),
+  nextActionDue: date("next_action_due"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -71,15 +87,14 @@ export const deals = pgTable("deals", {
     .defaultNow(),
 });
 
-export const tasks = pgTable("tasks", {
+export const templates = pgTable("templates", {
   id: uuid("id").primaryKey().defaultRandom(),
-  title: text("title").notNull(),
-  dueDate: date("due_date"),
-  completed: boolean("completed").notNull().default(false),
-  contactId: uuid("contact_id").references(() => contacts.id, {
-    onDelete: "cascade",
-  }),
-  dealId: uuid("deal_id").references(() => deals.id, { onDelete: "cascade" }),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  channel: templateChannelEnum("channel").notNull(),
+  name: text("name").notNull(),
+  body: text("body").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -87,68 +102,71 @@ export const tasks = pgTable("tasks", {
 
 export const activities = pgTable("activities", {
   id: uuid("id").primaryKey().defaultRandom(),
-  type: activityTypeEnum("type").notNull().default("note"),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  leadId: uuid("lead_id")
+    .notNull()
+    .references(() => leads.id, { onDelete: "cascade" }),
   body: text("body").notNull(),
-  contactId: uuid("contact_id").references(() => contacts.id, {
-    onDelete: "cascade",
-  }),
-  dealId: uuid("deal_id").references(() => deals.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
 });
 
-export const companiesRelations = relations(companies, ({ many }) => ({
-  contacts: many(contacts),
-  deals: many(deals),
+export const organizationsRelations = relations(organizations, ({ many }) => ({
+  memberships: many(memberships),
+  invites: many(orgInvites),
+  leads: many(leads),
+  templates: many(templates),
 }));
 
-export const contactsRelations = relations(contacts, ({ one, many }) => ({
-  company: one(companies, {
-    fields: [contacts.companyId],
-    references: [companies.id],
+export const membershipsRelations = relations(memberships, ({ one }) => ({
+  org: one(organizations, {
+    fields: [memberships.orgId],
+    references: [organizations.id],
   }),
-  deals: many(deals),
-  tasks: many(tasks),
+}));
+
+export const orgInvitesRelations = relations(orgInvites, ({ one }) => ({
+  org: one(organizations, {
+    fields: [orgInvites.orgId],
+    references: [organizations.id],
+  }),
+}));
+
+export const leadsRelations = relations(leads, ({ one, many }) => ({
+  org: one(organizations, {
+    fields: [leads.orgId],
+    references: [organizations.id],
+  }),
   activities: many(activities),
 }));
 
-export const dealsRelations = relations(deals, ({ one, many }) => ({
-  contact: one(contacts, {
-    fields: [deals.contactId],
-    references: [contacts.id],
+export const templatesRelations = relations(templates, ({ one }) => ({
+  org: one(organizations, {
+    fields: [templates.orgId],
+    references: [organizations.id],
   }),
-  company: one(companies, {
-    fields: [deals.companyId],
-    references: [companies.id],
-  }),
-  tasks: many(tasks),
-  activities: many(activities),
-}));
-
-export const tasksRelations = relations(tasks, ({ one }) => ({
-  contact: one(contacts, {
-    fields: [tasks.contactId],
-    references: [contacts.id],
-  }),
-  deal: one(deals, { fields: [tasks.dealId], references: [deals.id] }),
 }));
 
 export const activitiesRelations = relations(activities, ({ one }) => ({
-  contact: one(contacts, {
-    fields: [activities.contactId],
-    references: [contacts.id],
+  lead: one(leads, { fields: [activities.leadId], references: [leads.id] }),
+  org: one(organizations, {
+    fields: [activities.orgId],
+    references: [organizations.id],
   }),
-  deal: one(deals, { fields: [activities.dealId], references: [deals.id] }),
 }));
 
-export type Company = typeof companies.$inferSelect;
-export type NewCompany = typeof companies.$inferInsert;
-export type Contact = typeof contacts.$inferSelect;
-export type NewContact = typeof contacts.$inferInsert;
-export type Deal = typeof deals.$inferSelect;
-export type NewDeal = typeof deals.$inferInsert;
-export type Task = typeof tasks.$inferSelect;
-export type NewTask = typeof tasks.$inferInsert;
+export type Organization = typeof organizations.$inferSelect;
+export type NewOrganization = typeof organizations.$inferInsert;
+export type Membership = typeof memberships.$inferSelect;
+export type NewMembership = typeof memberships.$inferInsert;
+export type OrgInvite = typeof orgInvites.$inferSelect;
+export type NewOrgInvite = typeof orgInvites.$inferInsert;
+export type Lead = typeof leads.$inferSelect;
+export type NewLead = typeof leads.$inferInsert;
+export type Template = typeof templates.$inferSelect;
+export type NewTemplate = typeof templates.$inferInsert;
 export type Activity = typeof activities.$inferSelect;
 export type NewActivity = typeof activities.$inferInsert;

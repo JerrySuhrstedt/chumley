@@ -1,29 +1,20 @@
 import { redirect } from "next/navigation";
-import { AppSidebar } from "@/components/app-sidebar";
 import { Topbar } from "@/components/topbar";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentOrg } from "@/lib/org";
 
-export default async function AppLayout({
-  children,
-}: LayoutProps<"/(app)">) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export default async function AppLayout({ children }: LayoutProps<"/">) {
+  const current = await getCurrentOrg();
 
-  if (!user) {
-    redirect("/login");
+  if (!current) {
+    redirect("/onboarding");
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden">
-      <AppSidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Topbar userEmail={user.email ?? null} />
-        <main className="flex-1 overflow-y-auto bg-muted/30 p-6">
-          {children}
-        </main>
-      </div>
+    <div className="flex h-screen w-full flex-col overflow-hidden">
+      <Topbar orgName={current.org.name} />
+      <main className="flex-1 overflow-y-auto bg-muted/30 p-4 md:p-6">
+        {children}
+      </main>
     </div>
   );
 }
