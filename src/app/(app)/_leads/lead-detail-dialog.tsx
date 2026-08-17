@@ -13,6 +13,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { DeleteButton } from "@/components/delete-button";
 import type { Activity, Lead, Template } from "@/db/schema";
+import { telDigits } from "@/lib/phone";
 import { addLeadNote, deleteLead } from "./actions";
 import { LeadAvatar } from "./lead-avatar";
 import { LeadEditForm } from "./lead-edit-form";
@@ -89,7 +90,7 @@ export function LeadDetailDialog({
                 )}
                 {lead.phone && (
                   <a
-                    href={`tel:${lead.phone}`}
+                    href={`tel:${telDigits(lead.phone)}`}
                     className="flex items-center gap-1.5 text-slate-700 hover:underline"
                   >
                     <Phone className="size-3.5" />

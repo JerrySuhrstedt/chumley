@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { leads, organizations } from "@/db/schema";
+import { normalizePhone } from "@/lib/phone";
 
 function toNullable(value: unknown) {
   if (typeof value !== "string") return null;
@@ -41,7 +42,7 @@ export async function POST(
       orgId: org.id,
       name,
       email: toNullable(body.email),
-      phone: toNullable(body.phone),
+      phone: normalizePhone(toNullable(body.phone)),
       companyName: toNullable(body.company),
       value: toNullable(body.value),
     })

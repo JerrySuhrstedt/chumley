@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PhoneInput } from "@/components/phone-input";
 import type { Lead } from "@/db/schema";
 import { updateLead, type FormState } from "./actions";
 
@@ -33,7 +34,7 @@ export function LeadEditForm({
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
           <Label htmlFor="phone">Phone</Label>
-          <Input id="phone" name="phone" type="tel" defaultValue={lead.phone ?? ""} />
+          <PhoneInput id="phone" name="phone" defaultValue={lead.phone ?? ""} />
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="email">Email</Label>

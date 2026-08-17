@@ -5,6 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { activities, leads, leadStageEnum } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
+import { normalizePhone } from "@/lib/phone";
 
 export type FormState = { error: string | null };
 export type LeadStage = (typeof leadStageEnum.enumValues)[number];
@@ -34,7 +35,7 @@ export async function createLead(
   await db.insert(leads).values({
     orgId: org.id,
     name,
-    phone: toNullable(formData.get("phone")),
+    phone: normalizePhone(toNullable(formData.get("phone"))),
     email: toNullable(formData.get("email")),
     companyName: toNullable(formData.get("companyName")),
     value: toNullable(formData.get("value")),
@@ -61,7 +62,7 @@ export async function updateLead(
     .update(leads)
     .set({
       name,
-      phone: toNullable(formData.get("phone")),
+      phone: normalizePhone(toNullable(formData.get("phone"))),
       email: toNullable(formData.get("email")),
       companyName: toNullable(formData.get("companyName")),
       title: toNullable(formData.get("title")),

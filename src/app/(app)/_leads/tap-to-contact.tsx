@@ -3,6 +3,7 @@
 import { Mail, MessageSquare, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Lead, Template } from "@/db/schema";
+import { telDigits } from "@/lib/phone";
 
 function fillTemplate(body: string, lead: Lead) {
   return body.replaceAll("{{name}}", lead.name);
@@ -31,9 +32,10 @@ export function TapToContact({
     ? (e: React.MouseEvent) => e.stopPropagation()
     : undefined;
 
-  const telHref = lead.phone ? `tel:${lead.phone}` : "#";
-  const smsHref = lead.phone
-    ? `sms:${lead.phone}${smsBody ? `?&body=${encodeURIComponent(smsBody)}` : ""}`
+  const dialable = telDigits(lead.phone);
+  const telHref = dialable ? `tel:${dialable}` : "#";
+  const smsHref = dialable
+    ? `sms:${dialable}${smsBody ? `?&body=${encodeURIComponent(smsBody)}` : ""}`
     : "#";
   const mailHref = lead.email
     ? `mailto:${lead.email}${emailBody ? `?body=${encodeURIComponent(emailBody)}` : ""}`

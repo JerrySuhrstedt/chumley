@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PhoneInput } from "@/components/phone-input";
 import { createLead } from "./actions";
 import type { LeadStage } from "./actions";
 import { STAGES } from "./stages";
@@ -73,7 +74,7 @@ export function QuickAddLeadDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
               <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" name="phone" type="tel" />
+              <PhoneInput id="phone" name="phone" />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="email">Email</Label>
