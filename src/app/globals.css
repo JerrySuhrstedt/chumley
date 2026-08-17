@@ -90,6 +90,13 @@
   --board-ink: #172b4d;
   --board-ink-muted: #5e6c84;
 
+  /* Left navigation */
+  --nav-bg: #16293d;
+  --nav-hover: #21384f;
+  --nav-active: #0079bf;
+  --nav-ink: #b8c4d0;
+  --nav-ink-active: #ffffff;
+
   /* Card status labels (Trello-style colored chips) */
   --label-overdue: #eb5a46;
   --label-today: #f2d600;

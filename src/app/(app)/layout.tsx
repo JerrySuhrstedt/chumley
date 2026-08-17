@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { AppSidebar } from "@/components/app-sidebar";
 import { Topbar } from "@/components/topbar";
 import { getCurrentOrg } from "@/lib/org";
 
@@ -10,11 +11,14 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   }
 
   return (
-    <div className="flex h-screen w-full flex-col overflow-hidden">
-      <Topbar orgName={current.org.name} />
-      <main className="flex flex-1 flex-col overflow-hidden bg-[var(--board-bg)]">
-        {children}
-      </main>
+    <div className="flex h-screen w-full overflow-hidden">
+      <AppSidebar />
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <Topbar orgName={current.org.name} />
+        <main className="flex flex-1 flex-col overflow-hidden bg-[var(--board-bg)]">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { AuthShell } from "@/components/auth-shell";
 import { getCurrentOrg, getCurrentUser } from "@/lib/org";
 import { OnboardingForm } from "./onboarding-form";
 
@@ -14,16 +15,14 @@ export default async function OnboardingPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-950 px-4">
-      <div className="w-full max-w-sm rounded-lg border border-neutral-800 bg-neutral-900 p-8">
-        <h1 className="mb-1 text-xl font-semibold text-neutral-50">
-          Name your sales team
-        </h1>
-        <p className="mb-6 text-sm text-neutral-400">
-          You can invite the rest of your team once you&apos;re in.
-        </p>
-        <OnboardingForm />
-      </div>
-    </main>
+    <AuthShell>
+      <h1 className="text-center text-2xl font-semibold text-slate-800">
+        Name your sales team
+      </h1>
+      <p className="mt-1 text-center text-sm text-slate-600">
+        You can invite the rest of your team once you&apos;re in.
+      </p>
+      <OnboardingForm />
+    </AuthShell>
   );
 }

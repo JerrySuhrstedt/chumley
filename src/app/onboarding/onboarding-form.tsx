@@ -1,9 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { authButton, authInput, authLabel } from "@/components/auth-shell";
 import { createTeam } from "./actions";
 
 export function OnboardingForm() {
@@ -12,23 +10,30 @@ export function OnboardingForm() {
   });
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="name">Team name</Label>
-        <Input
+    <form action={formAction} className="mt-8 flex flex-col gap-5">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="name" className={authLabel}>
+          Team name
+        </label>
+        <input
           id="name"
           name="name"
           placeholder="Acme Sales"
           required
           autoFocus
+          className={authInput}
         />
       </div>
+
       {state.error && (
-        <p className="text-sm text-destructive">{state.error}</p>
+        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+          {state.error}
+        </p>
       )}
-      <Button type="submit" disabled={pending}>
+
+      <button type="submit" disabled={pending} className={authButton}>
         {pending ? "Creating..." : "Create team"}
-      </Button>
+      </button>
     </form>
   );
 }

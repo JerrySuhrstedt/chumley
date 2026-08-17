@@ -1,9 +1,12 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  authButton,
+  authInput,
+  authLabel,
+  authLink,
+} from "@/components/auth-shell";
 import {
   sendMagicLink,
   signInWithPassword,
@@ -14,6 +17,20 @@ import {
 type Mode = "signin" | "signup" | "magic";
 
 const INITIAL: LoginState = { error: null, sent: false };
+
+const COPY: Record<Mode, { title: string; cta: string; pending: string }> = {
+  signin: { title: "Sign in", cta: "Sign in", pending: "Signing in..." },
+  signup: {
+    title: "Create your account",
+    cta: "Create account",
+    pending: "Creating account...",
+  },
+  magic: {
+    title: "Sign in",
+    cta: "Email me a sign-in link",
+    pending: "Sending...",
+  },
+};
 
 export function LoginForm({ next }: { next?: string }) {
   const [mode, setMode] = useState<Mode>("signin");
@@ -26,95 +43,113 @@ export function LoginForm({ next }: { next?: string }) {
         : sendMagicLink;
 
   const [state, formAction, pending] = useActionState(action, INITIAL);
+  const copy = COPY[mode];
 
   if (state.sent) {
     return (
-      <p className="text-sm text-neutral-300">
-        Check your email to finish signing in.
-      </p>
+      <div className="text-center">
+        <h1 className="text-2xl font-semibold text-slate-800">
+          Check your email
+        </h1>
+        <p className="mt-2 text-sm text-slate-600">
+          We sent you a link to finish signing in.
+        </p>
+      </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <form action={formAction} className="flex flex-col gap-4">
+    <div>
+      <h1 className="text-center text-2xl font-semibold text-slate-800">
+        {copy.title}
+      </h1>
+      <p className="mt-1 text-center text-sm text-slate-600">
+        {mode === "signup" ? (
+          <>
+            or{" "}
+            <button
+              type="button"
+              onClick={() => setMode("signin")}
+              className={authLink}
+            >
+              sign in to your account
+            </button>
+          </>
+        ) : (
+          <>
+            or{" "}
+            <button
+              type="button"
+              onClick={() => setMode("signup")}
+              className={authLink}
+            >
+              create an account
+            </button>
+          </>
+        )}
+      </p>
+
+      <form action={formAction} className="mt-8 flex flex-col gap-5">
         <input type="hidden" name="next" value={next ?? "/"} />
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="email" className="text-neutral-200">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="email" className={authLabel}>
             Email
-          </Label>
-          <Input
+          </label>
+          <input
             id="email"
             name="email"
             type="email"
-            placeholder="you@example.com"
+            placeholder="Enter your email"
             required
             autoFocus
             autoComplete="email"
+            className={authInput}
           />
         </div>
 
         {mode !== "magic" && (
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="password" className="text-neutral-200">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="password" className={authLabel}>
               Password
-            </Label>
-            <Input
+            </label>
+            <input
               id="password"
               name="password"
               type="password"
+              placeholder={
+                mode === "signup" ? "At least 8 characters" : "Enter your password"
+              }
               required
               autoComplete={
                 mode === "signup" ? "new-password" : "current-password"
               }
+              className={authInput}
             />
           </div>
         )}
 
         {state.error && (
-          <p className="text-sm text-destructive">{state.error}</p>
+          <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+            {state.error}
+          </p>
         )}
 
-        <Button type="submit" size="lg" disabled={pending}>
-          {pending
-            ? "Working..."
-            : mode === "signin"
-              ? "Sign in"
-              : mode === "signup"
-                ? "Create account"
-                : "Email me a link"}
-        </Button>
+        <button type="submit" disabled={pending} className={authButton}>
+          {pending ? copy.pending : copy.cta}
+        </button>
       </form>
 
-      <div className="flex flex-col gap-1 text-sm text-neutral-400">
-        {mode !== "signup" && (
-          <button
-            type="button"
-            onClick={() => setMode("signup")}
-            className="text-left hover:text-neutral-200 hover:underline"
-          >
-            New here? Create an account
-          </button>
-        )}
-        {mode !== "signin" && (
-          <button
-            type="button"
-            onClick={() => setMode("signin")}
-            className="text-left hover:text-neutral-200 hover:underline"
-          >
-            Already have an account? Sign in
-          </button>
-        )}
-        {mode !== "magic" && (
-          <button
-            type="button"
-            onClick={() => setMode("magic")}
-            className="text-left hover:text-neutral-200 hover:underline"
-          >
-            Email me a sign-in link instead
-          </button>
-        )}
+      <div className="mt-6 text-center">
+        <button
+          type="button"
+          onClick={() => setMode(mode === "magic" ? "signin" : "magic")}
+          className="text-sm font-semibold text-slate-600 hover:underline"
+        >
+          {mode === "magic"
+            ? "Sign in with a password instead"
+            : "Sign in a different way"}
+        </button>
       </div>
     </div>
   );

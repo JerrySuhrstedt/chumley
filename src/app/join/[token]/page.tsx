@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AuthShell, authLink } from "@/components/auth-shell";
 import { getCurrentUser } from "@/lib/org";
 import { joinOrg } from "./actions";
 
@@ -20,13 +21,16 @@ export default async function JoinPage({
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-950 px-4">
-      <div className="w-full max-w-sm rounded-lg border border-neutral-800 bg-neutral-900 p-8 text-center">
-        <p className="mb-4 text-sm text-destructive">{result.error}</p>
-        <Link href="/" className="text-sm text-neutral-400 hover:underline">
-          Back to the app
+    <AuthShell>
+      <h1 className="text-center text-2xl font-semibold text-slate-800">
+        Can&apos;t join this team
+      </h1>
+      <p className="mt-2 text-center text-sm text-slate-600">{result.error}</p>
+      <p className="mt-6 text-center text-sm">
+        <Link href="/" className={authLink}>
+          Go to your pipeline
         </Link>
-      </div>
-    </main>
+      </p>
+    </AuthShell>
   );
 }
