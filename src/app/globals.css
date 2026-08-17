@@ -81,6 +81,20 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Board theme — swap these once branding is settled. */
+  --board-bg: #0079bf;
+  --board-topbar: #026aa7;
+  --board-column: #f1f2f4;
+  --board-column-hover: #e4e6ea;
+  --board-ink: #172b4d;
+  --board-ink-muted: #5e6c84;
+
+  /* Card status labels (Trello-style colored chips) */
+  --label-overdue: #eb5a46;
+  --label-today: #f2d600;
+  --label-upcoming: #61bd4f;
+  --label-none: #c1c7d0;
 }
 
 .dark {

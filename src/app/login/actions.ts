@@ -1,12 +1,74 @@
 "use server";
 
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-export async function sendMagicLink(
-  _prevState: { error: string | null; sent: boolean },
+export type LoginState = { error: string | null; sent: boolean };
+
+export async function signInWithPassword(
+  _prevState: LoginState,
   formData: FormData
-) {
+): Promise<LoginState> {
+  const email = String(formData.get("email") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+  const next = String(formData.get("next") ?? "/").trim() || "/";
+
+  if (!email || !password) {
+    return { error: "Enter your email and password.", sent: false };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    return { error: error.message, sent: false };
+  }
+
+  redirect(next);
+}
+
+export async function signUpWithPassword(
+  _prevState: LoginState,
+  formData: FormData
+): Promise<LoginState> {
+  const email = String(formData.get("email") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+  const next = String(formData.get("next") ?? "/").trim() || "/";
+
+  if (!email || !password) {
+    return { error: "Enter your email and password.", sent: false };
+  }
+
+  if (password.length < 8) {
+    return { error: "Password must be at least 8 characters.", sent: false };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signUp({ email, password });
+
+  if (error) {
+    return { error: error.message, sent: false };
+  }
+
+  // With "Confirm email" enabled, signUp returns a user but no session.
+  if (!data.session) {
+    return {
+      error: null,
+      sent: true,
+    };
+  }
+
+  redirect(next);
+}
+
+export async function sendMagicLink(
+  _prevState: LoginState,
+  formData: FormData
+): Promise<LoginState> {
   const email = String(formData.get("email") ?? "").trim();
   const next = String(formData.get("next") ?? "/").trim() || "/";
 

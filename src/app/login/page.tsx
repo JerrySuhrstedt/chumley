@@ -12,7 +12,7 @@ export default async function LoginPage({
           Stupid Simple CRM
         </h1>
         <p className="mb-6 text-sm text-neutral-400">
-          Sign in with a magic link.
+          Your sales pipeline, minus the clutter.
         </p>
         <LoginForm next={typeof next === "string" ? next : undefined} />
       </div>

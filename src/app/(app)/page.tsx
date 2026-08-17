@@ -19,12 +19,12 @@ export default async function PipelinePage() {
   ]);
 
   return (
-    <div className="flex h-full flex-col gap-4">
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="flex-1">
-          <Scorecard leads={allLeads} />
+    <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-col gap-3 px-4 pt-4 md:flex-row md:items-center md:justify-between md:px-6">
+        <Scorecard leads={allLeads} />
+        <div className="md:shrink-0">
+          <QuickAddLeadDialog />
         </div>
-        <QuickAddLeadDialog />
       </div>
 
       <LeadsBoard leads={allLeads} templates={allTemplates} />

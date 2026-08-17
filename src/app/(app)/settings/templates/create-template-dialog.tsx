@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -40,14 +40,10 @@ export function CreateTemplateDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        render={
-          <Button size="sm">
-            <Plus className="size-4" />
-            New template
-          </Button>
-        }
-      />
+      <DialogTrigger className={buttonVariants({ size: "sm" })}>
+        <Plus className="size-4" />
+        New template
+      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>New template</DialogTitle>

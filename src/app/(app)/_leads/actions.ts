@@ -38,6 +38,7 @@ export async function createLead(
     email: toNullable(formData.get("email")),
     companyName: toNullable(formData.get("companyName")),
     value: toNullable(formData.get("value")),
+    stage: (toNullable(formData.get("stage")) as LeadStage) ?? "new_lead",
   });
 
   revalidatePath("/");

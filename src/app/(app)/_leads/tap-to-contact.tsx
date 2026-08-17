@@ -44,6 +44,7 @@ export function TapToContact({
         variant="outline"
         size={size}
         disabled={!lead.phone}
+        nativeButton={false}
         className={size === "default" ? "flex-1" : undefined}
       >
         <Phone className="size-4" />
@@ -54,6 +55,7 @@ export function TapToContact({
         variant="outline"
         size={size}
         disabled={!lead.phone}
+        nativeButton={false}
         className={size === "default" ? "flex-1" : undefined}
       >
         <MessageSquare className="size-4" />
@@ -64,6 +66,7 @@ export function TapToContact({
         variant="outline"
         size={size}
         disabled={!lead.email}
+        nativeButton={false}
         className={size === "default" ? "flex-1" : undefined}
       >
         <Mail className="size-4" />
