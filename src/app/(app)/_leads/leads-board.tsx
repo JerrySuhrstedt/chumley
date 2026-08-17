@@ -2,8 +2,11 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import {
+  closestCorners,
   DndContext,
+  DragOverlay,
   type DragEndEvent,
+  type DragStartEvent,
   PointerSensor,
   useSensor,
   useSensors,
@@ -12,6 +15,7 @@ import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Activity, Lead, Template } from "@/db/schema";
 import { type LeadStage, updateLeadStage } from "./actions";
+import { LeadCardView } from "./lead-card";
 import { LeadColumn } from "./lead-column";
 import { LeadDetailDialog } from "./lead-detail-dialog";
 import { STAGES } from "./stages";
@@ -29,6 +33,7 @@ export function LeadsBoard({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [mobileStage, setMobileStage] = useState<LeadStage>("new_lead");
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   useEffect(() => {
@@ -59,8 +64,13 @@ export function LeadsBoard({
     });
   }
 
+  function handleDragStart(event: DragStartEvent) {
+    setActiveId(String(event.active.id));
+  }
+
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
+    setActiveId(null);
     if (!over) return;
 
     const leadId = String(active.id);
@@ -72,6 +82,9 @@ export function LeadsBoard({
   }
 
   const selectedLead = localLeads.find((l) => l.id === selectedId) ?? null;
+  const activeLead = activeId
+    ? (localLeads.find((l) => l.id === activeId) ?? null)
+    : null;
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -105,7 +118,14 @@ export function LeadsBoard({
         </div>
       </div>
 
-      <DndContext id="leads-board" sensors={sensors} onDragEnd={handleDragEnd}>
+      <DndContext
+        id="leads-board"
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={() => setActiveId(null)}
+      >
         <div className="flex flex-1 items-start gap-3 overflow-x-auto overflow-y-hidden px-4 pb-4 md:px-6">
           {STAGES.map((stage) => (
             <div
@@ -127,6 +147,12 @@ export function LeadsBoard({
             </div>
           ))}
         </div>
+
+        <DragOverlay dropAnimation={null}>
+          {activeLead ? (
+            <LeadCardView lead={activeLead} templates={templates} overlay />
+          ) : null}
+        </DragOverlay>
       </DndContext>
 
       {selectedLead && (

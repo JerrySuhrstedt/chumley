@@ -27,8 +27,9 @@ export function LeadColumn({
 
   return (
     <div
-      className={`flex max-h-full w-full flex-col rounded-xl bg-[var(--board-column)] transition-colors md:w-72 ${
-        isOver ? "ring-2 ring-white/70" : ""
+      ref={setNodeRef}
+      className={`flex max-h-full w-full flex-col rounded-xl bg-[var(--board-column)] transition-shadow md:w-72 ${
+        isOver ? "ring-2 ring-white shadow-lg" : ""
       }`}
     >
       <div className="flex items-center justify-between px-3 pt-3 pb-2">
@@ -41,10 +42,7 @@ export function LeadColumn({
         </span>
       </div>
 
-      <div
-        ref={setNodeRef}
-        className="flex min-h-12 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-1"
-      >
+      <div className="flex min-h-12 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-1">
         {leads.map((lead) => (
           <LeadCard
             key={lead.id}

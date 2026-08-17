@@ -1,31 +1,32 @@
 "use client";
 
+import type { HTMLAttributes } from "react";
 import { useDraggable } from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
 import { ChevronRight } from "lucide-react";
 import type { Lead, Template } from "@/db/schema";
 import { TapToContact } from "./tap-to-contact";
 import { nextActionStatus, nextStage, STAGES } from "./stages";
 import type { LeadStage } from "./actions";
 
-export function LeadCard({
+/**
+ * Presentational card. Rendered both in a column and inside the DragOverlay,
+ * so it takes no drag state of its own.
+ */
+export function LeadCardView({
   lead,
   templates,
   onClick,
   onMoveNext,
+  dragHandleProps,
+  overlay = false,
 }: {
   lead: Lead;
   templates: Template[];
-  onClick: () => void;
-  onMoveNext: (stage: LeadStage) => void;
+  onClick?: () => void;
+  onMoveNext?: (stage: LeadStage) => void;
+  dragHandleProps?: HTMLAttributes<HTMLDivElement>;
+  overlay?: boolean;
 }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({ id: lead.id });
-
-  const style = transform
-    ? { transform: CSS.Translate.toString(transform) }
-    : undefined;
-
   const status = nextActionStatus(lead);
   const upcoming = nextStage(lead.stage);
   const upcomingLabel = upcoming
@@ -38,15 +39,14 @@ export function LeadCard({
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      className={`rounded-lg bg-white shadow-[0_1px_1px_rgba(9,30,66,0.25)] transition-shadow hover:shadow-[0_2px_4px_rgba(9,30,66,0.25)] ${
-        isDragging ? "rotate-2 opacity-60" : ""
+      className={`rounded-lg bg-white transition-shadow ${
+        overlay
+          ? "rotate-3 cursor-grabbing shadow-[0_8px_16px_rgba(9,30,66,0.35)]"
+          : "shadow-[0_1px_1px_rgba(9,30,66,0.25)] hover:shadow-[0_2px_4px_rgba(9,30,66,0.25)]"
       }`}
     >
       <div
-        {...listeners}
-        {...attributes}
+        {...dragHandleProps}
         onClick={onClick}
         className="cursor-pointer px-3 pt-2.5 pb-2"
       >
@@ -72,7 +72,7 @@ export function LeadCard({
       <div className="flex flex-col gap-1 px-3 pb-2.5">
         <TapToContact lead={lead} templates={templates} stopPropagation />
 
-        {upcoming && upcomingLabel && (
+        {upcoming && upcomingLabel && onMoveNext && (
           <button
             type="button"
             className="flex items-center justify-between rounded px-1 py-1.5 text-xs font-medium text-[var(--board-ink-muted)] transition-colors hover:bg-[var(--board-column-hover)] md:hidden"
@@ -86,6 +86,39 @@ export function LeadCard({
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Draggable wrapper. The card itself does not move — DragOverlay renders the
+ * travelling copy above the board so it is never clipped by a column's
+ * scroll container.
+ */
+export function LeadCard({
+  lead,
+  templates,
+  onClick,
+  onMoveNext,
+}: {
+  lead: Lead;
+  templates: Template[];
+  onClick: () => void;
+  onMoveNext: (stage: LeadStage) => void;
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: lead.id,
+  });
+
+  return (
+    <div ref={setNodeRef} className={isDragging ? "opacity-40" : undefined}>
+      <LeadCardView
+        lead={lead}
+        templates={templates}
+        onClick={onClick}
+        onMoveNext={onMoveNext}
+        dragHandleProps={{ ...listeners, ...attributes }}
+      />
     </div>
   );
 }
