@@ -18,6 +18,7 @@ export function LeadColumn({
   isDropTarget = false,
   onCardClick,
   onMoveNext,
+  onContact,
 }: {
   stage: LeadStage;
   label: string;
@@ -26,6 +27,7 @@ export function LeadColumn({
   isDropTarget?: boolean;
   onCardClick: (leadId: string) => void;
   onMoveNext: (leadId: string, stage: LeadStage) => void;
+  onContact: (leadId: string, type: "call" | "text" | "email") => void;
 }) {
   const { setNodeRef } = useDroppable({ id: stage });
 
@@ -62,6 +64,7 @@ export function LeadColumn({
               templates={templates}
               onClick={() => onCardClick(lead.id)}
               onMoveNext={(next) => onMoveNext(lead.id, next)}
+              onContact={(type) => onContact(lead.id, type)}
             />
           ))}
         </SortableContext>

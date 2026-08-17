@@ -18,6 +18,7 @@ export function LeadCardView({
   templates,
   onClick,
   onMoveNext,
+  onContact,
   dragHandleProps,
   overlay = false,
 }: {
@@ -25,6 +26,7 @@ export function LeadCardView({
   templates: Template[];
   onClick?: () => void;
   onMoveNext?: (stage: LeadStage) => void;
+  onContact?: (type: "call" | "text" | "email") => void;
   dragHandleProps?: HTMLAttributes<HTMLDivElement>;
   overlay?: boolean;
 }) {
@@ -71,7 +73,12 @@ export function LeadCardView({
       </div>
 
       <div className="flex flex-col gap-1 px-3 pb-2.5">
-        <TapToContact lead={lead} templates={templates} stopPropagation />
+        <TapToContact
+          lead={lead}
+          templates={templates}
+          stopPropagation
+          onContact={onContact}
+        />
 
         {upcoming && upcomingLabel && onMoveNext && (
           <button
@@ -101,11 +108,13 @@ export function LeadCard({
   templates,
   onClick,
   onMoveNext,
+  onContact,
 }: {
   lead: Lead;
   templates: Template[];
   onClick: () => void;
   onMoveNext: (stage: LeadStage) => void;
+  onContact: (type: "call" | "text" | "email") => void;
 }) {
   const {
     attributes,
@@ -130,6 +139,7 @@ export function LeadCard({
         templates={templates}
         onClick={onClick}
         onMoveNext={onMoveNext}
+        onContact={onContact}
         dragHandleProps={{ ...listeners, ...attributes }}
       />
     </div>

@@ -1,11 +1,9 @@
 import { and, eq, ilike, or } from "drizzle-orm";
 import { Search } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { db } from "@/db";
 import { leads, templates } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
-import { TapToContact } from "../_leads/tap-to-contact";
-import { STAGES } from "../_leads/stages";
+import { ContactsList } from "./contacts-list";
 
 export default async function ContactsPage({
   searchParams,
@@ -17,23 +15,21 @@ export default async function ContactsPage({
   const query = typeof q === "string" ? q.trim() : "";
 
   const [rows, allTemplates] = await Promise.all([
-    db
-      .select()
-      .from(leads)
-      .where(
-        query
-          ? and(
-              eq(leads.orgId, current.org.id),
-              or(
-                ilike(leads.name, `%${query}%`),
-                ilike(leads.companyName, `%${query}%`),
-                ilike(leads.email, `%${query}%`),
-                ilike(leads.phone, `%${query}%`)
-              )
+    db.query.leads.findMany({
+      where: query
+        ? and(
+            eq(leads.orgId, current.org.id),
+            or(
+              ilike(leads.name, `%${query}%`),
+              ilike(leads.companyName, `%${query}%`),
+              ilike(leads.email, `%${query}%`),
+              ilike(leads.phone, `%${query}%`)
             )
-          : eq(leads.orgId, current.org.id)
-      )
-      .orderBy(leads.name),
+          )
+        : eq(leads.orgId, current.org.id),
+      with: { activities: true },
+      orderBy: (l, { asc }) => [asc(l.name)],
+    }),
     db.select().from(templates).where(eq(templates.orgId, current.org.id)),
   ]);
 
@@ -58,51 +54,11 @@ export default async function ContactsPage({
           </form>
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-          {rows.length === 0 ? (
-            <p className="p-8 text-center text-sm text-slate-500">
-              {query ? "No contacts match that search." : "No contacts yet."}
-            </p>
-          ) : (
-            <ul className="divide-y divide-slate-100">
-              {rows.map((lead) => {
-                const stage = STAGES.find((s) => s.value === lead.stage);
-                return (
-                  <li
-                    key={lead.id}
-                    className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-medium text-slate-900">
-                          {lead.name}
-                        </p>
-                        {stage && (
-                          <Badge variant="secondary">{stage.label}</Badge>
-                        )}
-                      </div>
-                      <p className="mt-0.5 truncate text-sm text-slate-500">
-                        {[lead.companyName, lead.email, lead.phone]
-                          .filter(Boolean)
-                          .join(" · ") || "No contact details yet"}
-                      </p>
-                      {lead.nextActionText && (
-                        <p className="mt-1 text-xs text-slate-500">
-                          Next: {lead.nextActionText}
-                          {lead.nextActionDue ? ` (${lead.nextActionDue})` : ""}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="shrink-0">
-                      <TapToContact lead={lead} templates={allTemplates} />
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
+        <ContactsList
+          leads={rows}
+          templates={allTemplates}
+          query={query}
+        />
       </div>
     </div>
   );

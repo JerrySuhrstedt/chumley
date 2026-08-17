@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Mail, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,15 +37,23 @@ export function LeadDetailDialog({
   templates,
   open,
   onOpenChange,
+  initialLogType = "note",
 }: {
   lead: LeadWithActivities;
   templates: Template[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Pre-selects the log type when opened straight from a Call/Text/Email tap. */
+  initialLogType?: ActivityType;
 }) {
   const [editing, setEditing] = useState(false);
-  const [logType, setLogType] = useState<ActivityType>("note");
+  const [logType, setLogType] = useState<ActivityType>(initialLogType);
   const logRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- follow the channel the caller opened with
+    setLogType(initialLogType);
+  }, [initialLogType]);
 
   // Reaching out scrolls the log panel into view so the note is the obvious
   // next step once the dialer or mail client hands control back.

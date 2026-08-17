@@ -18,7 +18,7 @@ import { arrayMove } from "@dnd-kit/sortable";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Activity, Lead, Template } from "@/db/schema";
-import { type LeadStage, reorderStage } from "./actions";
+import { type ActivityType, type LeadStage, reorderStage } from "./actions";
 import { LeadCardView } from "./lead-card";
 import { LeadColumn } from "./lead-column";
 import { LeadDetailDialog } from "./lead-detail-dialog";
@@ -50,6 +50,7 @@ export function LeadsBoard({
   const [query, setQuery] = useState("");
   const [mobileStage, setMobileStage] = useState<LeadStage>("new_lead");
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [logType, setLogType] = useState<ActivityType>("note");
   const [, startTransition] = useTransition();
 
   useEffect(() => {
@@ -92,6 +93,17 @@ export function LeadsBoard({
     );
     setLocalLeads(next);
     persist(stage, next);
+  }
+
+  function openRecord(leadId: string) {
+    setLogType("note");
+    setSelectedId(leadId);
+  }
+
+  /** Reaching out from a card opens the record with the log ready. */
+  function handleContact(leadId: string, type: ActivityType) {
+    setLogType(type);
+    setSelectedId(leadId);
   }
 
   function handleDragStart(event: DragStartEvent) {
@@ -215,8 +227,9 @@ export function LeadsBoard({
                 leads={filtered.filter((l) => l.stage === stage.value)}
                 templates={templates}
                 isDropTarget={!!activeLead && activeLead.stage === stage.value}
-                onCardClick={setSelectedId}
+                onCardClick={openRecord}
                 onMoveNext={moveStage}
+                onContact={handleContact}
               />
             </div>
           ))}
@@ -233,6 +246,7 @@ export function LeadsBoard({
         <LeadDetailDialog
           lead={selectedLead}
           templates={templates}
+          initialLogType={logType}
           open={!!selectedId}
           onOpenChange={(open) => !open && setSelectedId(null)}
         />
