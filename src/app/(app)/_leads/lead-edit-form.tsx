@@ -40,6 +40,10 @@ export function LeadEditForm({
           <Input id="email" name="email" type="email" defaultValue={lead.email ?? ""} />
         </div>
       </div>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="title">Job title</Label>
+        <Input id="title" name="title" defaultValue={lead.title ?? ""} />
+      </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
           <Label htmlFor="companyName">Company</Label>

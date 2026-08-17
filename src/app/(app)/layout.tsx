@@ -12,7 +12,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
   return (
     <div className="flex h-screen w-full overflow-hidden">
-      <AppSidebar />
+      <AppSidebar email={current.email} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar orgName={current.org.name} />
         <main className="flex flex-1 flex-col overflow-hidden bg-[var(--board-bg)]">

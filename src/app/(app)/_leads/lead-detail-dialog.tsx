@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
+import { Mail, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,16 +10,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { DeleteButton } from "@/components/delete-button";
 import type { Activity, Lead, Template } from "@/db/schema";
 import { addLeadNote, deleteLead } from "./actions";
+import { LeadAvatar } from "./lead-avatar";
 import { LeadEditForm } from "./lead-edit-form";
 import { NextActionSection } from "./next-action-section";
+import { STAGES } from "./stages";
 import { TapToContact } from "./tap-to-contact";
 
 type LeadWithActivities = Lead & { activities: Activity[] };
+
+function InfoRow({ label, value }: { label: string; value: string | null }) {
+  return (
+    <div>
+      <dt className="text-xs text-slate-500">{label}</dt>
+      <dd className="text-sm text-slate-900">{value || "—"}</dd>
+    </div>
+  );
+}
 
 export function LeadDetailDialog({
   lead,
@@ -33,10 +44,9 @@ export function LeadDetailDialog({
 }) {
   const [editing, setEditing] = useState(false);
   const noteAction = addLeadNote.bind(null, lead.id);
-  const [noteState, noteFormAction, notePending] = useActionState(
-    noteAction,
-    { error: null }
-  );
+  const [noteState, noteFormAction, notePending] = useActionState(noteAction, {
+    error: null,
+  });
   const noteFormRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
@@ -49,108 +59,175 @@ export function LeadDetailDialog({
     (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
   );
 
+  const stageLabel = STAGES.find((s) => s.value === lead.stage)?.label ?? "";
+  const subtitle = [lead.title, lead.companyName].filter(Boolean).join(" at ");
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[85vh] max-w-lg flex-col">
-        <DialogHeader>
-          <DialogTitle>{lead.name}</DialogTitle>
+      <DialogContent className="flex max-h-[88vh] w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl">
+        {/* Header */}
+        <DialogHeader className="shrink-0 border-b border-slate-200 px-5 py-4">
+          <div className="flex items-start gap-4">
+            <LeadAvatar lead={lead} className="size-14 text-lg" />
+
+            <div className="min-w-0 flex-1">
+              <DialogTitle className="truncate text-xl font-semibold text-slate-900">
+                {lead.name}
+              </DialogTitle>
+              {subtitle && (
+                <p className="truncate text-sm text-slate-600">{subtitle}</p>
+              )}
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                {lead.email && (
+                  <a
+                    href={`mailto:${lead.email}`}
+                    className="flex items-center gap-1.5 text-[var(--board-bg)] hover:underline"
+                  >
+                    <Mail className="size-3.5" />
+                    {lead.email}
+                  </a>
+                )}
+                {lead.phone && (
+                  <a
+                    href={`tel:${lead.phone}`}
+                    className="flex items-center gap-1.5 text-slate-700 hover:underline"
+                  >
+                    <Phone className="size-3.5" />
+                    {lead.phone}
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
         </DialogHeader>
 
-        {editing ? (
-          <LeadEditForm lead={lead} onSuccess={() => setEditing(false)} />
-        ) : (
-          <div className="flex flex-1 flex-col gap-4 overflow-y-auto pb-16 md:pb-0">
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>
-                <span className="text-muted-foreground">Company: </span>
-                {lead.companyName ?? "—"}
-              </div>
-              <div>
-                <span className="text-muted-foreground">Value: </span>
-                {lead.value ? `$${lead.value}` : "—"}
-              </div>
-              <div>
-                <span className="text-muted-foreground">Phone: </span>
-                {lead.phone ?? "—"}
-              </div>
-              <div>
-                <span className="text-muted-foreground">Email: </span>
-                {lead.email ?? "—"}
-              </div>
-            </div>
-
-            <TapToContact
-              lead={lead}
-              templates={templates}
-              size="default"
-            />
-
-            <NextActionSection lead={lead} />
-
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
-                Edit
-              </Button>
-              <DeleteButton
-                action={async () => {
-                  await deleteLead(lead.id);
-                  onOpenChange(false);
-                }}
-                confirmMessage={`Delete ${lead.name}? This can't be undone.`}
-              />
-            </div>
-
-            <Separator />
-
-            <form
-              ref={noteFormRef}
-              action={noteFormAction}
-              className="flex flex-col gap-2"
-            >
-              <Textarea
-                name="body"
-                placeholder="Add a note..."
-                rows={2}
-                required
-              />
-              {noteState.error && (
-                <p className="text-sm text-destructive">{noteState.error}</p>
-              )}
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto bg-slate-50">
+          {editing ? (
+            <div className="p-5">
+              <LeadEditForm lead={lead} onSuccess={() => setEditing(false)} />
               <Button
-                type="submit"
+                variant="ghost"
                 size="sm"
-                className="self-end"
-                disabled={notePending}
+                className="mt-3"
+                onClick={() => setEditing(false)}
               >
-                {notePending ? "Adding..." : "Add note"}
+                Cancel
               </Button>
-            </form>
+            </div>
+          ) : (
+            <div className="grid gap-4 p-5 md:grid-cols-[1fr_16rem]">
+              {/* Main column */}
+              <div className="flex flex-col gap-4">
+                <section className="rounded-lg border border-slate-200 bg-white p-4">
+                  <h3 className="mb-3 text-sm font-semibold text-slate-900">
+                    What&apos;s next
+                  </h3>
+                  <NextActionSection lead={lead} />
+                </section>
 
-            <ul className="flex flex-col gap-3">
-              {activities.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  No activity yet.
-                </p>
-              )}
-              {activities.map((activity) => (
-                <li key={activity.id} className="text-sm">
-                  <p className="mb-1 text-xs text-muted-foreground">
-                    {formatDistanceToNow(activity.createdAt, {
-                      addSuffix: true,
-                    })}
-                  </p>
-                  <p className="whitespace-pre-wrap">{activity.body}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+                <section className="rounded-lg border border-slate-200 bg-white p-4">
+                  <h3 className="mb-3 text-sm font-semibold text-slate-900">
+                    Reach out
+                  </h3>
+                  <TapToContact
+                    lead={lead}
+                    templates={templates}
+                    size="default"
+                  />
+                </section>
 
-        {!editing && (
-          <div className="absolute inset-x-0 bottom-0 border-t bg-background p-3 md:hidden">
-            <TapToContact lead={lead} templates={templates} size="default" />
-          </div>
-        )}
+                <section className="rounded-lg border border-slate-200 bg-white p-4">
+                  <h3 className="mb-3 text-sm font-semibold text-slate-900">
+                    History
+                  </h3>
+
+                  <form
+                    ref={noteFormRef}
+                    action={noteFormAction}
+                    className="flex flex-col gap-2"
+                  >
+                    <Textarea
+                      name="body"
+                      placeholder={`Enter a note about ${lead.name.split(" ")[0]}`}
+                      rows={2}
+                      required
+                    />
+                    {noteState.error && (
+                      <p className="text-sm text-destructive">
+                        {noteState.error}
+                      </p>
+                    )}
+                    <Button
+                      type="submit"
+                      size="sm"
+                      className="self-start"
+                      disabled={notePending}
+                    >
+                      {notePending ? "Saving..." : "Save note"}
+                    </Button>
+                  </form>
+
+                  <ul className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4">
+                    {activities.length === 0 && (
+                      <p className="text-sm text-slate-500">No history yet.</p>
+                    )}
+                    {activities.map((activity) => (
+                      <li key={activity.id} className="text-sm">
+                        <p className="mb-0.5 text-xs text-slate-500">
+                          {formatDistanceToNow(activity.createdAt, {
+                            addSuffix: true,
+                          })}
+                        </p>
+                        <p className="whitespace-pre-wrap text-slate-800">
+                          {activity.body}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              </div>
+
+              {/* Right rail */}
+              <aside className="flex flex-col gap-4">
+                <section className="rounded-lg border border-slate-200 bg-white p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-slate-900">
+                      Contact info
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setEditing(true)}
+                      className="text-sm font-medium text-[var(--board-bg)] hover:underline"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                  <dl className="flex flex-col gap-3">
+                    <InfoRow label="Name" value={lead.name} />
+                    <InfoRow label="Job title" value={lead.title} />
+                    <InfoRow label="Company" value={lead.companyName} />
+                    <InfoRow label="Email" value={lead.email} />
+                    <InfoRow label="Phone" value={lead.phone} />
+                    <InfoRow
+                      label="Value"
+                      value={lead.value ? `$${lead.value}` : null}
+                    />
+                    <InfoRow label="Stage" value={stageLabel} />
+                  </dl>
+                </section>
+
+                <DeleteButton
+                  action={async () => {
+                    await deleteLead(lead.id);
+                    onOpenChange(false);
+                  }}
+                  confirmMessage={`Delete ${lead.name}? This can't be undone.`}
+                />
+              </aside>
+            </div>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

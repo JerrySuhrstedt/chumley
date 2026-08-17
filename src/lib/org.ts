@@ -22,7 +22,12 @@ export async function getCurrentOrg() {
 
   if (!membership) return null;
 
-  return { org: membership.org, role: membership.role, userId: user.id };
+  return {
+    org: membership.org,
+    role: membership.role,
+    userId: user.id,
+    email: user.email ?? null,
+  };
 }
 
 export async function createOrgForUser(userId: string, name: string) {

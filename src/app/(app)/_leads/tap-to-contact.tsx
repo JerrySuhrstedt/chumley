@@ -1,3 +1,5 @@
+"use client";
+
 import { Mail, MessageSquare, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Lead, Template } from "@/db/schema";

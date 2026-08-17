@@ -2,9 +2,11 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import {
-  closestCorners,
+  closestCenter,
+  type CollisionDetection,
   DndContext,
   DragOverlay,
+  pointerWithin,
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
@@ -25,6 +27,16 @@ import { STAGES } from "./stages";
 type LeadWithActivities = Lead & { activities: Activity[] };
 
 const STAGE_VALUES = STAGES.map((s) => s.value) as string[];
+
+/**
+ * Whatever is under the pointer wins. closestCorners measures corner
+ * distance, which on tall columns can resolve to a neighbouring column and
+ * drop the card in the wrong stage.
+ */
+const collisionDetection: CollisionDetection = (args) => {
+  const underPointer = pointerWithin(args);
+  return underPointer.length > 0 ? underPointer : closestCenter(args);
+};
 
 export function LeadsBoard({
   leads,
@@ -181,7 +193,7 @@ export function LeadsBoard({
       <DndContext
         id="leads-board"
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={collisionDetection}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}

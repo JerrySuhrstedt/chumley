@@ -64,6 +64,7 @@ export async function updateLead(
       phone: toNullable(formData.get("phone")),
       email: toNullable(formData.get("email")),
       companyName: toNullable(formData.get("companyName")),
+      title: toNullable(formData.get("title")),
       value: toNullable(formData.get("value")),
       updatedAt: new Date(),
     })

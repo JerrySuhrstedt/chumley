@@ -4,33 +4,34 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
+  Contact,
   KanbanSquare,
-  MessageSquareText,
-  Users,
+  LogOut,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { signOut } from "@/app/(app)/actions";
 
 const NAV = [
   { href: "/", label: "Pipeline", icon: KanbanSquare, exact: true },
-  { href: "/settings/team", label: "Team", icon: Users },
-  { href: "/settings/templates", label: "Templates", icon: MessageSquareText },
+  { href: "/contacts", label: "Contacts", icon: Contact },
+  { href: "/calendar", label: "Calendar", icon: CalendarDays },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 const STORAGE_KEY = "ssc:nav-collapsed";
 
-export function AppSidebar() {
+export function AppSidebar({ email }: { email: string | null }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
-  const [ready, setReady] = useState(false);
 
-  // Restore the user's preference before showing labels, so the sidebar
-  // doesn't flash open then snap shut.
+  // Restore the user's preference on mount.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- read persisted UI preference on mount
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- read persisted UI preference
     setCollapsed(window.localStorage.getItem(STORAGE_KEY) === "1");
-    setReady(true);
   }, []);
 
   function toggle() {
@@ -39,6 +40,8 @@ export function AppSidebar() {
       return !prev;
     });
   }
+
+  const initial = (email ?? "?").charAt(0).toUpperCase();
 
   return (
     <aside
@@ -49,7 +52,7 @@ export function AppSidebar() {
     >
       <div
         className={cn(
-          "flex h-12 items-center",
+          "flex h-12 shrink-0 items-center",
           collapsed ? "justify-center" : "px-4"
         )}
       >
@@ -82,7 +85,7 @@ export function AppSidebar() {
               )}
             >
               <item.icon className="size-5 shrink-0" />
-              {!collapsed && ready && <span>{item.label}</span>}
+              {!collapsed && <span>{item.label}</span>}
             </Link>
           );
         })}
@@ -93,8 +96,8 @@ export function AppSidebar() {
         onClick={toggle}
         aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
         className={cn(
-          "m-2 flex items-center gap-2 rounded-md px-3 py-2 text-sm text-[var(--nav-ink)] transition-colors hover:bg-[var(--nav-hover)] hover:text-white",
-          collapsed && "justify-center px-0"
+          "mx-2 flex items-center gap-3 rounded-md py-2 text-sm text-[var(--nav-ink)] transition-colors hover:bg-[var(--nav-hover)] hover:text-white",
+          collapsed ? "justify-center px-0" : "px-3"
         )}
       >
         {collapsed ? (
@@ -106,6 +109,39 @@ export function AppSidebar() {
           </>
         )}
       </button>
+
+      <div className="mt-2 border-t border-white/10 p-2">
+        <div
+          className={cn(
+            "flex items-center gap-2",
+            collapsed ? "flex-col" : "px-1"
+          )}
+        >
+          <div
+            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[var(--nav-active)] text-sm font-semibold text-white"
+            title={email ?? undefined}
+          >
+            {initial}
+          </div>
+
+          {!collapsed && (
+            <p className="min-w-0 flex-1 truncate text-xs text-[var(--nav-ink)]">
+              {email ?? "Signed in"}
+            </p>
+          )}
+
+          <form action={signOut}>
+            <button
+              type="submit"
+              aria-label="Sign out"
+              title="Sign out"
+              className="flex size-8 items-center justify-center rounded-md text-[var(--nav-ink)] transition-colors hover:bg-[var(--nav-hover)] hover:text-white"
+            >
+              <LogOut className="size-4" />
+            </button>
+          </form>
+        </div>
+      </div>
     </aside>
   );
 }

@@ -75,6 +75,8 @@ export const leads = pgTable("leads", {
   companyName: text("company_name"),
   email: text("email"),
   phone: text("phone"),
+  title: text("title"),
+  avatarUrl: text("avatar_url"),
   value: numeric("value", { precision: 12, scale: 2 }),
   stage: leadStageEnum("stage").notNull().default("new_lead"),
   position: integer("position").notNull().default(0),

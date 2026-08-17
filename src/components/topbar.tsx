@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Settings } from "lucide-react";
+import { Menu } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,6 +8,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { signOut } from "@/app/(app)/actions";
+
+const MOBILE_NAV = [
+  { href: "/", label: "Pipeline" },
+  { href: "/contacts", label: "Contacts" },
+  { href: "/calendar", label: "Calendar" },
+  { href: "/settings", label: "Settings" },
+];
 
 export function Topbar({ orgName }: { orgName: string }) {
   return (
@@ -18,18 +25,22 @@ export function Topbar({ orgName }: { orgName: string }) {
       >
         {orgName}
       </Link>
+
+      {/* The sidebar covers navigation on desktop, so this is mobile-only. */}
       <DropdownMenu>
         <DropdownMenuTrigger
-          aria-label="Settings"
-          className="flex size-8 items-center justify-center rounded text-white transition-colors hover:bg-white/20"
+          aria-label="Menu"
+          className="flex size-8 items-center justify-center rounded text-white transition-colors hover:bg-white/20 md:hidden"
         >
-          <Settings className="size-4" />
+          <Menu className="size-5" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem render={<Link href="/settings/team">Team</Link>} />
-          <DropdownMenuItem
-            render={<Link href="/settings/templates">Templates</Link>}
-          />
+          {MOBILE_NAV.map((item) => (
+            <DropdownMenuItem
+              key={item.href}
+              render={<Link href={item.href}>{item.label}</Link>}
+            />
+          ))}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             render={
