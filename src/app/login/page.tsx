@@ -4,12 +4,13 @@ import { LoginForm } from "./login-form";
 export default async function LoginPage({
   searchParams,
 }: PageProps<"/login">) {
-  const { next, error } = await searchParams;
+  const { next, error, mode } = await searchParams;
 
   return (
     <AuthShell>
       <LoginForm
         next={typeof next === "string" ? next : undefined}
+        initialMode={mode === "signup" ? "signup" : undefined}
         initialError={
           error === "invalid-link"
             ? "That sign-in link has expired. Try again."

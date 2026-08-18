@@ -20,5 +20,5 @@ export async function createTeam(
   }
 
   await createOrgForUser(user.id, name);
-  redirect("/");
+  redirect("/pipeline");
 }

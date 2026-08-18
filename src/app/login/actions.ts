@@ -12,7 +12,7 @@ export async function signInWithPassword(
 ): Promise<LoginState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const next = String(formData.get("next") ?? "/").trim() || "/";
+  const next = String(formData.get("next") ?? "/pipeline").trim() || "/pipeline";
 
   if (!email || !password) {
     return { error: "Enter your email and password.", sent: false };
@@ -37,7 +37,7 @@ export async function signUpWithPassword(
 ): Promise<LoginState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const next = String(formData.get("next") ?? "/").trim() || "/";
+  const next = String(formData.get("next") ?? "/pipeline").trim() || "/pipeline";
 
   if (!email || !password) {
     return { error: "Enter your email and password.", sent: false };
@@ -79,7 +79,7 @@ export async function sendMagicLink(
   formData: FormData
 ): Promise<LoginState> {
   const email = String(formData.get("email") ?? "").trim();
-  const next = String(formData.get("next") ?? "/").trim() || "/";
+  const next = String(formData.get("next") ?? "/pipeline").trim() || "/pipeline";
 
   if (!email) {
     return { error: "Enter an email address.", sent: false };
@@ -103,7 +103,7 @@ export async function sendMagicLink(
 }
 
 export async function signInWithGoogle(formData: FormData) {
-  const next = String(formData.get("next") ?? "/").trim() || "/";
+  const next = String(formData.get("next") ?? "/pipeline").trim() || "/pipeline";
 
   const origin = (await headers()).get("origin");
   const supabase = await createClient();

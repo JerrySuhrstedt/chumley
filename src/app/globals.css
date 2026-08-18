@@ -108,6 +108,18 @@
   --nav-ink: #b8c4d0;
   --nav-ink-active: #ffffff;
 
+  /* UnCRM brand, taken from the logo */
+  --brand: #f16522;
+  --brand-dark: #d4531a;
+  --brand-tint: #fef2ec;
+  --ink: #231f20;
+  --ink-soft: #55504f;
+  --ink-muted: #7d7776;
+  --surface-alt: #faf8f7;
+  --rule: #e7e2e0;
+  --deep: #16293d;
+  --deep-soft: #24405c;
+
   /* Card status labels (Trello-style colored chips) */
   --label-overdue: #eb5a46;
   --label-today: #f2d600;

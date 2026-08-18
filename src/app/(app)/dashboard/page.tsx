@@ -149,7 +149,7 @@ export default async function DashboardPage() {
             <div className="mb-2 flex items-baseline justify-between">
               <h2 className="font-semibold text-slate-900">Pipeline</h2>
               <Link
-                href="/"
+                href="/pipeline"
                 className="flex items-center gap-1 text-sm font-medium text-[var(--board-bg)] hover:underline"
               >
                 Open board <ArrowRight className="size-3.5" />

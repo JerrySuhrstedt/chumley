@@ -17,7 +17,7 @@ export default async function JoinPage({
   const result = await joinOrg(token);
 
   if (!result.error) {
-    redirect("/");
+    redirect("/pipeline");
   }
 
   return (

@@ -37,11 +37,14 @@ const COPY: Record<Mode, { title: string; cta: string; pending: string }> = {
 export function LoginForm({
   next,
   initialError,
+  initialMode = "signin",
 }: {
   next?: string;
   initialError?: string;
+  initialMode?: Mode;
 }) {
-  const [mode, setMode] = useState<Mode>("signin");
+  // The marketing page links straight to signup, so honour ?mode=signup.
+  const [mode, setMode] = useState<Mode>(initialMode);
 
   const action =
     mode === "signin"
@@ -100,7 +103,7 @@ export function LoginForm({
       </p>
 
       <form action={formAction} className="mt-8 flex flex-col gap-5">
-        <input type="hidden" name="next" value={next ?? "/"} />
+        <input type="hidden" name="next" value={next ?? "/pipeline"} />
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="email" className={authLabel}>
@@ -161,7 +164,7 @@ export function LoginForm({
       {/* Its own form so the required email/password fields above do not
           block submission. */}
       <form action={signInWithGoogle}>
-        <input type="hidden" name="next" value={next ?? "/"} />
+        <input type="hidden" name="next" value={next ?? "/pipeline"} />
         <GoogleButton />
       </form>
 

@@ -33,6 +33,8 @@ export async function updateSession(request: NextRequest) {
   const isAuthRoute = pathname.startsWith("/login");
   const isPublicRoute =
     isAuthRoute ||
+    // The marketing home page is the front door, open to everyone.
+    pathname === "/" ||
     pathname.startsWith("/auth/") ||
     pathname.startsWith("/join/") ||
     pathname.startsWith("/api/webhooks/");
@@ -46,7 +48,7 @@ export async function updateSession(request: NextRequest) {
 
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = "/pipeline";
     return NextResponse.redirect(url);
   }
 

@@ -196,7 +196,7 @@ export function CsvImporter() {
         <div className="mt-5 flex justify-center gap-2">
           <Button
             nativeButton={false}
-            render={<Link href="/">View pipeline</Link>}
+            render={<Link href="/pipeline">View pipeline</Link>}
           />
           <Button variant="outline" onClick={reset}>
             Import another file

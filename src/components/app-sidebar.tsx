@@ -18,7 +18,7 @@ import { signOut } from "@/app/(app)/actions";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/", label: "Pipeline", icon: KanbanSquare, exact: true },
+  { href: "/pipeline", label: "Pipeline", icon: KanbanSquare },
   { href: "/contacts", label: "Contacts", icon: Contact },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/settings", label: "Settings", icon: Settings },
@@ -61,7 +61,7 @@ export function AppSidebar({ email }: { email: string | null }) {
         )}
       >
         <Link
-          href="/"
+          href="/pipeline"
           className="truncate text-base font-bold text-white"
           title="UnCRM"
         >
@@ -71,9 +71,7 @@ export function AppSidebar({ email }: { email: string | null }) {
 
       <nav className="flex flex-1 flex-col gap-1 px-2 py-2">
         {NAV.map((item) => {
-          const active = item.exact
-            ? pathname === item.href
-            : pathname.startsWith(item.href);
+          const active = pathname.startsWith(item.href);
 
           return (
             <Link

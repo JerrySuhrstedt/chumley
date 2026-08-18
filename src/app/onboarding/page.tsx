@@ -11,7 +11,7 @@ export default async function OnboardingPage() {
 
   const existing = await getCurrentOrg();
   if (existing) {
-    redirect("/");
+    redirect("/pipeline");
   }
 
   return (

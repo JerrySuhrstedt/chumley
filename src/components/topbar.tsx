@@ -37,7 +37,7 @@ export function Topbar({
     <header className="flex h-16 shrink-0 items-center justify-between px-4 md:px-6">
       <div className="flex min-w-0 flex-1 items-center gap-4">
         <Link
-          href="/"
+          href="/pipeline"
           className="-mx-2 shrink-0 rounded px-2 py-1 text-lg font-bold tracking-tight text-white transition-colors hover:bg-white/15 md:text-xl"
         >
           {orgName}

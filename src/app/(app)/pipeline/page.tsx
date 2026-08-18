@@ -2,10 +2,10 @@ import { and, eq, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { leads, templates } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
-import { LeadsBoard } from "./_leads/leads-board";
-import { QuickAddLeadDialog } from "./_leads/quick-add-lead-dialog";
-import { Scorecard } from "./_leads/scorecard";
-import { resolveStageLabels } from "./_leads/stages";
+import { LeadsBoard } from "../_leads/leads-board";
+import { QuickAddLeadDialog } from "../_leads/quick-add-lead-dialog";
+import { Scorecard } from "../_leads/scorecard";
+import { resolveStageLabels } from "../_leads/stages";
 
 export default async function PipelinePage() {
   const current = await getCurrentOrg();
