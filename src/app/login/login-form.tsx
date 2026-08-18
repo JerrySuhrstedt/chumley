@@ -9,10 +9,12 @@ import {
 } from "@/components/auth-shell";
 import {
   sendMagicLink,
+  signInWithGoogle,
   signInWithPassword,
   signUpWithPassword,
   type LoginState,
 } from "./actions";
+import { GoogleButton } from "./google-button";
 
 type Mode = "signin" | "signup" | "magic";
 
@@ -32,7 +34,13 @@ const COPY: Record<Mode, { title: string; cta: string; pending: string }> = {
   },
 };
 
-export function LoginForm({ next }: { next?: string }) {
+export function LoginForm({
+  next,
+  initialError,
+}: {
+  next?: string;
+  initialError?: string;
+}) {
   const [mode, setMode] = useState<Mode>("signin");
 
   const action =
@@ -44,6 +52,8 @@ export function LoginForm({ next }: { next?: string }) {
 
   const [state, formAction, pending] = useActionState(action, INITIAL);
   const copy = COPY[mode];
+  // A failed Google round trip lands back here as ?error=, with no form state.
+  const error = state.error ?? initialError ?? null;
 
   if (state.sent) {
     return (
@@ -129,15 +139,30 @@ export function LoginForm({ next }: { next?: string }) {
           </div>
         )}
 
-        {state.error && (
+        {error && (
           <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-            {state.error}
+            {error}
           </p>
         )}
 
         <button type="submit" disabled={pending} className={authButton}>
           {pending ? copy.pending : copy.cta}
         </button>
+      </form>
+
+      <div className="my-6 flex items-center gap-3">
+        <span className="h-px flex-1 bg-slate-200" />
+        <span className="text-xs font-medium tracking-wide text-slate-500 uppercase">
+          or
+        </span>
+        <span className="h-px flex-1 bg-slate-200" />
+      </div>
+
+      {/* Its own form so the required email/password fields above do not
+          block submission. */}
+      <form action={signInWithGoogle}>
+        <input type="hidden" name="next" value={next ?? "/"} />
+        <GoogleButton />
       </form>
 
       <div className="mt-6 text-center">

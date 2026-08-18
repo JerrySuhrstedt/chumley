@@ -101,3 +101,26 @@ export async function sendMagicLink(
 
   return { error: null, sent: true };
 }
+
+export async function signInWithGoogle(formData: FormData) {
+  const next = String(formData.get("next") ?? "/").trim() || "/";
+
+  const origin = (await headers()).get("origin");
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(next)}`,
+    },
+  });
+
+  if (error || !data.url) {
+    redirect(
+      `/login?error=${encodeURIComponent(error?.message ?? "Google sign-in is unavailable.")}`
+    );
+  }
+
+  // Hand off to Google. It comes back to /auth/confirm with a PKCE code,
+  // which that route already knows how to exchange for a session.
+  redirect(data.url);
+}
