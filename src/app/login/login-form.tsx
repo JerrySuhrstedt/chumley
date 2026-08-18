@@ -10,11 +10,12 @@ import {
 import {
   sendMagicLink,
   signInWithGoogle,
+  signInWithLinkedIn,
   signInWithPassword,
   signUpWithPassword,
   type LoginState,
 } from "./actions";
-import { GoogleButton } from "./google-button";
+import { OAuthButton } from "./oauth-buttons";
 
 type Mode = "signin" | "signup" | "magic";
 
@@ -161,12 +162,20 @@ export function LoginForm({
         <span className="h-px flex-1 bg-slate-200" />
       </div>
 
-      {/* Its own form so the required email/password fields above do not
-          block submission. */}
-      <form action={signInWithGoogle}>
-        <input type="hidden" name="next" value={next ?? "/pipeline"} />
-        <GoogleButton />
-      </form>
+      {/* Each provider gets its own form, so the required email and password
+          fields above do not block submission and each button tracks only its
+          own pending state. */}
+      <div className="flex flex-col gap-3">
+        <form action={signInWithGoogle}>
+          <input type="hidden" name="next" value={next ?? "/pipeline"} />
+          <OAuthButton provider="google" />
+        </form>
+
+        <form action={signInWithLinkedIn}>
+          <input type="hidden" name="next" value={next ?? "/pipeline"} />
+          <OAuthButton provider="linkedin" />
+        </form>
+      </div>
 
       <div className="mt-6 text-center">
         <button

@@ -102,25 +102,46 @@ export async function sendMagicLink(
   return { error: null, sent: true };
 }
 
-export async function signInWithGoogle(formData: FormData) {
+type OAuthProvider = "google" | "linkedin_oidc";
+
+const PROVIDER_LABEL: Record<OAuthProvider, string> = {
+  google: "Google",
+  linkedin_oidc: "LinkedIn",
+};
+
+/**
+ * Hands off to the provider. It comes back to /auth/confirm with a PKCE
+ * code, which that route already knows how to exchange for a session.
+ *
+ * Both providers return a profile picture in the token, which Supabase puts
+ * on the user record. getCurrentOrg picks it up as the default headshot.
+ */
+async function startOAuth(provider: OAuthProvider, formData: FormData) {
   const next = String(formData.get("next") ?? "/pipeline").trim() || "/pipeline";
 
   const origin = (await headers()).get("origin");
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
+    provider,
     options: {
       redirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(next)}`,
     },
   });
 
   if (error || !data.url) {
+    const label = PROVIDER_LABEL[provider];
     redirect(
-      `/login?error=${encodeURIComponent(error?.message ?? "Google sign-in is unavailable.")}`
+      `/login?error=${encodeURIComponent(error?.message ?? `${label} sign-in is unavailable.`)}`
     );
   }
 
-  // Hand off to Google. It comes back to /auth/confirm with a PKCE code,
-  // which that route already knows how to exchange for a session.
   redirect(data.url);
+}
+
+export async function signInWithGoogle(formData: FormData) {
+  await startOAuth("google", formData);
+}
+
+export async function signInWithLinkedIn(formData: FormData) {
+  await startOAuth("linkedin_oidc", formData);
 }
