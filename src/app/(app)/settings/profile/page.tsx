@@ -9,6 +9,8 @@ import { db } from "@/db";
 import { memberships, organizations } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
 import { normalizeLinkedinUrl } from "@/lib/linkedin";
+import { getProviderPhotos } from "@/lib/provider-photos";
+import { HeadshotPicker } from "./headshot-picker";
 
 /** Lucide dropped brand marks, so the LinkedIn glyph is inlined. */
 function LinkedinMark({ className = "size-4" }: { className?: string }) {
@@ -66,6 +68,8 @@ export default async function ProfileSettingsPage() {
   const current = await getCurrentOrg();
   if (!current) return null;
 
+  const providerPhotos = await getProviderPhotos(current.userId);
+
   const initial = (current.displayName ?? current.email ?? "?")
     .charAt(0)
     .toUpperCase();
@@ -92,30 +96,11 @@ export default async function ProfileSettingsPage() {
           action={saveProfile}
           className="flex flex-col gap-5 rounded-lg border border-slate-200 bg-white p-4"
         >
-          <div className="flex items-center gap-4">
-            {current.avatarUrl ? (
-              // Arbitrary external host, so this stays a plain img rather
-              // than next/image with a remote-pattern allowlist.
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={current.avatarUrl}
-                alt=""
-                className="size-16 shrink-0 rounded-full object-cover ring-1 ring-slate-200"
-              />
-            ) : (
-              <span className="flex size-16 shrink-0 items-center justify-center rounded-full bg-[var(--board-bg)] text-xl font-semibold text-white">
-                {initial}
-              </span>
-            )}
-            <div className="min-w-0 text-sm">
-              <p className="font-medium text-slate-900">Headshot</p>
-              <p className="text-slate-500">
-                {current.providerPhoto && !current.avatarUrl
-                  ? "Pulled from the account you signed in with."
-                  : "Paste an image link below, or sign in with Google to use that photo."}
-              </p>
-            </div>
-          </div>
+          <HeadshotPicker
+            savedUrl={current.savedAvatarUrl}
+            providerPhotos={providerPhotos}
+            initial={initial}
+          />
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="displayName">Your name</Label>
@@ -153,22 +138,7 @@ export default async function ProfileSettingsPage() {
             <p className="text-xs text-slate-500">
               Paste the whole link or just the handle. LinkedIn does not let
               other sites read a profile photo from a URL, so your headshot
-              comes from the field below or from the account you sign in with.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="avatarUrl">Headshot image link</Label>
-            <Input
-              id="avatarUrl"
-              name="avatarUrl"
-              type="url"
-              inputMode="url"
-              defaultValue={current.avatarUrl ?? ""}
-              placeholder="https://example.com/your-photo.jpg"
-            />
-            <p className="text-xs text-slate-500">
-              Leave this empty to use the photo from your sign-in account.
+              comes from the picker above or from the account you sign in with.
             </p>
           </div>
 

@@ -37,6 +37,10 @@ export async function getCurrentOrg() {
     displayName: membership.displayName,
     jobTitle: membership.jobTitle,
     linkedinUrl: membership.linkedinUrl,
+    // What was actually chosen and stored. Null means "use whatever the
+    // sign-in account supplied", and the form must show it as empty.
+    savedAvatarUrl: membership.avatarUrl,
+    // What to render. Never feed this back into the form's default value.
     avatarUrl: membership.avatarUrl ?? providerPhoto,
     providerPhoto,
   };
