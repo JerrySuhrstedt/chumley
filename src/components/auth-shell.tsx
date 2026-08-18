@@ -15,7 +15,7 @@ export const authLink =
 export function Wordmark() {
   return (
     <span className="text-2xl font-bold tracking-tight text-[var(--board-bg)]">
-      Stupid Simple CRM
+      UnCRM
     </span>
   );
 }
@@ -33,7 +33,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
       </main>
 
       <footer className="px-4 py-6 text-center text-xs text-slate-500">
-        © {new Date().getFullYear()} Stupid Simple CRM
+        © {new Date().getFullYear()} UnCRM
       </footer>
     </div>
   );
