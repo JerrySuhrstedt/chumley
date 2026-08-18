@@ -31,7 +31,9 @@ export function Topbar({
   const person = displayName ?? email ?? null;
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between bg-[var(--board-topbar)] px-4 md:px-6">
+    // Transparent so the sidebar's colour carries across the top as one
+    // continuous piece of chrome.
+    <header className="flex h-16 shrink-0 items-center justify-between px-4 md:px-6">
       <Link
         href="/"
         className="-mx-2 rounded px-2 py-1 text-lg font-bold tracking-tight text-white transition-colors hover:bg-white/15 md:text-xl"

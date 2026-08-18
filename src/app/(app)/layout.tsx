@@ -11,7 +11,9 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden">
+    // The chrome is one continuous colour: the sidebar and top bar sit on it
+    // transparently, and the content is a panel resting inside that frame.
+    <div className="flex h-screen w-full overflow-hidden bg-[var(--nav-bg)]">
       <AppSidebar email={current.email} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar
@@ -20,7 +22,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           jobTitle={current.jobTitle}
           email={current.email}
         />
-        <main className="flex flex-1 flex-col overflow-hidden bg-[var(--board-bg)]">
+        <main className="flex flex-1 flex-col overflow-hidden rounded-tl-2xl bg-[var(--board-bg)]">
           {children}
         </main>
       </div>

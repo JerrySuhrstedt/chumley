@@ -48,7 +48,7 @@ export function AppSidebar({ email }: { email: string | null }) {
   return (
     <aside
       className={cn(
-        "hidden shrink-0 flex-col bg-[var(--nav-bg)] transition-[width] duration-200 md:flex",
+        "hidden shrink-0 flex-col transition-[width] duration-200 md:flex",
         collapsed ? "w-16" : "w-56"
       )}
     >
