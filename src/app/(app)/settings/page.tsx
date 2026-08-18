@@ -1,8 +1,14 @@
 import Link from "next/link";
-import { ChevronRight, MessageSquareText, Users } from "lucide-react";
+import { ChevronRight, MessageSquareText, Upload, Users } from "lucide-react";
 import { getCurrentOrg } from "@/lib/org";
 
 const SECTIONS = [
+  {
+    href: "/settings/import",
+    label: "Import",
+    description: "Bring in leads from a CSV, mapping columns to your fields.",
+    icon: Upload,
+  },
   {
     href: "/settings/team",
     label: "Team",
