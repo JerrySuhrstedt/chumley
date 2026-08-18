@@ -211,7 +211,9 @@ export function LeadsBoard({
         onDragEnd={handleDragEnd}
         onDragCancel={() => setActiveId(null)}
       >
-        <div className="flex flex-1 items-start gap-3 overflow-x-auto overflow-y-hidden px-4 pb-4 md:px-6">
+        {/* Vertical padding keeps the drop-target glow from being clipped
+            by this scroll container. */}
+        <div className="flex flex-1 items-start gap-3 overflow-x-auto overflow-y-hidden px-4 pt-1.5 pb-5 md:px-6">
           {STAGES.map((stage) => (
             <div
               key={stage.value}

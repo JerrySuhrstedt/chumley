@@ -38,7 +38,8 @@ export function LeadColumn({
       ref={setNodeRef}
       className={`flex max-h-full w-full flex-col rounded-xl transition-all md:w-72 ${
         isDropTarget
-          ? "bg-[var(--board-column-hover)] shadow-[0_0_0_3px_#fff,0_8px_20px_rgba(9,30,66,0.3)]"
+          ? // Solid ring hugs the whole edge; the blurred pass adds the glow.
+            "bg-[var(--board-column-hover)] shadow-[0_0_0_3px_var(--drop-glow),0_0_16px_4px_var(--drop-glow-soft)]"
           : "bg-[var(--board-column)]"
       }`}
     >
@@ -70,7 +71,7 @@ export function LeadColumn({
         </SortableContext>
 
         {leads.length === 0 && isDropTarget && (
-          <div className="m-1 flex-1 rounded-lg border-2 border-dashed border-[var(--board-ink-muted)]/40" />
+          <div className="m-1 flex-1 rounded-lg border-2 border-dashed border-[var(--drop-glow)]" />
         )}
       </div>
 

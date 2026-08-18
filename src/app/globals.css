@@ -90,6 +90,10 @@
   --board-ink: #172b4d;
   --board-ink-muted: #5e6c84;
 
+  /* Drop target highlight while dragging a card */
+  --drop-glow: #f2d600;
+  --drop-glow-soft: rgba(242, 214, 0, 0.55);
+
   /* Left navigation */
   --nav-bg: #16293d;
   --nav-hover: #21384f;
