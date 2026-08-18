@@ -103,7 +103,9 @@ export default function HomePage() {
               ))}
             </ul>
 
-            <div className="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+            {/* inline-flex keeps the block only as wide as the button, so
+                centering the note centers it under the button itself. */}
+            <div className="mt-9 inline-flex flex-col items-center gap-3">
               <CtaButton size="xl" />
               <span className="text-sm text-[var(--ink-muted)]">
                 No credit card. Set up in minutes.
