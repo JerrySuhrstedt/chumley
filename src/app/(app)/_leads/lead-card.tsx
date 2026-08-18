@@ -5,6 +5,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ChevronRight } from "lucide-react";
 import type { Lead, Template } from "@/db/schema";
+import { LeadAvatar } from "./lead-avatar";
 import { TapToContact } from "./tap-to-contact";
 import { nextActionStatus, nextStage, STAGES } from "./stages";
 import type { LeadStage } from "./actions";
@@ -64,12 +65,19 @@ export function LeadCardView({
           {status.label}
         </span>
 
-        <p className="text-sm font-medium text-[var(--board-ink)]">
-          {lead.name}
-        </p>
-        {meta && (
-          <p className="mt-0.5 text-xs text-[var(--board-ink-muted)]">{meta}</p>
-        )}
+        <div className="flex items-center gap-2">
+          <LeadAvatar lead={lead} className="size-7 text-[11px]" />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-[var(--board-ink)]">
+              {lead.name}
+            </p>
+            {meta && (
+              <p className="truncate text-xs text-[var(--board-ink-muted)]">
+                {meta}
+              </p>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-col gap-1 px-3 pb-2.5">
