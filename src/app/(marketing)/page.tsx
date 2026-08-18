@@ -12,9 +12,9 @@ import { CtaButton } from "./_components/cta";
 import { FaqList } from "./_components/faq-list";
 
 export const metadata: Metadata = {
-  title: "UnCRM | Finally, a sales CRM you'll actually want to use",
+  title: "Sell1 | Finally, a sales CRM you'll actually want to use",
   description:
-    "Stupid simple on purpose. Add a name and a phone number, drag a card when the deal moves, done. No setup, no training, no manual. If you can use your phone, you can use UnCRM.",
+    "Stupid simple on purpose. Add a name and a phone number, drag a card when the deal moves, done. No setup, no training, no manual. If you can use your phone, you can use Sell1.",
 };
 
 const HERO_POINTS = [
@@ -81,7 +81,7 @@ export default function HomePage() {
             </h1>
 
             <p className="mt-6 max-w-[52ch] text-[1.35rem] leading-relaxed text-[var(--ink-soft)] sm:text-2xl">
-              UnCRM is stupid simple on purpose. Add a name and a phone
+              Sell1 is stupid simple on purpose. Add a name and a phone
               number, drag a card when the deal moves, and you are done. No
               setup, no training, no manual. If you can use your phone, you can
               use this.
@@ -155,7 +155,7 @@ export default function HomePage() {
             </p>
 
             <p className="mt-5 max-w-[68ch] text-[17px] leading-relaxed font-semibold text-[var(--ink)]">
-              UnCRM is one screen. Your deals are cards. Move a card when the
+              Sell1 is one screen. Your deals are cards. Move a card when the
               deal moves. Tap a card to call, text, or email. There are no
               required fields, no records to create first, and no settings to
               figure out. Most people are running it about two minutes after
@@ -256,7 +256,7 @@ export default function HomePage() {
             <strong className="font-semibold text-[var(--ink)]">
               Placeholder, on purpose.
             </strong>{" "}
-            UnCRM has no customers yet, so there are no real testimonials to
+            Sell1 has no customers yet, so there are no real testimonials to
             print. Invented ones would be a fake review. Replace these three
             after your first users, and add a review-site line underneath.
           </p>

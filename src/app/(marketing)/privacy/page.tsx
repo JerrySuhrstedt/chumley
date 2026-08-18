@@ -10,16 +10,16 @@ import {
 } from "../_components/legal";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | UnCRM",
+  title: "Privacy Policy | Sell1",
   description:
-    "How SumoLab LLC collects, uses, shares, and protects personal information in the UnCRM service.",
+    "How SumoLab LLC collects, uses, shares, and protects personal information in the Sell1 service.",
 };
 
 export default function PrivacyPage() {
   return (
     <LegalPage
       title="Privacy Policy"
-      intro={`This Privacy Policy explains how ${COMPANY.legalName} ("SumoLab," "we," "us," or "our") collects, uses, discloses, and safeguards personal information in connection with ${COMPANY.product}, our sales pipeline software, together with the uncrm.app website and any related services (collectively, the "Service"). Please read it carefully. By creating an account or otherwise using the Service, you acknowledge the practices described here.`}
+      intro={`This Privacy Policy explains how ${COMPANY.legalName} ("SumoLab," "we," "us," or "our") collects, uses, discloses, and safeguards personal information in connection with ${COMPANY.product}, our sales pipeline software, together with the sell1.app website and any related services (collectively, the "Service"). Please read it carefully. By creating an account or otherwise using the Service, you acknowledge the practices described here.`}
     >
       <Section heading="1. Two roles: controller and processor">
         <p>

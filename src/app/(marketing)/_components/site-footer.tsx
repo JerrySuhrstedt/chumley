@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { UnCrmLogo } from "@/components/uncrm-logo";
+import { Sell1Logo } from "@/components/sell1-logo";
 
 const PRODUCT = [
   { href: "#how-it-works", label: "How it works" },
@@ -25,7 +25,7 @@ export function SiteFooter() {
       <div className="mx-auto max-w-6xl px-5 py-14 lg:px-8">
         <div className="flex flex-col gap-10 md:flex-row md:justify-between">
           <div className="max-w-sm">
-            <UnCrmLogo variant="light" className="h-7 w-auto" />
+            <Sell1Logo variant="light" className="text-2xl" />
             <p className="mt-4 text-[15px] leading-relaxed text-white/70">
               Nothing to set up, nothing to learn. The sales CRM built for
               people who would rather be selling than typing.

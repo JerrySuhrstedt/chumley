@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "UnCRM",
+  title: "Sell1",
   description: "Your sales pipeline, minus the clutter.",
 };
 

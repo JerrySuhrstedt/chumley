@@ -6,7 +6,7 @@ import { HelpCircle, Minus, Plus } from "lucide-react";
 const FAQS: { q: string; a: string }[] = [
   {
     q: "I am not a computer person. Is this going to be over my head?",
-    a: "No, and that is the entire point of UnCRM. There is one screen. Your deals are cards. You drag a card to the right when the deal moves forward. You tap a card to call, text, or email. That is the whole thing. No required fields, no dropdowns to decode, no setup wizard, no manual. If you can use the contacts app on your phone, you already know how to use this.",
+    a: "No, and that is the entire point of Sell1. There is one screen. Your deals are cards. You drag a card to the right when the deal moves forward. You tap a card to call, text, or email. That is the whole thing. No required fields, no dropdowns to decode, no setup wizard, no manual. If you can use the contacts app on your phone, you already know how to use this.",
   },
   {
     q: "How long does setup take?",
@@ -14,7 +14,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Does it work on a phone?",
-    a: "Yes, and that is where most people use it. UnCRM runs in your phone's browser with no app to install and no app store to fight with. The board stacks into one column, cards get a move button instead of a drag, and the call, text, and email buttons hand off to your phone's own dialer and apps. You can log a call from the truck between appointments in about ten seconds.",
+    a: "Yes, and that is where most people use it. Sell1 runs in your phone's browser with no app to install and no app store to fight with. The board stacks into one column, cards get a move button instead of a drag, and the call, text, and email buttons hand off to your phone's own dialer and apps. You can log a call from the truck between appointments in about ten seconds.",
   },
   {
     q: "Can I bring the contacts I already have?",
@@ -22,11 +22,11 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "We already pay for Salesforce. Why would we add this?",
-    a: "If your people are actually logging into Salesforce every day, keep it. UnCRM is for the other situation: the licenses are paid for, the logins exist, and the real pipeline is still on a legal pad. A CRM nobody opens is not a CRM, it is a line item. This one gets opened because using it is faster than not using it.",
+    a: "If your people are actually logging into Salesforce every day, keep it. Sell1 is for the other situation: the licenses are paid for, the logins exist, and the real pipeline is still on a legal pad. A CRM nobody opens is not a CRM, it is a line item. This one gets opened because using it is faster than not using it.",
   },
   {
     q: "What does it cost?",
-    a: "Nothing right now. UnCRM is in early access and free while we work with our first teams. Paid plans are coming, and if you sign up during early access you will get plenty of notice and a say in what the pricing looks like. No credit card to start.",
+    a: "Nothing right now. Sell1 is in early access and free while we work with our first teams. Paid plans are coming, and if you sign up during early access you will get plenty of notice and a say in what the pricing looks like. No credit card to start.",
   },
 ];
 

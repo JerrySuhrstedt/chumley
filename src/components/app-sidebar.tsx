@@ -63,9 +63,9 @@ export function AppSidebar({ email }: { email: string | null }) {
         <Link
           href="/pipeline"
           className="truncate text-base font-bold text-white"
-          title="UnCRM"
+          title="Sell1"
         >
-          {collapsed ? "UN" : "UnCRM"}
+          {collapsed ? "S1" : "Sell1"}
         </Link>
       </div>
 
