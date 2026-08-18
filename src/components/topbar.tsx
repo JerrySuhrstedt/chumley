@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { signOut } from "@/app/(app)/actions";
+import { GlobalSearch } from "@/components/global-search";
 
 const MOBILE_NAV = [
   { href: "/dashboard", label: "Dashboard" },
@@ -34,14 +35,20 @@ export function Topbar({
     // Transparent so the sidebar's colour carries across the top as one
     // continuous piece of chrome.
     <header className="flex h-16 shrink-0 items-center justify-between px-4 md:px-6">
-      <Link
-        href="/"
-        className="-mx-2 rounded px-2 py-1 text-lg font-bold tracking-tight text-white transition-colors hover:bg-white/15 md:text-xl"
-      >
-        {orgName}
-      </Link>
+      <div className="flex min-w-0 flex-1 items-center gap-4">
+        <Link
+          href="/"
+          className="-mx-2 shrink-0 rounded px-2 py-1 text-lg font-bold tracking-tight text-white transition-colors hover:bg-white/15 md:text-xl"
+        >
+          {orgName}
+        </Link>
 
-      <div className="flex items-center gap-3">
+        <div className="hidden flex-1 sm:block">
+          <GlobalSearch />
+        </div>
+      </div>
+
+      <div className="flex shrink-0 items-center gap-3 pl-3">
         {displayName ? (
           <div className="hidden text-right leading-tight sm:block">
             <p className="text-sm font-semibold text-white">{displayName}</p>

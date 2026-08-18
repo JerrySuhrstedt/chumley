@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowRightCircle, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,13 +17,21 @@ export function ContactsList({
   leads,
   templates,
   query,
+  openId,
 }: {
   leads: LeadWithActivities[];
   templates: Template[];
   query: string;
+  /** Set by header search, so a result opens its record on arrival. */
+  openId?: string;
 }) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(openId ?? null);
   const [logType, setLogType] = useState<ActivityType>("note");
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- follow the record named in the URL
+    setSelectedId(openId ?? null);
+  }, [openId]);
 
   const selected = leads.find((l) => l.id === selectedId) ?? null;
 

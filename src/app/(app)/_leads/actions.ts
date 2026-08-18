@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, ilike, inArray, or } from "drizzle-orm";
 import { db } from "@/db";
 import {
   activities,
@@ -204,6 +204,52 @@ export async function removeFromPipeline(id: string) {
 
   revalidatePath("/");
   revalidatePath("/contacts");
+}
+
+export type SearchHit = {
+  id: string;
+  name: string;
+  companyName: string | null;
+  email: string | null;
+  phone: string | null;
+  avatarUrl: string | null;
+  stage: LeadStage;
+};
+
+/** Header search across people, companies, emails and phone numbers. */
+export async function searchLeads(query: string): Promise<SearchHit[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+
+  const current = await getCurrentOrg();
+  if (!current) return [];
+
+  const like = `%${q}%`;
+
+  return db
+    .select({
+      id: leads.id,
+      name: leads.name,
+      companyName: leads.companyName,
+      email: leads.email,
+      phone: leads.phone,
+      avatarUrl: leads.avatarUrl,
+      stage: leads.stage,
+    })
+    .from(leads)
+    .where(
+      and(
+        eq(leads.orgId, current.org.id),
+        or(
+          ilike(leads.name, like),
+          ilike(leads.companyName, like),
+          ilike(leads.email, like),
+          ilike(leads.phone, like)
+        )
+      )
+    )
+    .orderBy(leads.name)
+    .limit(8);
 }
 
 export async function deleteLead(id: string) {

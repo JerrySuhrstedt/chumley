@@ -12,7 +12,7 @@ export default async function ContactsPage({
   const current = await getCurrentOrg();
   if (!current) return null;
 
-  const { q, view } = await searchParams;
+  const { q, view, open } = await searchParams;
   const query = typeof q === "string" ? q.trim() : "";
   const filter = view === "pipeline" || view === "contacts" ? view : "all";
 
@@ -110,6 +110,7 @@ export default async function ContactsPage({
           leads={rows}
           templates={allTemplates}
           query={query}
+          openId={typeof open === "string" ? open : undefined}
         />
       </div>
     </div>
