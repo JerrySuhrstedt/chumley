@@ -90,6 +90,13 @@
   --board-ink: #172b4d;
   --board-ink-muted: #5e6c84;
 
+  /* Outcome buckets. Tinted, not saturated, so white cards and dark label
+     text still read clearly on top. */
+  --bucket-won: #dcf1e3;
+  --bucket-won-hover: #cbe9d5;
+  --bucket-lost: #f9e2e2;
+  --bucket-lost-hover: #f3d2d2;
+
   /* Drop target highlight while dragging a card */
   --drop-glow: #f2d600;
   --drop-glow-soft: rgba(242, 214, 0, 0.55);
