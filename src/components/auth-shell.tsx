@@ -18,7 +18,7 @@ export const authLink =
 export function Wordmark() {
   return (
     <Link href="/" aria-label="Sell1 home" className="inline-block">
-      <Sell1Logo className="text-3xl" />
+      <Sell1Logo className="h-9 w-auto" />
     </Link>
   );
 }

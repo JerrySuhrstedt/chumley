@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#231f20"/>
+  <!-- Scaled to ~62% height so it survives Android's circular maskable crop. -->
+  <g transform="translate(157,78.5) scale(0.363)">
+    <polygon fill="#f16522" points="238.8 926.1 238.8 193.3 234.5 193.3 73.5 295.1 73.5 162.5 247.8 51.7 387.5 51.7 387.5 926.1"/>
+  </g>
+</svg>

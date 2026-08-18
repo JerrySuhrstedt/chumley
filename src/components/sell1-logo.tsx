@@ -1,36 +1,38 @@
 /**
- * The Sell1 wordmark.
+ * The Sell1 wordmark, inlined so it never waits on a network request and
+ * can inherit sizing from its container.
  *
- * PLACEHOLDER. The previous mark was hand-drawn letterforms exported from
- * Illustrator. This is set type standing in until a real one is drawn, so
- * nothing on the site ships the old brand. It follows the same visual logic:
- * the distinctive character carries the brand orange, and the period closes
- * the mark.
- *
- * Sized by font-size so it scales with whatever class you hand it.
+ * Paths exported from the master Illustrator file. The "1" and the period
+ * always carry the brand orange; the "sell" flips between ink and white
+ * depending on the surface underneath it.
  */
 export function Sell1Logo({
   variant = "dark",
-  className = "text-2xl",
+  className = "h-8 w-auto",
 }: {
   variant?: "dark" | "light";
   className?: string;
 }) {
-  const ink = variant === "light" ? "text-white" : "text-[#231f20]";
+  const wordColor = variant === "light" ? "#ffffff" : "#221f1f";
 
   return (
-    <span
-      className={`inline-flex items-baseline font-bold tracking-[-0.03em] ${ink} ${className}`}
-      aria-label="Sell1"
+    <svg
+      viewBox="0 0 544.6 198.5"
+      className={className}
       role="img"
+      aria-label="Sell1"
+      fill="none"
     >
-      <span aria-hidden>sell</span>
-      <span aria-hidden className="text-[var(--brand)]">
-        1
-      </span>
-      <span aria-hidden className="text-[var(--brand)]">
-        .
-      </span>
-    </span>
+      <g fill={wordColor}>
+        <path d="M128.4,90.7l-37.2,2.2c-1-4.6-3.5-8.6-7.7-12-4.2-3.4-9.8-5.1-16.9-5.1s-11.6,1.3-15.8,3.9c-4.2,2.6-6.4,6.1-6.4,10.5s1.4,6.5,4.1,9c2.8,2.5,7.5,4.4,14.2,5.8l26.7,5.3c14.3,2.9,24.9,7.6,31.9,14,7,6.5,10.5,15,10.5,25.6s-2.8,18.2-8.4,25.4c-5.6,7.2-13.3,12.9-23.1,16.9-9.8,4.1-21.1,6.1-33.7,6.1-19.4,0-34.9-4.1-46.4-12.2-11.5-8.1-18.2-19.2-20.2-33.1l39.8-2.1c1.3,6,4.3,10.5,8.9,13.5,4.6,3.1,10.6,4.6,17.9,4.6s12.8-1.4,17.3-4.2c4.4-2.8,6.6-6.3,6.6-10.6,0-7.3-6.3-12.2-18.9-14.7l-25.3-5.3c-14.3-2.9-24.9-7.8-31.9-14.8-7-7-10.5-16-10.5-26.9s2.6-17.6,7.7-24.4c5.2-6.8,12.4-12.1,21.7-15.8s20.2-5.5,32.8-5.5c18.6,0,33.1,3.9,43.8,11.7,10.6,7.8,16.8,18.5,18.6,32Z" />
+        <path d="M276.1,121.6c0-12.5-1.8-23.4-5.3-32.8-3.5-9.3-8.4-17.1-14.7-23.2-6.3-6.2-13.7-10.8-22.1-13.9-8.4-3.1-17.5-4.7-27.2-4.7-14.4,0-26.8,3.2-37.5,9.6-10.6,6.4-18.9,15.3-24.7,26.7-5.8,11.4-8.7,24.6-8.7,39.6s2.9,28.9,8.7,40.2c5.8,11.3,14.2,20.1,25.1,26.2,10.9,6.1,23.9,9.2,39,9.2s22.7-1.9,31.9-5.6c9.2-3.7,16.7-8.9,22.5-15.6,5.8-6.7,9.6-14.5,11.5-23.6l-37.5-2.5c-1.3,3.6-3.3,6.7-6,9.2-2.7,2.5-5.8,4.5-9.5,5.8-3.7,1.3-7.8,2-12.3,2-6.6,0-12.4-1.5-17.4-4.5-5-3-8.9-7.4-11.7-13-2.5-5.1-3.9-11.1-4.1-18.1h100v-11ZM190.3,81.9c4.6-3.1,10.2-4.6,16.9-4.6s12.2,1.5,16.7,4.5c4.5,3,7.9,7.3,10.2,12.8,1.6,3.8,2.6,8.1,3.1,12.9h-60.9c.5-4.8,1.6-9.2,3.4-13.1,2.4-5.3,6-9.4,10.6-12.5Z" />
+        <path d="M327.2,0v195.6h-40.6V0h40.6Z" />
+        <path d="M385,0v195.6h-40.6V0h40.6Z" />
+      </g>
+      <g fill="#f16522">
+        <path d="M483.3,0v195.6h-41.2V39.3h-1.2l-44.6,28.2V30.7L444.5,0h38.7Z" />
+        <path d="M521.5,198.1c-6.5,0-11.9-2.2-16.4-6.6-4.5-4.4-6.7-9.8-6.7-16.3s2.2-11.9,6.7-16.3c4.5-4.4,9.9-6.6,16.4-6.6s11.9,2.2,16.4,6.6c4.5,4.4,6.7,9.8,6.7,16.3s-2.2,11.9-6.7,16.3c-4.5,4.4-9.9,6.6-16.4,6.6Z" />
+      </g>
+    </svg>
   );
 }
