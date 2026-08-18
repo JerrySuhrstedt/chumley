@@ -76,8 +76,14 @@ export default function HomePage() {
               Free while in early access
             </span>
 
-            <h1 className="mt-6 text-[2.6rem] leading-[1.04] font-extrabold tracking-tight text-balance text-[var(--ink)] sm:text-[3.1rem] xl:text-[3.5rem]">
-              Finally, a sales&nbsp;CRM you&apos;ll actually want to use.
+            {/* Breaks are forced from sm up. Below that the line "a sales CRM
+                you'll" is wider than a phone, so mobile wraps naturally. */}
+            <h1 className="mt-6 text-[2.6rem] leading-[1.04] font-extrabold tracking-tight text-[var(--ink)] sm:text-[3.1rem] xl:text-[4rem]">
+              Finally,{" "}
+              <br className="hidden sm:inline" />
+              a sales&nbsp;CRM you&apos;ll{" "}
+              <br className="hidden sm:inline" />
+              actually want to use.
             </h1>
 
             <p className="mt-6 max-w-[52ch] text-[1.35rem] leading-snug font-bold text-[var(--ink)] sm:text-2xl">
