@@ -1,7 +1,33 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+/** The live brand. Anything arriving on an old host is sent here. */
+const CANONICAL_HOST = "sell1.app";
+const LEGACY_HOSTS = new Set(["uncrm.app", "www.uncrm.app", "stupid-simple-crm.vercel.app"]);
+
 export async function updateSession(request: NextRequest) {
+  const host = request.headers.get("host")?.toLowerCase() ?? "";
+
+  // Old domains still resolve to this project. Forward them, query string
+  // intact, so an auth code issued against a stale Site URL still lands.
+  if (LEGACY_HOSTS.has(host)) {
+    const url = request.nextUrl.clone();
+    url.host = CANONICAL_HOST;
+    url.port = "";
+    url.protocol = "https";
+    return NextResponse.redirect(url, 308);
+  }
+
+  // Supabase falls back to the project's Site URL when a redirect target is
+  // not allow-listed, which drops the code on "/" instead of /auth/confirm.
+  // Catch it here so sign-in completes regardless of that setting.
+  if (request.nextUrl.pathname === "/" && request.nextUrl.searchParams.has("code")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/confirm";
+    url.searchParams.set("next", "/pipeline");
+    return NextResponse.redirect(url);
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
