@@ -12,7 +12,7 @@ import { CtaButton } from "./_components/cta";
 import { FaqList } from "./_components/faq-list";
 
 export const metadata: Metadata = {
-  title: "UnCRM | Finally, a CRM you'll actually use",
+  title: "UnCRM | Finally, a sales CRM you'll actually want to use",
   description:
     "Stupid simple on purpose. Add a name and a phone number, drag a card when the deal moves, done. No setup, no training, no manual. If you can use your phone, you can use UnCRM.",
 };
@@ -76,8 +76,8 @@ export default function HomePage() {
               Free while in early access
             </span>
 
-            <h1 className="mt-6 text-[2.6rem] leading-[1.04] font-extrabold tracking-tight text-balance text-[var(--ink)] sm:text-[3.4rem] xl:text-[3.9rem]">
-              Finally, a CRM you&apos;ll actually use.
+            <h1 className="mt-6 text-[2.6rem] leading-[1.04] font-extrabold tracking-tight text-balance text-[var(--ink)] sm:text-[3.1rem] xl:text-[3.5rem]">
+              Finally, a sales&nbsp;CRM you&apos;ll actually want to use.
             </h1>
 
             <p className="mt-6 max-w-[52ch] text-[1.35rem] leading-relaxed text-[var(--ink-soft)] sm:text-2xl">
