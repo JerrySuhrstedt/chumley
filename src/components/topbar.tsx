@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Menu } from "lucide-react";
+import { LogOut, Menu, Settings, User } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +12,7 @@ import { GlobalSearch } from "@/components/global-search";
 
 const MOBILE_NAV = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/", label: "Pipeline" },
+  { href: "/pipeline", label: "Pipeline" },
   { href: "/contacts", label: "Contacts" },
   { href: "/calendar", label: "Calendar" },
   { href: "/settings", label: "Settings" },
@@ -71,25 +71,72 @@ export function Topbar({
           </Link>
         )}
 
-        <Link
-          href="/settings/profile"
-          aria-label="Your profile"
-          className="shrink-0 rounded-full ring-2 ring-transparent transition-all hover:ring-white/40"
-        >
-          {avatarUrl ? (
-            // Arbitrary external host, so a plain img rather than next/image.
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={avatarUrl}
-              alt=""
-              className="size-9 rounded-full object-cover"
+        {/* The avatar is where people look for sign out, so the account menu
+            lives here rather than only at the foot of the sidebar. */}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            aria-label="Account menu"
+            className="shrink-0 rounded-full ring-2 ring-transparent transition-all hover:ring-white/40"
+          >
+            {avatarUrl ? (
+              // Arbitrary external host, so a plain img rather than next/image.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={avatarUrl}
+                alt=""
+                className="size-9 rounded-full object-cover"
+              />
+            ) : (
+              <span className="flex size-9 items-center justify-center rounded-full bg-white/20 text-sm font-semibold text-white">
+                {initial}
+              </span>
+            )}
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="end" className="min-w-56">
+            <div className="px-2 py-1.5">
+              <p className="truncate text-sm font-semibold text-slate-900">
+                {displayName ?? "Your account"}
+              </p>
+              <p className="truncate text-xs text-slate-500">{email}</p>
+            </div>
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem
+              render={
+                <Link href="/settings/profile">
+                  <User className="mr-2 size-4" />
+                  Your profile
+                </Link>
+              }
             />
-          ) : (
-            <span className="flex size-9 items-center justify-center rounded-full bg-white/20 text-sm font-semibold text-white">
-              {initial}
-            </span>
-          )}
-        </Link>
+            <DropdownMenuItem
+              render={
+                <Link href="/settings">
+                  <Settings className="mr-2 size-4" />
+                  Settings
+                </Link>
+              }
+            />
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem
+              render={
+                <form action={signOut} className="w-full">
+                  <button
+                    type="submit"
+                    className="flex w-full items-center text-left text-red-600"
+                  >
+                    <LogOut className="mr-2 size-4" />
+                    Sign out
+                  </button>
+                </form>
+              }
+            />
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* The sidebar covers navigation on desktop, so this is mobile-only. */}
         <DropdownMenu>
