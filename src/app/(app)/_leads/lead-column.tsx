@@ -1,6 +1,7 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
+import { PartyPopper } from "lucide-react";
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -68,8 +69,15 @@ export function LeadColumn({
       }`}
     >
       <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-2">
-        <h2 className="min-w-0 flex-1">
+        <h2 className="flex min-w-0 flex-1 items-center gap-1.5">
           <BucketName stage={stage} label={label} />
+          {/* Tied to the stage, not the label, so it survives a rename. */}
+          {stage === "won" && (
+            <PartyPopper
+              className="size-[1.6rem] shrink-0 text-[#0ca30c]"
+              aria-label="Win"
+            />
+          )}
         </h2>
         <span className="shrink-0 text-xs text-[var(--board-ink-muted)]">
           {leads.length}
