@@ -52,15 +52,17 @@ export function AppSidebar({ email }: { email: string | null }) {
         collapsed ? "w-16" : "w-56"
       )}
     >
+      {/* Matches the header height so the nav and page content start on the
+          same line. */}
       <div
         className={cn(
-          "flex h-12 shrink-0 items-center",
+          "flex h-16 shrink-0 items-center",
           collapsed ? "justify-center" : "px-4"
         )}
       >
         <Link
           href="/"
-          className="truncate text-sm font-bold text-white"
+          className="truncate text-base font-bold text-white"
           title="Stupid Simple CRM"
         >
           {collapsed ? "SS" : "Stupid Simple CRM"}
