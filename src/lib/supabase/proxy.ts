@@ -33,8 +33,12 @@ export async function updateSession(request: NextRequest) {
   const isAuthRoute = pathname.startsWith("/login");
   const isPublicRoute =
     isAuthRoute ||
-    // The marketing home page is the front door, open to everyone.
+    // The marketing pages are the front door, open to everyone. The legal
+    // pages in particular must answer without a redirect, because reviewers
+    // and crawlers fetch them while signed out.
     pathname === "/" ||
+    pathname === "/privacy" ||
+    pathname === "/terms" ||
     pathname.startsWith("/auth/") ||
     pathname.startsWith("/join/") ||
     pathname.startsWith("/api/webhooks/");

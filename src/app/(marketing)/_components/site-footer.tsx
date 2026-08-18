@@ -11,7 +11,12 @@ const PRODUCT = [
 const COMPANY = [
   { href: "/login", label: "Log in" },
   { href: "/login?mode=signup", label: "Create an account" },
-  { href: "mailto:hello@uncrm.app", label: "Contact" },
+  { href: "mailto:info@sumolab.co", label: "Contact" },
+];
+
+const LEGAL = [
+  { href: "/privacy", label: "Privacy Policy" },
+  { href: "/terms", label: "Terms of Service" },
 ];
 
 export function SiteFooter() {
@@ -26,10 +31,16 @@ export function SiteFooter() {
               people who would rather be selling than typing.
             </p>
             <a
-              href="mailto:hello@uncrm.app"
-              className="mt-4 inline-block text-[15px] text-white/70 transition-colors hover:text-[var(--brand)]"
+              href="mailto:info@sumolab.co"
+              className="mt-4 block text-[15px] text-white/70 transition-colors hover:text-[var(--brand)]"
             >
-              hello@uncrm.app
+              info@sumolab.co
+            </a>
+            <a
+              href="tel:+14808269400"
+              className="block text-[15px] text-white/70 transition-colors hover:text-[var(--brand)]"
+            >
+              (480) 826-9400
             </a>
           </div>
 
@@ -58,6 +69,24 @@ export function SiteFooter() {
               </h3>
               <ul className="mt-4 space-y-3">
                 {COMPANY.map((l) => (
+                  <li key={l.href}>
+                    <Link
+                      href={l.href}
+                      className="text-[15px] text-white/80 transition-colors hover:text-[var(--brand)]"
+                    >
+                      {l.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="text-xs font-bold tracking-widest text-white/50 uppercase">
+                Legal
+              </h3>
+              <ul className="mt-4 space-y-3">
+                {LEGAL.map((l) => (
                   <li key={l.href}>
                     <Link
                       href={l.href}
