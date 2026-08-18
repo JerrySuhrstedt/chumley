@@ -45,6 +45,7 @@ export function CsvImporter() {
   const [rows, setRows] = useState<Row[]>([]);
   const [mapping, setMapping] = useState<Record<string, FieldKey | "">>({});
   const [skipDuplicates, setSkipDuplicates] = useState(true);
+  const [intoPipeline, setIntoPipeline] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [importing, setImporting] = useState(false);
@@ -115,7 +116,7 @@ export function CsvImporter() {
       phone: textOrNull(get("phone")),
       title: textOrNull(get("title")),
       value: parseValue(get("value")),
-      stage: parseStage(get("stage")),
+      stage: parseStage(get("stage"), intoPipeline ? "new_lead" : "contact"),
       nextActionText: textOrNull(get("nextActionText")),
       nextActionDue: parseDate(get("nextActionDue")),
     };
@@ -307,7 +308,7 @@ export function CsvImporter() {
           </div>
         )}
 
-        <div className="rounded-lg border border-slate-200 bg-white p-4">
+        <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4">
           <label className="flex items-start gap-2 text-sm text-slate-700">
             <input
               type="checkbox"
@@ -316,9 +317,26 @@ export function CsvImporter() {
               className="mt-0.5 size-4"
             />
             <span>
-              Skip leads whose email already exists
+              Skip anyone whose email already exists
               <span className="block text-xs text-slate-500">
                 Prevents duplicates if you import the same list twice.
+              </span>
+            </span>
+          </label>
+
+          <label className="flex items-start gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={intoPipeline}
+              onChange={(e) => setIntoPipeline(e.target.checked)}
+              className="mt-0.5 size-4"
+            />
+            <span>
+              These are active leads — put them straight on the board
+              <span className="block text-xs text-slate-500">
+                Off by default. Imported people land in Contacts, and you move
+                them onto the board when they show interest. Only tick this if
+                every row is genuinely being worked.
               </span>
             </span>
           </label>

@@ -22,6 +22,12 @@ export const leadStageEnum = pgEnum("lead_stage", [
   "proposal_sent",
   "won",
   "lost",
+  /**
+   * Known to you, but not yet working in the pipeline — imported lists,
+   * networking, past customers. Deliberately not a board column: a contact
+   * earns a place on the board by showing interest.
+   */
+  "contact",
 ]);
 
 export const templateChannelEnum = pgEnum("template_channel", [

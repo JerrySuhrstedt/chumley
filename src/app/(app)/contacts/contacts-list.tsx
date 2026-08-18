@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight } from "lucide-react";
+import { ArrowRightCircle, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type { Activity, Lead, Template } from "@/db/schema";
-import type { ActivityType } from "../_leads/actions";
+import { addToPipeline, type ActivityType } from "../_leads/actions";
 import { LeadAvatar } from "../_leads/lead-avatar";
 import { LeadDetailDialog } from "../_leads/lead-detail-dialog";
-import { STAGES } from "../_leads/stages";
+import { ALL_STAGES, CONTACT_STAGE } from "../_leads/stages";
 import { TapToContact } from "../_leads/tap-to-contact";
 
 type LeadWithActivities = Lead & { activities: Activity[] };
@@ -47,7 +48,7 @@ export function ContactsList({
         ) : (
           <ul className="divide-y divide-slate-100">
             {leads.map((lead) => {
-              const stage = STAGES.find((s) => s.value === lead.stage);
+              const stage = ALL_STAGES.find((s) => s.value === lead.stage);
               const details =
                 [lead.companyName, lead.email, lead.phone]
                   .filter(Boolean)
@@ -89,6 +90,18 @@ export function ContactsList({
                   </button>
 
                   <div className="flex shrink-0 items-center gap-2">
+                    {lead.stage === CONTACT_STAGE && (
+                      <form
+                        action={async () => {
+                          await addToPipeline(lead.id);
+                        }}
+                      >
+                        <Button type="submit" size="sm" variant="outline">
+                          <ArrowRightCircle className="size-4" />
+                          Add to pipeline
+                        </Button>
+                      </form>
+                    )}
                     <TapToContact
                       lead={lead}
                       templates={templates}

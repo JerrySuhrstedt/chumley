@@ -1,5 +1,6 @@
 import type { LeadStage } from "./actions";
 
+/** The board. A contact is not here until it shows interest. */
 export const STAGES: { value: LeadStage; label: string }[] = [
   { value: "new_lead", label: "New Lead" },
   { value: "contacted", label: "Contacted" },
@@ -7,6 +8,22 @@ export const STAGES: { value: LeadStage; label: string }[] = [
   { value: "won", label: "Won" },
   { value: "lost", label: "Lost" },
 ];
+
+export const CONTACT_STAGE: LeadStage = "contact";
+
+/** Includes the off-pipeline state, for labelling records anywhere. */
+export const ALL_STAGES: { value: LeadStage; label: string }[] = [
+  { value: CONTACT_STAGE, label: "Contact" },
+  ...STAGES,
+];
+
+export function stageLabel(stage: LeadStage) {
+  return ALL_STAGES.find((s) => s.value === stage)?.label ?? stage;
+}
+
+export function isInPipeline(stage: LeadStage) {
+  return stage !== CONTACT_STAGE;
+}
 
 export function nextStage(stage: LeadStage): LeadStage | null {
   const order: LeadStage[] = [

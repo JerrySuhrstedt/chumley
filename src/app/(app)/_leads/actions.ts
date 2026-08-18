@@ -22,6 +22,7 @@ function toNullable(value: FormDataEntryValue | null) {
 }
 
 const STAGE_LABELS: Record<LeadStage, string> = {
+  contact: "Contact",
   new_lead: "New Lead",
   contacted: "Contacted",
   proposal_sent: "Proposal Sent",
@@ -140,6 +141,65 @@ export async function reorderStage(stage: LeadStage, orderedIds: string[]) {
         createdBy: userId,
       });
     }
+  });
+
+  revalidatePath("/");
+  revalidatePath("/contacts");
+}
+
+/**
+ * Move a contact onto the board. This is the moment a contact becomes a lead,
+ * so it's recorded on the timeline like any other stage change.
+ */
+export async function addToPipeline(id: string) {
+  const { org, userId } = await requireOrg();
+
+  const [lead] = await db
+    .select({ id: leads.id, stage: leads.stage })
+    .from(leads)
+    .where(and(eq(leads.id, id), eq(leads.orgId, org.id)));
+
+  if (!lead || lead.stage !== "contact") return;
+
+  await db
+    .update(leads)
+    .set({ stage: "new_lead", updatedAt: new Date() })
+    .where(and(eq(leads.id, id), eq(leads.orgId, org.id)));
+
+  await db.insert(activities).values({
+    orgId: org.id,
+    leadId: id,
+    type: "stage_change",
+    body: "Contact → New Lead",
+    createdBy: userId,
+  });
+
+  revalidatePath("/");
+  revalidatePath("/contacts");
+}
+
+/** Take a lead off the board without deleting the person. */
+export async function removeFromPipeline(id: string) {
+  const { org, userId } = await requireOrg();
+
+  const [lead] = await db
+    .select({ id: leads.id, stage: leads.stage })
+    .from(leads)
+    .where(and(eq(leads.id, id), eq(leads.orgId, org.id)));
+
+  if (!lead || lead.stage === "contact") return;
+
+  await db
+    .update(leads)
+    .set({ stage: "contact", updatedAt: new Date() })
+    .where(and(eq(leads.id, id), eq(leads.orgId, org.id)));
+
+  await db.insert(activities).values({
+    orgId: org.id,
+    leadId: id,
+    type: "stage_change",
+    body: `${stageLabel(lead.stage)} → Contact`,
+    createdBy: userId,
   });
 
   revalidatePath("/");

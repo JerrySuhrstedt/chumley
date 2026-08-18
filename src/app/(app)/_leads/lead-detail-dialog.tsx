@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Mail, Phone } from "lucide-react";
+import { ArrowRightCircle, Mail, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,13 +12,18 @@ import {
 import { DeleteButton } from "@/components/delete-button";
 import type { Activity, Lead, Template } from "@/db/schema";
 import { telDigits } from "@/lib/phone";
-import { deleteLead, type ActivityType } from "./actions";
+import {
+  addToPipeline,
+  deleteLead,
+  removeFromPipeline,
+  type ActivityType,
+} from "./actions";
 import { ActivityItem } from "./activity-item";
 import { ActivityLogger } from "./activity-logger";
 import { LeadAvatar } from "./lead-avatar";
 import { LeadEditForm } from "./lead-edit-form";
 import { NextActionSection } from "./next-action-section";
-import { STAGES } from "./stages";
+import { ALL_STAGES, CONTACT_STAGE } from "./stages";
 import { TapToContact } from "./tap-to-contact";
 
 type LeadWithActivities = Lead & { activities: Activity[] };
@@ -66,7 +71,8 @@ export function LeadDetailDialog({
     (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
   );
 
-  const stageLabel = STAGES.find((s) => s.value === lead.stage)?.label ?? "";
+  const stageLabel =
+    ALL_STAGES.find((s) => s.value === lead.stage)?.label ?? "";
   const subtitle = [lead.title, lead.companyName].filter(Boolean).join(" at ");
 
   return (
@@ -204,6 +210,31 @@ export function LeadDetailDialog({
                     <InfoRow label="Stage" value={stageLabel} />
                   </dl>
                 </section>
+
+                {lead.stage === CONTACT_STAGE ? (
+                  <form
+                    action={async () => {
+                      await addToPipeline(lead.id);
+                      onOpenChange(false);
+                    }}
+                  >
+                    <Button type="submit" className="w-full">
+                      <ArrowRightCircle className="size-4" />
+                      Add to pipeline
+                    </Button>
+                  </form>
+                ) : (
+                  <form
+                    action={async () => {
+                      await removeFromPipeline(lead.id);
+                      onOpenChange(false);
+                    }}
+                  >
+                    <Button type="submit" variant="outline" size="sm">
+                      Remove from pipeline
+                    </Button>
+                  </form>
+                )}
 
                 <DeleteButton
                   action={async () => {

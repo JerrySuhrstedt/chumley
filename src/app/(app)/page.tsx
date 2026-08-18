@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { leads, templates } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
@@ -11,8 +11,10 @@ export default async function PipelinePage() {
   if (!current) return null;
 
   const [allLeads, allTemplates] = await Promise.all([
+    // The board is the pipeline only — contacts live on the Contacts page
+    // until they show interest.
     db.query.leads.findMany({
-      where: eq(leads.orgId, current.org.id),
+      where: and(eq(leads.orgId, current.org.id), ne(leads.stage, "contact")),
       with: { activities: true },
       orderBy: (l, { asc }) => [asc(l.position), asc(l.createdAt)],
     }),

@@ -114,10 +114,18 @@ const STAGE_ALIASES: Record<string, LeadStage> = {
   dead: "lost",
 };
 
-/** Unrecognized stages fall back to New Lead rather than dropping the row. */
-export function parseStage(raw: string | undefined): LeadStage {
-  if (!raw) return "new_lead";
-  return STAGE_ALIASES[norm(raw)] ?? "new_lead";
+/**
+ * Unrecognized or missing stages fall back to the caller's default rather
+ * than dropping the row. Imports default to "contact", so a bought or
+ * exported list doesn't flood the pipeline with people who never showed
+ * interest.
+ */
+export function parseStage(
+  raw: string | undefined,
+  fallback: LeadStage = "contact"
+): LeadStage {
+  if (!raw) return fallback;
+  return STAGE_ALIASES[norm(raw)] ?? fallback;
 }
 
 /** Strips currency symbols and thousands separators. */
