@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Contact,
   KanbanSquare,
+  LayoutDashboard,
   LogOut,
   Settings,
 } from "lucide-react";
@@ -16,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { signOut } from "@/app/(app)/actions";
 
 const NAV = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/", label: "Pipeline", icon: KanbanSquare, exact: true },
   { href: "/contacts", label: "Contacts", icon: Contact },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },

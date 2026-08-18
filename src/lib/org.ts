@@ -27,6 +27,8 @@ export async function getCurrentOrg() {
     role: membership.role,
     userId: user.id,
     email: user.email ?? null,
+    displayName: membership.displayName,
+    jobTitle: membership.jobTitle,
   };
 }
 

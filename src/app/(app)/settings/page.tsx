@@ -1,8 +1,20 @@
 import Link from "next/link";
-import { ChevronRight, MessageSquareText, Upload, Users } from "lucide-react";
+import {
+  ChevronRight,
+  MessageSquareText,
+  Upload,
+  UserRound,
+  Users,
+} from "lucide-react";
 import { getCurrentOrg } from "@/lib/org";
 
 const SECTIONS = [
+  {
+    href: "/settings/profile",
+    label: "Your profile",
+    description: "Your name, job title, and company name in the header.",
+    icon: UserRound,
+  },
   {
     href: "/settings/import",
     label: "Import",

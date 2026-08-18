@@ -14,7 +14,12 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
     <div className="flex h-screen w-full overflow-hidden">
       <AppSidebar email={current.email} />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Topbar orgName={current.org.name} />
+        <Topbar
+          orgName={current.org.name}
+          displayName={current.displayName}
+          jobTitle={current.jobTitle}
+          email={current.email}
+        />
         <main className="flex flex-1 flex-col overflow-hidden bg-[var(--board-bg)]">
           {children}
         </main>

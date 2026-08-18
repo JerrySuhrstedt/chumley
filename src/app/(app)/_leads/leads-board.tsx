@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { fireConfetti } from "@/lib/confetti";
 import {
   closestCenter,
   type CollisionDetection,
@@ -51,6 +52,7 @@ export function LeadsBoard({
   const [mobileStage, setMobileStage] = useState<LeadStage>("new_lead");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [logType, setLogType] = useState<ActivityType>("note");
+  const dragStartStage = useRef<LeadStage | null>(null);
   const [, startTransition] = useTransition();
 
   useEffect(() => {
@@ -87,7 +89,16 @@ export function LeadsBoard({
     });
   }
 
+  /** Closing a deal is the one moment worth celebrating. */
+  function celebrateIfWon(leadId: string, stage: LeadStage) {
+    const previous = localLeads.find((l) => l.id === leadId)?.stage;
+    if (stage === "won" && previous !== "won") {
+      fireConfetti();
+    }
+  }
+
   function moveStage(leadId: string, stage: LeadStage) {
+    celebrateIfWon(leadId, stage);
     const next = localLeads.map((l) =>
       l.id === leadId ? { ...l, stage } : l
     );
@@ -107,7 +118,10 @@ export function LeadsBoard({
   }
 
   function handleDragStart(event: DragStartEvent) {
-    setActiveId(String(event.active.id));
+    const id = String(event.active.id);
+    dragStartStage.current =
+      localLeads.find((l) => l.id === id)?.stage ?? null;
+    setActiveId(id);
   }
 
   /**
@@ -149,6 +163,12 @@ export function LeadsBoard({
     if (!dragged) return;
 
     const destStage = stageOf(overId, localLeads) ?? dragged.stage;
+
+    // dragOver may already have moved it, so compare against the stage it
+    // started the drag in.
+    if (destStage === "won" && dragStartStage.current !== "won") {
+      fireConfetti();
+    }
     let next = localLeads;
 
     if (draggedId !== overId) {
