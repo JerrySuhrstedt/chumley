@@ -23,7 +23,7 @@ import { type ActivityType, type LeadStage, reorderStage } from "./actions";
 import { LeadCardView } from "./lead-card";
 import { LeadColumn } from "./lead-column";
 import { LeadDetailDialog } from "./lead-detail-dialog";
-import { STAGES } from "./stages";
+import { STAGES, type StageLabels } from "./stages";
 
 type LeadWithActivities = Lead & { activities: Activity[] };
 
@@ -42,9 +42,11 @@ const collisionDetection: CollisionDetection = (args) => {
 export function LeadsBoard({
   leads,
   templates,
+  stageLabels,
 }: {
   leads: LeadWithActivities[];
   templates: Template[];
+  stageLabels: StageLabels;
 }) {
   const [localLeads, setLocalLeads] = useState(leads);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -215,7 +217,7 @@ export function LeadsBoard({
                   : "bg-white/25 text-white hover:bg-white/35"
               )}
             >
-              {stage.label} (
+              {stageLabels[stage.value]} (
               {filtered.filter((l) => l.stage === stage.value).length})
             </button>
           ))}
@@ -245,7 +247,7 @@ export function LeadsBoard({
             >
               <LeadColumn
                 stage={stage.value}
-                label={stage.label}
+                label={stageLabels[stage.value]}
                 leads={filtered.filter((l) => l.stage === stage.value)}
                 templates={templates}
                 isDropTarget={!!activeLead && activeLead.stage === stage.value}

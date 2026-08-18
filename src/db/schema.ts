@@ -7,6 +7,7 @@ import {
   numeric,
   integer,
   date,
+  jsonb,
   timestamp,
   unique,
 } from "drizzle-orm/pg-core";
@@ -60,6 +61,12 @@ export const activityOutcomeEnum = pgEnum("activity_outcome", [
 export const organizations = pgTable("organizations", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
+  /**
+   * Per-team bucket names, keyed by stage. Only the label is editable —
+   * the stage values stay fixed so ordering, forecasting and logging keep
+   * working. Unset keys fall back to the defaults.
+   */
+  stageLabels: jsonb("stage_labels").$type<Record<string, string>>(),
   webhookToken: uuid("webhook_token").notNull().defaultRandom().unique(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

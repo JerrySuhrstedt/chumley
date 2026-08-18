@@ -9,6 +9,7 @@ import {
   activityTypeEnum,
   leads,
   leadStageEnum,
+  organizations,
 } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
 import { normalizePhone } from "@/lib/phone";
@@ -204,6 +205,31 @@ export async function removeFromPipeline(id: string) {
 
   revalidatePath("/");
   revalidatePath("/contacts");
+}
+
+/**
+ * Rename one bucket for this team. Only the label changes — the stage value
+ * behind it is fixed, so ordering, forecasting and history are unaffected.
+ * Clearing the name restores the default.
+ */
+export async function renameStage(stage: LeadStage, label: string) {
+  const { org } = await requireOrg();
+
+  const next = { ...(org.stageLabels ?? {}) };
+  const trimmed = label.trim().slice(0, 30);
+
+  if (trimmed) {
+    next[stage] = trimmed;
+  } else {
+    delete next[stage];
+  }
+
+  await db
+    .update(organizations)
+    .set({ stageLabels: next })
+    .where(eq(organizations.id, org.id));
+
+  revalidatePath("/", "layout");
 }
 
 export type SearchHit = {

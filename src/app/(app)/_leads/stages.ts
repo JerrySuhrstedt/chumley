@@ -21,6 +21,22 @@ export function stageLabel(stage: LeadStage) {
   return ALL_STAGES.find((s) => s.value === stage)?.label ?? stage;
 }
 
+export type StageLabels = Record<string, string>;
+
+/**
+ * Merge a team's custom bucket names over the defaults, so a partially
+ * renamed board still reads correctly.
+ */
+export function resolveStageLabels(
+  custom: StageLabels | null | undefined
+): StageLabels {
+  const resolved: StageLabels = {};
+  for (const stage of ALL_STAGES) {
+    resolved[stage.value] = custom?.[stage.value]?.trim() || stage.label;
+  }
+  return resolved;
+}
+
 export function isInPipeline(stage: LeadStage) {
   return stage !== CONTACT_STAGE;
 }

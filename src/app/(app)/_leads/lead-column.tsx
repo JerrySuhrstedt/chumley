@@ -7,6 +7,7 @@ import {
 } from "@dnd-kit/sortable";
 import type { Lead, Template } from "@/db/schema";
 import type { LeadStage } from "./actions";
+import { BucketName } from "./bucket-name";
 import { LeadCard } from "./lead-card";
 import { QuickAddLeadDialog } from "./quick-add-lead-dialog";
 
@@ -43,11 +44,11 @@ export function LeadColumn({
           : "bg-[var(--board-column)]"
       }`}
     >
-      <div className="flex items-center justify-between px-3 pt-3 pb-2">
-        <h2 className="text-sm font-semibold text-[var(--board-ink)]">
-          {label}
+      <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-2">
+        <h2 className="min-w-0 flex-1">
+          <BucketName stage={stage} label={label} />
         </h2>
-        <span className="text-xs text-[var(--board-ink-muted)]">
+        <span className="shrink-0 text-xs text-[var(--board-ink-muted)]">
           {leads.length}
           {total > 0 ? ` · $${total.toLocaleString()}` : ""}
         </span>

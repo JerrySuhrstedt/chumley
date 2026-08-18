@@ -6,7 +6,11 @@ import { db } from "@/db";
 import { activities, leads, templates } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
 import { activityMeta, outcomeMeta } from "../_leads/activity-meta";
-import { CONTACT_STAGE, STAGES } from "../_leads/stages";
+import {
+  CONTACT_STAGE,
+  resolveStageLabels,
+  STAGES,
+} from "../_leads/stages";
 import { NextSteps } from "./next-steps";
 import { PipelineFunnel } from "./pipeline-funnel";
 
@@ -75,11 +79,13 @@ export default async function DashboardPage() {
     { label: "Due today", value: dueLeads.length.toLocaleString() },
   ];
 
+  const labels = resolveStageLabels(current.org.stageLabels);
+
   const byStage = STAGES.map((stage) => {
     const rows = pipeline.filter((l) => l.stage === stage.value);
     return {
       value: stage.value,
-      label: stage.label,
+      label: labels[stage.value],
       count: rows.length,
       amount: rows.reduce((sum, l) => sum + Number(l.value ?? 0), 0),
     };
