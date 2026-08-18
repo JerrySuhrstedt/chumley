@@ -8,25 +8,39 @@ export type FunnelStage = {
 };
 
 /**
- * Stage progression is ordered magnitude, not identity, so it takes a
- * sequential one-hue ramp deepening toward the close rather than a different
- * hue per stage. Won uses the status "good" step because it is an outcome,
- * not another rung.
- *
- * Steps validated against the palette checker: all sit inside the lightness
- * band, clear the chroma floor, and hold CVD separation. Adjacent blues sit
- * just under the categorical separation threshold by design — a sequential
- * ramp is meant to step gently, and every bar carries a text label and count
- * so nothing is identified by color alone.
+ * Categorical hues, one per stage, validated with the palette checker:
+ * lightness, chroma, colour-vision separation and normal-vision separation
+ * all pass. Every band is also labelled, so identity never rests on colour.
  */
 const FILL: Record<string, string> = {
-  new_lead: "#6da7ec",
-  contacted: "#2a78d6",
-  proposal_sent: "#184f95",
-  won: "#0ca30c",
+  new_lead: "#2a78d6",
+  contacted: "#eb6834",
+  proposal_sent: "#4a3aa7",
+  won: "#1baf7a",
 };
 
-const money = (n: number) => `$${Math.round(n).toLocaleString()}`;
+/**
+ * Odds of closing from each stage. Standard pipeline weighting: the further
+ * along, the likelier it lands. Won is settled, so it carries no forecast.
+ */
+export const CLOSE_ODDS: Record<string, number> = {
+  new_lead: 0.1,
+  contacted: 0.25,
+  proposal_sent: 0.5,
+  won: 1,
+};
+
+const money = (n: number) =>
+  n >= 1000 ? `$${Math.round(n / 1000)}k` : `$${Math.round(n)}`;
+
+const moneyFull = (n: number) => `$${Math.round(n).toLocaleString()}`;
+
+// Funnel geometry, in SVG user units.
+const W = 320;
+const H = 250;
+const TOP_W = 300;
+const BOTTOM_W = 96;
+const MIN_BAND = 26;
 
 export function PipelineFunnel({
   stages,
@@ -35,10 +49,9 @@ export function PipelineFunnel({
   stages: FunnelStage[];
   lost: FunnelStage;
 }) {
-  const top = stages[0]?.count ?? 0;
-  const entered = stages.reduce((sum, s) => sum + s.count, 0) + lost.count;
+  const totalCount = stages.reduce((sum, s) => sum + s.count, 0);
 
-  if (entered === 0) {
+  if (totalCount + lost.count === 0) {
     return (
       <p className="rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
         No deals in the pipeline yet. Add a lead and it shows up here.
@@ -46,70 +59,157 @@ export function PipelineFunnel({
     );
   }
 
+  // Bands present in the funnel. A stage with nothing in it is dropped so the
+  // shape stays continuous rather than showing a zero-height sliver.
+  const bands = stages.filter((s) => s.count > 0);
+
+  // Height carries the count; the taper is the funnel's shape. Small stages
+  // get a floor so their label still fits, with the rest shared by weight.
+  const flexible = Math.max(0, H - MIN_BAND * bands.length);
+
+  const heights = bands.map(
+    (stage) =>
+      MIN_BAND + flexible * (totalCount > 0 ? stage.count / totalCount : 0)
+  );
+
+  const shaped = bands.map((stage, i) => {
+    const top = heights.slice(0, i).reduce((sum, h) => sum + h, 0);
+    return { stage, top, bottom: top + heights[i] };
+  });
+
+  // Normalize in case rounding pushed the last band past the canvas.
+  const stackHeight = heights.reduce((sum, h) => sum + h, 0);
+  const scale = stackHeight > 0 ? H / stackHeight : 1;
+  const widthAt = (yy: number) =>
+    TOP_W + (BOTTOM_W - TOP_W) * (Math.min(yy, H) / H);
+
+  const cx = W / 2;
+
+  // Weighted forecast: what the open pipeline is worth once each stage is
+  // discounted by its odds of closing.
+  const forecast = stages
+    .filter((s) => s.value !== "won")
+    .reduce((sum, s) => sum + s.amount * (CLOSE_ODDS[s.value] ?? 0), 0);
+
+  const openValue = stages
+    .filter((s) => s.value !== "won")
+    .reduce((sum, s) => sum + s.amount, 0);
+
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <ul className="flex flex-col gap-2">
-        {stages.map((stage) => {
-          // Width is share of the widest stage, floored so a non-zero stage
-          // never renders as an invisible sliver.
-          const ofWidest = top > 0 ? stage.count / top : 0;
-          const width = stage.count === 0 ? 0 : Math.max(ofWidest * 100, 12);
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <p className="text-sm text-slate-500">
+          Open pipeline{" "}
+          <span className="font-semibold text-slate-900">
+            {moneyFull(openValue)}
+          </span>
+        </p>
+        <p className="text-sm text-slate-500">
+          Weighted forecast{" "}
+          <span className="font-semibold text-slate-900">
+            {moneyFull(forecast)}
+          </span>
+        </p>
+      </div>
 
-          // Share of everything in the pipeline. A "% from the stage above"
-          // would imply conversion, which a snapshot can't support: a won
-          // deal has already left the earlier stages, so the ratio between
-          // two current counts is not a conversion rate.
-          const share = entered > 0 ? Math.round((stage.count / entered) * 100) : 0;
+      <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          className="w-full max-w-[320px] shrink-0"
+          role="img"
+          aria-label="Deals by pipeline stage"
+        >
+          {shaped.map(({ stage, top, bottom }) => {
+            const t = top * scale;
+            const b = bottom * scale;
+            const wt = widthAt(t);
+            const wb = widthAt(b);
+            const mid = (t + b) / 2;
+            const roomy = b - t >= 30;
 
-          return (
-            <li key={stage.value}>
-              <div className="mb-1 flex items-baseline justify-between text-sm">
-                <span className="font-medium text-slate-700">
-                  {stage.label}
-                </span>
-                <span className="text-slate-500">
-                  {stage.count}
-                  {stage.amount > 0 ? ` · ${money(stage.amount)}` : ""}
-                  <span className="ml-2 text-xs text-slate-400">
-                    {share}% of pipeline
+            return (
+              <g key={stage.value}>
+                <polygon
+                  points={[
+                    `${cx - wt / 2},${t}`,
+                    `${cx + wt / 2},${t}`,
+                    `${cx + wb / 2},${b}`,
+                    `${cx - wb / 2},${b}`,
+                  ].join(" ")}
+                  fill={FILL[stage.value] ?? "#2a78d6"}
+                  /* A hairline in the surface colour separates the bands
+                     without breaking the funnel silhouette. */
+                  stroke="#ffffff"
+                  strokeWidth={2}
+                />
+                <text
+                  x={cx}
+                  y={mid}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fill="#ffffff"
+                  fontSize={roomy ? 15 : 12}
+                  fontWeight={600}
+                >
+                  {/* Always money, so the bands share one unit. A $0 band is
+                      true information: deals with no value recorded. */}
+                  {money(stage.amount)}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+
+        <ul className="flex w-full flex-col gap-2 text-sm">
+          {stages.map((stage) => {
+            const odds = CLOSE_ODDS[stage.value] ?? 0;
+            return (
+              <li key={stage.value} className="flex items-start gap-2">
+                <span
+                  aria-hidden
+                  className="mt-1 size-2.5 shrink-0 rounded-sm"
+                  style={{ backgroundColor: FILL[stage.value] }}
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="flex justify-between gap-2">
+                    <span className="text-slate-700">{stage.label}</span>
+                    <span className="font-medium text-slate-900">
+                      {moneyFull(stage.amount)}
+                    </span>
+                  </span>
+                  <span className="flex justify-between gap-2 text-xs text-slate-500">
+                    <span>
+                      {stage.count} {stage.count === 1 ? "deal" : "deals"}
+                    </span>
+                    <span>
+                      {stage.value === "won"
+                        ? "closed"
+                        : `${Math.round(odds * 100)}% to close`}
+                    </span>
                   </span>
                 </span>
-              </div>
+              </li>
+            );
+          })}
 
-              {/* Centered bar tapering down the stages gives the funnel shape. */}
-              <div className="flex h-7 justify-center">
-                <div
-                  className="flex items-center justify-center rounded transition-[width]"
-                  style={{
-                    width: `${width}%`,
-                    backgroundColor: FILL[stage.value] ?? "#9ec5f4",
-                  }}
-                >
-                  {stage.count > 0 && width >= 18 && (
-                    <span className="text-xs font-semibold text-white">
-                      {stage.count}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-
-      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-sm">
-        <span className="flex items-center gap-2 text-slate-600">
-          <span
-            aria-hidden
-            className="size-2.5 rounded-full"
-            style={{ backgroundColor: "#d03b3b" }}
-          />
-          Lost
-        </span>
-        <span className="text-slate-500">
-          {lost.count}
-          {lost.amount > 0 ? ` · ${money(lost.amount)}` : ""}
-        </span>
+          <li className="flex items-start gap-2 border-t border-slate-100 pt-2">
+            <span
+              aria-hidden
+              className="mt-1 size-2.5 shrink-0 rounded-sm bg-slate-300"
+            />
+            <span className="min-w-0 flex-1">
+              <span className="flex justify-between gap-2">
+                <span className="text-slate-700">Lost</span>
+                <span className="font-medium text-slate-500">
+                  {moneyFull(lost.amount)}
+                </span>
+              </span>
+              <span className="block text-xs text-slate-500">
+                {lost.count} {lost.count === 1 ? "deal" : "deals"}
+              </span>
+            </span>
+          </li>
+        </ul>
       </div>
     </div>
   );
