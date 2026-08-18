@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
+import { UnCrmLogo } from "@/components/uncrm-logo";
 
 /** Shared input styling for the auth screens. */
 export const authInput =
@@ -12,11 +14,12 @@ export const authButton =
 export const authLink =
   "font-semibold text-[var(--board-bg)] hover:underline";
 
+/** The real mark, linked back to the marketing page. */
 export function Wordmark() {
   return (
-    <span className="text-2xl font-bold tracking-tight text-[var(--board-bg)]">
-      UnCRM
-    </span>
+    <Link href="/" aria-label="UnCRM home" className="inline-block">
+      <UnCrmLogo className="h-9 w-auto" />
+    </Link>
   );
 }
 
@@ -25,7 +28,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen flex-col bg-white">
       <main className="flex flex-1 flex-col items-center px-4 pt-14 md:pt-20">
         <div className="w-full max-w-sm">
-          <div className="mb-7 text-center">
+          <div className="mb-8 flex justify-center">
             <Wordmark />
           </div>
           {children}

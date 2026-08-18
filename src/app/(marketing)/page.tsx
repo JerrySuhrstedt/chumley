@@ -80,7 +80,7 @@ export default function HomePage() {
               Finally, a CRM you&apos;ll actually use.
             </h1>
 
-            <p className="mt-6 max-w-[52ch] text-lg leading-relaxed text-[var(--ink-soft)] sm:text-xl">
+            <p className="mt-6 max-w-[52ch] text-[1.35rem] leading-relaxed text-[var(--ink-soft)] sm:text-2xl">
               UnCRM is stupid simple on purpose. Add a name and a phone
               number, drag a card when the deal moves, and you are done. No
               setup, no training, no manual. If you can use your phone, you can
