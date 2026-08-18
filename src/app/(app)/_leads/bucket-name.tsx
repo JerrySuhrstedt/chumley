@@ -56,7 +56,7 @@ export function BucketName({
         }}
         maxLength={30}
         aria-label={`Rename ${label} bucket`}
-        className="w-full min-w-0 rounded border border-[var(--board-bg)] bg-white px-1.5 py-0.5 text-sm font-semibold text-[var(--board-ink)] outline-none"
+        className="w-full min-w-0 rounded border border-[var(--board-bg)] bg-white px-1.5 py-0.5 text-[1.2rem] font-semibold text-[var(--board-ink)] outline-none"
       />
     );
   }
@@ -66,7 +66,7 @@ export function BucketName({
       type="button"
       onClick={() => setEditing(true)}
       title="Rename this bucket"
-      className="-mx-1 truncate rounded px-1 text-left text-sm font-semibold text-[var(--board-ink)] hover:bg-black/5"
+      className="-mx-1 block max-w-full truncate rounded px-1 text-left text-[1.2rem] leading-tight font-semibold text-[var(--board-ink)] hover:bg-black/5"
     >
       {label}
     </button>
