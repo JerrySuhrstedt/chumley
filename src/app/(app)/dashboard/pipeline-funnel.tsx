@@ -96,8 +96,8 @@ export function PipelineFunnel({
     .reduce((sum, s) => sum + s.amount, 0);
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+    <div className="rounded-lg border border-slate-200 bg-white p-5">
+      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <p className="text-sm text-slate-500">
           Open pipeline{" "}
           <span className="font-semibold text-slate-900">
@@ -112,10 +112,10 @@ export function PipelineFunnel({
         </p>
       </div>
 
-      <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+      <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
         <svg
           viewBox={`0 0 ${W} ${H}`}
-          className="w-full max-w-[320px] shrink-0"
+          className="w-full max-w-[340px] shrink-0"
           role="img"
           aria-label="Deals by pipeline stage"
         >

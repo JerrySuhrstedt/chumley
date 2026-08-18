@@ -137,7 +137,8 @@ export default async function DashboardPage() {
           />
         </section>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        {/* The funnel needs the room; the activity feed reads fine narrower. */}
+        <div className="grid gap-6 lg:grid-cols-[1.55fr_1fr]">
           <section>
             <div className="mb-2 flex items-baseline justify-between">
               <h2 className="font-semibold text-slate-900">Pipeline</h2>
