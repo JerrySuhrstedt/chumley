@@ -40,13 +40,23 @@ export function Topbar({
       </Link>
 
       <div className="flex items-center gap-3">
-        {person && (
+        {displayName ? (
           <div className="hidden text-right leading-tight sm:block">
-            <p className="text-sm font-semibold text-white">{person}</p>
-            {jobTitle && (
-              <p className="text-xs text-white/70">{jobTitle}</p>
-            )}
+            <p className="text-sm font-semibold text-white">{displayName}</p>
+            {jobTitle && <p className="text-xs text-white/70">{jobTitle}</p>}
           </div>
+        ) : (
+          // Without a name we'd just echo the email, which looks like nothing
+          // was set. Point at where to set it instead.
+          <Link
+            href="/settings/profile"
+            className="hidden text-right leading-tight sm:block"
+          >
+            <span className="block text-sm font-semibold text-white underline decoration-white/40 underline-offset-2">
+              Add your name
+            </span>
+            <span className="block text-xs text-white/70">{person}</span>
+          </Link>
         )}
 
         {/* The sidebar covers navigation on desktop, so this is mobile-only. */}
