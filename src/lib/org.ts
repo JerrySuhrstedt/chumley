@@ -22,6 +22,13 @@ export async function getCurrentOrg() {
 
   if (!membership) return null;
 
+  // Google (and any other OAuth provider) hands back a photo at sign-in.
+  // A photo saved on the profile wins; otherwise fall back to that one.
+  const providerPhoto =
+    (user.user_metadata?.avatar_url as string | undefined) ??
+    (user.user_metadata?.picture as string | undefined) ??
+    null;
+
   return {
     org: membership.org,
     role: membership.role,
@@ -29,6 +36,9 @@ export async function getCurrentOrg() {
     email: user.email ?? null,
     displayName: membership.displayName,
     jobTitle: membership.jobTitle,
+    linkedinUrl: membership.linkedinUrl,
+    avatarUrl: membership.avatarUrl ?? providerPhoto,
+    providerPhoto,
   };
 }
 

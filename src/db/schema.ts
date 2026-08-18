@@ -84,6 +84,9 @@ export const memberships = pgTable(
     role: membershipRoleEnum("role").notNull().default("member"),
     displayName: text("display_name"),
     jobTitle: text("job_title"),
+    linkedinUrl: text("linkedin_url"),
+    // Filled from the sign-in provider when there is one, or pasted by hand.
+    avatarUrl: text("avatar_url"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

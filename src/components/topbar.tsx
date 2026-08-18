@@ -23,13 +23,16 @@ export function Topbar({
   displayName,
   jobTitle,
   email,
+  avatarUrl,
 }: {
   orgName: string;
   displayName: string | null;
   jobTitle: string | null;
   email: string | null;
+  avatarUrl: string | null;
 }) {
   const person = displayName ?? email ?? null;
+  const initial = (person ?? "?").charAt(0).toUpperCase();
 
   return (
     // Transparent so the sidebar's colour carries across the top as one
@@ -67,6 +70,26 @@ export function Topbar({
             <span className="block text-xs text-white/70">{person}</span>
           </Link>
         )}
+
+        <Link
+          href="/settings/profile"
+          aria-label="Your profile"
+          className="shrink-0 rounded-full ring-2 ring-transparent transition-all hover:ring-white/40"
+        >
+          {avatarUrl ? (
+            // Arbitrary external host, so a plain img rather than next/image.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={avatarUrl}
+              alt=""
+              className="size-9 rounded-full object-cover"
+            />
+          ) : (
+            <span className="flex size-9 items-center justify-center rounded-full bg-white/20 text-sm font-semibold text-white">
+              {initial}
+            </span>
+          )}
+        </Link>
 
         {/* The sidebar covers navigation on desktop, so this is mobile-only. */}
         <DropdownMenu>

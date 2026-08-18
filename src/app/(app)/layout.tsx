@@ -20,6 +20,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           orgName={current.org.name}
           displayName={current.displayName}
           jobTitle={current.jobTitle}
+          avatarUrl={current.avatarUrl}
           email={current.email}
         />
         <main className="flex flex-1 flex-col overflow-hidden rounded-tl-2xl bg-[var(--board-bg)]">
