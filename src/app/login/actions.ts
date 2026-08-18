@@ -47,8 +47,17 @@ export async function signUpWithPassword(
     return { error: "Password must be at least 8 characters.", sent: false };
   }
 
+  // Point the confirmation link back at whichever host they signed up on,
+  // rather than relying on the project's single configured Site URL.
+  const origin = (await headers()).get("origin");
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(next)}`,
+    },
+  });
 
   if (error) {
     return { error: error.message, sent: false };
