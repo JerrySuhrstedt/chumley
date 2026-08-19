@@ -63,6 +63,7 @@ export async function updateSession(request: NextRequest) {
     // pages in particular must answer without a redirect, because reviewers
     // and crawlers fetch them while signed out.
     pathname === "/" ||
+    pathname === "/pricing" ||
     pathname === "/privacy" ||
     pathname === "/terms" ||
     // The embeddable website form is public by definition.

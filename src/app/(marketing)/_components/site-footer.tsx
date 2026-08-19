@@ -5,6 +5,7 @@ const PRODUCT = [
   { href: "#how-it-works", label: "How it works" },
   { href: "#benefits", label: "Benefits" },
   { href: "#features", label: "Features" },
+  { href: "/pricing", label: "Pricing" },
   { href: "#faqs", label: "FAQs" },
 ];
 
