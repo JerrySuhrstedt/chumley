@@ -286,7 +286,8 @@ export function LeadsBoard({
                 templates={templates}
                 isDropTarget={!!activeLead && activeLead.stage === stage.value}
                 onCardClick={openRecord}
-                onMoveNext={moveStage}
+                onMove={moveStage}
+                stageLabels={stageLabels}
                 onContact={handleContact}
               />
             </div>

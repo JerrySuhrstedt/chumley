@@ -10,6 +10,7 @@ import type { Lead, Template } from "@/db/schema";
 import type { LeadStage } from "./actions";
 import { BucketHint } from "./bucket-hint";
 import { BucketName } from "./bucket-name";
+import type { StageLabels } from "./stages";
 import { LeadCard } from "./lead-card";
 import { QuickAddLeadDialog } from "./quick-add-lead-dialog";
 
@@ -25,20 +26,22 @@ const BUCKET_TINT: Partial<Record<LeadStage, { base: string; over: string }>> = 
 export function LeadColumn({
   stage,
   label,
+  stageLabels,
   leads,
   templates,
   isDropTarget = false,
   onCardClick,
-  onMoveNext,
+  onMove,
   onContact,
 }: {
   stage: LeadStage;
   label: string;
+  stageLabels?: StageLabels;
   leads: Lead[];
   templates: Template[];
   isDropTarget?: boolean;
   onCardClick: (leadId: string) => void;
-  onMoveNext: (leadId: string, stage: LeadStage) => void;
+  onMove: (leadId: string, stage: LeadStage) => void;
   onContact: (leadId: string, type: "call" | "text" | "email") => void;
 }) {
   const { setNodeRef } = useDroppable({ id: stage });
@@ -107,7 +110,8 @@ export function LeadColumn({
               lead={lead}
               templates={templates}
               onClick={() => onCardClick(lead.id)}
-              onMoveNext={(next) => onMoveNext(lead.id, next)}
+              onMove={(next: LeadStage) => onMove(lead.id, next)}
+              stageLabels={stageLabels}
               onContact={(type) => onContact(lead.id, type)}
             />
           ))}

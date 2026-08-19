@@ -3,11 +3,18 @@
 import type { HTMLAttributes } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ChevronRight } from "lucide-react";
+import { MoveRight } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { Lead, Template } from "@/db/schema";
 import { LeadAvatar } from "./lead-avatar";
 import { TapToContact } from "./tap-to-contact";
-import { nextActionStatus, nextStage, STAGES } from "./stages";
+import { nextActionStatus, STAGES, STAGE_COLOR } from "./stages";
+import type { StageLabels } from "./stages";
 import { temperature } from "./temperature";
 import type { LeadStage } from "./actions";
 
@@ -19,24 +26,25 @@ export function LeadCardView({
   lead,
   templates,
   onClick,
-  onMoveNext,
+  onMove,
   onContact,
   dragHandleProps,
   overlay = false,
+  stageLabels,
 }: {
   lead: Lead;
   templates: Template[];
   onClick?: () => void;
-  onMoveNext?: (stage: LeadStage) => void;
+  onMove?: (stage: LeadStage) => void;
   onContact?: (type: "call" | "text" | "email") => void;
   dragHandleProps?: HTMLAttributes<HTMLDivElement>;
   overlay?: boolean;
+  stageLabels?: StageLabels;
 }) {
   const status = nextActionStatus(lead);
-  const upcoming = nextStage(lead.stage);
-  const upcomingLabel = upcoming
-    ? STAGES.find((s) => s.value === upcoming)?.label
-    : null;
+  const label = (value: LeadStage) =>
+    stageLabels?.[value] ?? STAGES.find((s) => s.value === value)?.label ?? value;
+  const elsewhere = STAGES.filter((s) => s.value !== lead.stage);
 
   const temp = temperature(lead.temperature);
 
@@ -106,18 +114,35 @@ export function LeadCardView({
           )}
         </div>
 
-        {upcoming && upcomingLabel && onMoveNext && (
-          <button
-            type="button"
-            className="flex items-center justify-between rounded px-1 py-1.5 text-xs font-medium text-[var(--board-ink-muted)] transition-colors hover:bg-[var(--board-column-hover)] md:hidden"
-            onClick={(e) => {
-              e.stopPropagation();
-              onMoveNext(upcoming);
-            }}
-          >
-            Move to {upcomingLabel}
-            <ChevronRight className="size-3.5" />
-          </button>
+        {/* Dragging is fine with a mouse and miserable with a thumb, so on
+            a phone every bucket is one tap away, in any direction. */}
+        {onMove && (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center justify-between rounded px-1 py-1.5 text-xs font-medium text-[var(--board-ink-muted)] transition-colors hover:bg-[var(--board-column-hover)] md:hidden"
+            >
+              Move to...
+              <MoveRight className="size-3.5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-44">
+              {elsewhere.map((s) => (
+                <DropdownMenuItem
+                  key={s.value}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMove(s.value);
+                  }}
+                >
+                  <span
+                    className="mr-2 size-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: STAGE_COLOR[s.value] }}
+                  />
+                  {label(s.value)}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
     </div>
@@ -133,14 +158,16 @@ export function LeadCard({
   lead,
   templates,
   onClick,
-  onMoveNext,
+  onMove,
   onContact,
+  stageLabels,
 }: {
   lead: Lead;
   templates: Template[];
   onClick: () => void;
-  onMoveNext: (stage: LeadStage) => void;
+  onMove: (stage: LeadStage) => void;
   onContact: (type: "call" | "text" | "email") => void;
+  stageLabels?: StageLabels;
 }) {
   const {
     attributes,
@@ -174,8 +201,9 @@ export function LeadCard({
           lead={lead}
           templates={templates}
           onClick={onClick}
-          onMoveNext={onMoveNext}
+          onMove={onMove}
           onContact={onContact}
+          stageLabels={stageLabels}
           dragHandleProps={{ ...listeners, ...attributes }}
         />
       </div>
