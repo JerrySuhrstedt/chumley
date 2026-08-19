@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   ChevronRight,
   Code,
+  CreditCard,
   MessageSquareText,
   Upload,
   UserRound,
@@ -34,6 +35,12 @@ const SECTIONS = [
     label: "Team",
     description: "Invite teammates, manage members, and your lead webhook.",
     icon: Users,
+  },
+  {
+    href: "/settings/billing",
+    label: "Billing",
+    description: "Your plan, and how many seats your team is using.",
+    icon: CreditCard,
   },
   {
     href: "/settings/templates",

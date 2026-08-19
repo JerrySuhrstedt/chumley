@@ -78,6 +78,12 @@ export const organizations = pgTable("organizations", {
   webhookToken: uuid("webhook_token").notNull().defaultRandom().unique(),
   /** Heading shown above the embeddable website form. Plain text only. */
   formHeading: text("form_heading"),
+  /**
+   * The Paddle customer this team bills as. Set by the first checkout and
+   * kept afterwards, so a team that cancels and returns is the same
+   * customer rather than a second one.
+   */
+  paddleCustomerId: text("paddle_customer_id"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -176,6 +182,54 @@ export const activities = pgTable("activities", {
     .defaultNow(),
 });
 
+/**
+ * A team's subscription, mirrored from Paddle.
+ *
+ * Webhooks are the source of truth and write here; the app only ever
+ * reads. Keyed by Paddle's own id so a repeated delivery converges on the
+ * same row instead of creating a second one, and so events arriving out of
+ * order still settle correctly.
+ *
+ * Scoped to the organization rather than the user, because the team is what
+ * gets billed. A manager paying for six reps is one subscription, not six.
+ */
+export const subscriptions = pgTable("subscriptions", {
+  /** Paddle's subscription id, sub_01h... */
+  id: text("id").primaryKey(),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  customerId: text("customer_id").notNull(),
+  /** active | trialing | past_due | paused | canceled */
+  status: text("status").notNull(),
+  priceId: text("price_id").notNull(),
+  productId: text("product_id"),
+  /** Seats paid for. This is what the invite flow checks against. */
+  quantity: integer("quantity").notNull().default(1),
+  /**
+   * Set when a cancel or pause is pending. Status stays active until the
+   * date arrives, so this is the difference between "they cancelled" and
+   * "their access has ended".
+   */
+  scheduledChangeAt: timestamp("scheduled_change_at", { withTimezone: true }),
+  scheduledChangeAction: text("scheduled_change_action"),
+  currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+  trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
+  org: one(organizations, {
+    fields: [subscriptions.orgId],
+    references: [organizations.id],
+  }),
+}));
+
 export const organizationsRelations = relations(organizations, ({ many }) => ({
   memberships: many(memberships),
   invites: many(orgInvites),
@@ -230,5 +284,7 @@ export type Lead = typeof leads.$inferSelect;
 export type NewLead = typeof leads.$inferInsert;
 export type Template = typeof templates.$inferSelect;
 export type NewTemplate = typeof templates.$inferInsert;
+export type Subscription = typeof subscriptions.$inferSelect;
+export type NewSubscription = typeof subscriptions.$inferInsert;
 export type Activity = typeof activities.$inferSelect;
 export type NewActivity = typeof activities.$inferInsert;

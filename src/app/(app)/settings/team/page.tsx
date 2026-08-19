@@ -1,4 +1,5 @@
 import { getOrigin } from "@/lib/site-url";
+import { getBillingState } from "@/lib/paddle/access";
 import Link from "next/link";
 import { eq } from "drizzle-orm";
 import { ArrowLeft } from "lucide-react";
@@ -14,6 +15,8 @@ import { RemoveMemberButton } from "./remove-member-button";
 export default async function TeamSettingsPage() {
   const current = await getCurrentOrg();
   if (!current) return null;
+
+  const billing = await getBillingState(current.org.id);
 
   const [members, token, origin] = await Promise.all([
     db
@@ -48,11 +51,40 @@ export default async function TeamSettingsPage() {
         <CardHeader>
           <CardTitle>Invite teammates</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center gap-2">
-          <code className="flex-1 truncate rounded bg-muted px-2 py-1.5 text-xs">
-            {inviteUrl}
-          </code>
-          <CopyLinkButton url={inviteUrl} />
+        <CardContent className="flex flex-col gap-3">
+          {Number.isFinite(billing.seatsLeft) && (
+            <p className="text-sm text-muted-foreground">
+              {billing.seatsUsed} of {billing.seats} seats used.{" "}
+              {billing.seatsLeft > 0 ? (
+                <span className="font-medium text-foreground">
+                  {billing.seatsLeft} left.
+                </span>
+              ) : (
+                <span className="font-medium text-foreground">
+                  No seats left.
+                </span>
+              )}
+            </p>
+          )}
+
+          {billing.seatsLeft > 0 ? (
+            <div className="flex items-center gap-2">
+              <code className="flex-1 truncate rounded bg-muted px-2 py-1.5 text-xs">
+                {inviteUrl}
+              </code>
+              <CopyLinkButton url={inviteUrl} />
+            </div>
+          ) : (
+            // Hiding the link is the honest failure. Handing somebody a
+            // link that will bounce their teammate is worse than saying so.
+            <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              Every seat is taken. Add more seats in{" "}
+              <Link href="/settings/billing" className="font-semibold underline">
+                Billing
+              </Link>{" "}
+              and the link comes back.
+            </p>
+          )}
         </CardContent>
       </Card>
 
