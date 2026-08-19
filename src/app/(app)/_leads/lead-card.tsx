@@ -158,16 +158,27 @@ export function LeadCard({
         transform: CSS.Translate.toString(transform),
         transition,
       }}
-      className={isDragging ? "opacity-40" : undefined}
+      // While the card travels in the DragOverlay, the space it came from
+      // holds open as a dashed outline rather than a faded copy, so it reads
+      // as "this is where it lands" instead of "this is broken".
+      // Outline rather than border, because an outline costs no layout and
+      // the gap must not resize as the card leaves it.
+      className={
+        isDragging
+          ? "rounded-lg bg-black/[0.04] outline-2 -outline-offset-2 outline-dashed outline-[rgba(9,30,66,0.3)]"
+          : undefined
+      }
     >
-      <LeadCardView
-        lead={lead}
-        templates={templates}
-        onClick={onClick}
-        onMoveNext={onMoveNext}
-        onContact={onContact}
-        dragHandleProps={{ ...listeners, ...attributes }}
-      />
+      <div className={isDragging ? "invisible" : undefined}>
+        <LeadCardView
+          lead={lead}
+          templates={templates}
+          onClick={onClick}
+          onMoveNext={onMoveNext}
+          onContact={onContact}
+          dragHandleProps={{ ...listeners, ...attributes }}
+        />
+      </div>
     </div>
   );
 }
