@@ -67,15 +67,15 @@ export function ContactsList({
 
               const touched = lastTouched(lead);
               const dateNote =
-                sortKey === "newest"
+                sortKey === "added"
                   ? `Added ${new Date(lead.createdAt).toLocaleDateString()}`
                   : sortKey === "changed"
                     ? `Changed ${new Date(lead.updatedAt).toLocaleDateString()}`
-                  : sortKey === "recent" || sortKey === "cold"
-                    ? touched
-                      ? `Last talked ${new Date(touched).toLocaleDateString()}`
-                      : "Never talked to"
-                    : null;
+                    : sortKey === "talked"
+                      ? touched
+                        ? `Last talked ${new Date(touched).toLocaleDateString()}`
+                        : "Never talked to"
+                      : null;
 
               return (
                 <li

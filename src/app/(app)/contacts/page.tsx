@@ -8,7 +8,7 @@ import { QuickAddLeadDialog } from "../_leads/quick-add-lead-dialog";
 import { resolveStageLabels } from "../_leads/stages";
 import { ContactsList } from "./contacts-list";
 import { SortSelect } from "./sort-select";
-import { isSortKey, sortContacts } from "./sort";
+import { defaultDir, isSortKey, sortContacts, type SortDir } from "./sort";
 
 export default async function ContactsPage({
   searchParams,
@@ -16,8 +16,10 @@ export default async function ContactsPage({
   const current = await getCurrentOrg();
   if (!current) return null;
 
-  const { q, view, open, sort } = await searchParams;
+  const { q, view, open, sort, dir } = await searchParams;
   const sortKey = isSortKey(sort) ? sort : "last";
+  const sortDir: SortDir =
+    dir === "asc" || dir === "desc" ? dir : defaultDir(sortKey);
   const query = typeof q === "string" ? q.trim() : "";
   const filter = view === "pipeline" || view === "contacts" ? view : "all";
 
@@ -52,7 +54,7 @@ export default async function ContactsPage({
 
   // Sorted here rather than in SQL because "not talked to longest" depends
   // on each row's activity history, which is already loaded.
-  const sortedRows = sortContacts(rows, sortKey);
+  const sortedRows = sortContacts(rows, sortKey, sortDir);
 
   const total = counts.reduce((sum, row) => sum + Number(row.count), 0);
   const offPipeline = Number(
@@ -83,6 +85,9 @@ export default async function ContactsPage({
             {sortKey !== "last" && (
               <input type="hidden" name="sort" value={sortKey} />
             )}
+            {sortDir !== defaultDir(sortKey) && (
+              <input type="hidden" name="dir" value={sortDir} />
+            )}
             <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-slate-400" />
             <input
               name="q"
@@ -91,7 +96,7 @@ export default async function ContactsPage({
               className="h-10 w-full rounded-md border border-slate-300 bg-white pr-3 pl-8 text-sm outline-none focus:border-[var(--board-bg)] focus:ring-3 focus:ring-[var(--board-bg)]/20"
             />
           </form>
-          <SortSelect value={sortKey} />
+          <SortSelect value={sortKey} dir={sortDir} />
           {/* Lands off the board, since a contact has not shown interest yet. */}
           <QuickAddLeadDialog
             stage="contact"
@@ -107,6 +112,7 @@ export default async function ContactsPage({
             if (tab.key !== "all") params.set("view", tab.key);
             if (query) params.set("q", query);
             if (sortKey !== "last") params.set("sort", sortKey);
+            if (sortDir !== defaultDir(sortKey)) params.set("dir", sortDir);
             const href = params.toString()
               ? `/contacts?${params}`
               : "/contacts";
