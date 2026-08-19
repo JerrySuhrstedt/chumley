@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { CtaButton } from "../_components/cta";
 import { TRIAL_DAYS } from "./plans";
 import { PlanCards } from "./plan-cards";
+import { TestModeNotice } from "@/components/test-mode-notice";
 
 export const metadata: Metadata = {
   title: "Pricing | Sell1",
@@ -59,6 +60,8 @@ export default function PricingPage() {
           </p>
 
           <PlanCards />
+
+          <TestModeNotice className="mx-auto mt-10 max-w-2xl" />
 
           <p className="mt-8 text-sm text-[var(--ink-muted)]">
             Nothing is charged today. Join during early access and you keep

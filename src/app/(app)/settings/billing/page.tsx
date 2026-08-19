@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCurrentOrg } from "@/lib/org";
 import { getBillingState } from "@/lib/paddle/access";
 import { Checkout } from "./checkout";
+import { TestModeNotice } from "@/components/test-mode-notice";
 
 const LABEL: Record<string, string> = {
   active: "Active",
@@ -61,6 +62,8 @@ export default async function BillingSettingsPage() {
             </CardContent>
           </Card>
         )}
+
+        {billing.billingLive && !sub && <TestModeNotice />}
 
         {billing.billingLive && !sub && current.email && (
           <Checkout
