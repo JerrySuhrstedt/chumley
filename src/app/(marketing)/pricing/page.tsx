@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { CtaButton } from "../_components/cta";
-import { PRICE } from "./plans";
+import { TRIAL_DAYS } from "./plans";
 import { PlanCards } from "./plan-cards";
 
 export const metadata: Metadata = {
   title: "Pricing | Sell1",
   description:
-    "$19 per user per month. One plan, everything included, no tiers and no contracts. Free while in early access.",
+    "$19 for one person, from $15 each for a sales team, and less again as the team grows. Everything included. Free while in early access.",
 };
 
 const FAQS: { q: string; a: string }[] = [
@@ -15,12 +15,16 @@ const FAQS: { q: string; a: string }[] = [
     a: "Nothing. Sell1 is free while we work with our first teams, and anyone who joins during early access keeps that price for a full year after we start charging. You will get plenty of notice, and no card is taken today.",
   },
   {
-    q: "Why is there only one plan?",
-    a: "Because a chart of plans is a decision, and the whole promise here is that there is nothing to work out. Everybody gets the entire product for the same price per person. There is no upgrade to sell you later and no feature waiting behind one.",
+    q: "What is the difference between the two?",
+    a: "How many people are using it, and nothing else. Both are the entire product. The team price is lower per person because a manager buying six seats is a different sale from one rep buying one, and it drops again at five and at ten. Nothing is ever withheld to sell you an upgrade later.",
   },
   {
     q: "What if my team grows?",
-    a: "Add them, and the bill follows. You pay for the people actually using it, so a rep who joins in March costs you from March. Nobody has to ration logins to keep the bill down, which is how half a pipeline ends up off the board.",
+    a: "Add them and the bill follows, and if the new person takes you past five or ten, everybody's price drops with them. You pay for the people actually using it, so a rep who starts in March costs you from March. Nobody has to ration logins to keep the bill down, which is how half a pipeline ends up off the board.",
+  },
+  {
+    q: "Why does the team plan start at three?",
+    a: "Because otherwise it is not a team plan, it is just a discount with extra steps. Below three people the single price is the honest one.",
   },
   {
     q: "What happens to my data if I stop paying?",
@@ -46,12 +50,12 @@ export default function PricingPage() {
           </span>
 
           <h1 className="mt-6 text-[2.4rem] leading-[1.05] font-extrabold tracking-tight text-balance text-[var(--ink)] sm:text-5xl">
-            One price. Everything included.
+            Simple pricing. Everything included.
           </h1>
 
           <p className="mx-auto mt-5 max-w-[54ch] text-lg leading-relaxed text-[var(--ink-soft)] sm:text-xl">
-            No feature chart to read, no plan to pick, no sales call. Pay for
-            the people using it and get on with selling.
+            One person or a whole team. Nothing is held back on either, and
+            the price per person falls as more of you use it.
           </p>
 
           <PlanCards />
@@ -90,7 +94,7 @@ export default function PricingPage() {
             Try it before any of this matters.
           </h2>
           <p className="mx-auto mt-4 max-w-[46ch] text-lg text-white/70">
-            Free today, and {PRICE.trialDays} days free whenever we do start.
+            Free today, and {TRIAL_DAYS} days free whenever we do start.
             You will know inside five minutes whether your team would use it.
           </p>
           <div className="mt-9">
