@@ -1,6 +1,6 @@
 "use server";
 
-import { headers } from "next/headers";
+import { getOrigin } from "@/lib/site-url";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -49,7 +49,7 @@ export async function signUpWithPassword(
 
   // Point the confirmation link back at whichever host they signed up on,
   // rather than relying on the project's single configured Site URL.
-  const origin = (await headers()).get("origin");
+  const origin = await getOrigin();
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -85,7 +85,7 @@ export async function sendMagicLink(
     return { error: "Enter an email address.", sent: false };
   }
 
-  const origin = (await headers()).get("origin");
+  const origin = await getOrigin();
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email,
@@ -119,7 +119,7 @@ const PROVIDER_LABEL: Record<OAuthProvider, string> = {
 async function startOAuth(provider: OAuthProvider, formData: FormData) {
   const next = String(formData.get("next") ?? "/pipeline").trim() || "/pipeline";
 
-  const origin = (await headers()).get("origin");
+  const origin = await getOrigin();
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,

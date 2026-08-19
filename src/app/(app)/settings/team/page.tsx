@@ -1,4 +1,4 @@
-import { headers } from "next/headers";
+import { getOrigin } from "@/lib/site-url";
 import Link from "next/link";
 import { eq } from "drizzle-orm";
 import { ArrowLeft } from "lucide-react";
@@ -27,7 +27,7 @@ export default async function TeamSettingsPage() {
       .leftJoin(authUsers, eq(memberships.userId, authUsers.id))
       .where(eq(memberships.orgId, current.org.id)),
     getOrCreateInviteToken(),
-    headers().then((h) => h.get("origin")),
+    getOrigin(),
   ]);
 
   const inviteUrl = `${origin}/join/${token}`;
