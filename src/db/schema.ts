@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  boolean,
   pgTable,
   pgEnum,
   uuid,
@@ -129,6 +130,8 @@ export const leads = pgTable("leads", {
   value: numeric("value", { precision: 12, scale: 2 }),
   stage: leadStageEnum("stage").notNull().default("new_lead"),
   temperature: leadTemperatureEnum("temperature"),
+  /** Seeded on signup so a new board demonstrates itself. Clearable. */
+  isSample: boolean("is_sample").notNull().default(false),
   position: integer("position").notNull().default(0),
   ownerId: uuid("owner_id"),
   nextActionText: text("next_action_text"),

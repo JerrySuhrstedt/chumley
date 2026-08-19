@@ -76,6 +76,12 @@ export function LeadCardView({
           {status.label}
         </span>
 
+        {lead.isSample && (
+          <span className="mb-2 ml-1.5 inline-flex items-center rounded bg-[var(--board-ink-muted)] px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-white uppercase">
+            Example
+          </span>
+        )}
+
         <div className="flex items-center gap-2">
           <LeadAvatar lead={lead} className="size-7 text-[11px]" />
           <div className="min-w-0">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { toast } from "sonner";
 import { fireConfetti } from "@/lib/confetti";
 import {
   closestCenter,
@@ -11,7 +12,8 @@ import {
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -34,8 +36,9 @@ import { LeadCardView } from "./lead-card";
 import { LeadColumn } from "./lead-column";
 import { LeadDetailDialog } from "./lead-detail-dialog";
 import { QuickAddLeadDialog } from "./quick-add-lead-dialog";
+import { SampleBanner } from "./sample-banner";
 import { Scorecard } from "./scorecard";
-import { STAGES, type StageLabels } from "./stages";
+import { nextStage, STAGES, type StageLabels } from "./stages";
 
 type LeadWithActivities = Lead & { activities: Activity[] };
 
@@ -77,7 +80,13 @@ export function LeadsBoard({
   }, [leads]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    // A finger has to rest before it drags, which leaves quick horizontal
+    // movement free for the swipe. Without this, dnd-kit claims every touch
+    // and swiping does nothing.
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 8 },
+    })
   );
 
   const filtered = useMemo(() => {
@@ -90,6 +99,33 @@ export function LeadsBoard({
         .some((field) => field!.toLowerCase().includes(q));
     });
   }, [localLeads, query, temp, due]);
+
+  /**
+   * Swipe right: one bucket forward. Swipe left: off the board.
+   * Both are one tap from being undone, because a thumb makes mistakes a
+   * mouse does not.
+   */
+  function swipeForward(leadId: string) {
+    const lead = localLeads.find((l) => l.id === leadId);
+    if (!lead) return;
+    const next = nextStage(lead.stage);
+    if (!next) return;
+    const from = lead.stage;
+    moveStage(leadId, next);
+    toast(`${lead.name} moved to ${stageLabels[next] ?? next}`, {
+      action: { label: "Undo", onClick: () => moveStage(leadId, from) },
+    });
+  }
+
+  function swipeArchive(leadId: string) {
+    const lead = localLeads.find((l) => l.id === leadId);
+    if (!lead) return;
+    const from = lead.stage;
+    moveStage(leadId, "contact");
+    toast(`${lead.name} moved to Contacts`, {
+      action: { label: "Undo", onClick: () => moveStage(leadId, from) },
+    });
+  }
 
   /** A drop target is either a column (stage id) or another card (lead id). */
   function stageOf(id: string, source: Lead[]): LeadStage | null {
@@ -230,6 +266,12 @@ export function LeadsBoard({
           </div>
         </div>
 
+        {localLeads.some((l) => l.isSample) && (
+          <SampleBanner
+            count={localLeads.filter((l) => l.isSample).length}
+          />
+        )}
+
         <BoardFilters
           temp={temp}
           due={due}
@@ -287,6 +329,8 @@ export function LeadsBoard({
                 isDropTarget={!!activeLead && activeLead.stage === stage.value}
                 onCardClick={openRecord}
                 onMove={moveStage}
+                onSwipeForward={swipeForward}
+                onSwipeArchive={swipeArchive}
                 stageLabels={stageLabels}
                 onContact={handleContact}
               />

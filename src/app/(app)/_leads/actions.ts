@@ -501,3 +501,15 @@ export async function setTemperature(
   revalidatePath("/pipeline");
   revalidatePath("/contacts");
 }
+
+/** Wipe the three demo deals a new team starts with. */
+export async function clearSamples() {
+  const { org } = await requireOrg();
+
+  await db
+    .delete(leads)
+    .where(and(eq(leads.orgId, org.id), eq(leads.isSample, true)));
+
+  revalidatePath("/pipeline");
+  revalidatePath("/contacts");
+}

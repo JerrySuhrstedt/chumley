@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { memberships, organizations, templates } from "@/db/schema";
+import { leads, memberships, organizations, templates } from "@/db/schema";
 import { createClient } from "@/lib/supabase/server";
 
 export async function getCurrentUser() {
@@ -66,6 +66,68 @@ const STARTER_TEMPLATES = [
   },
 ];
 
+/**
+ * Three deals to poke at on day one.
+ *
+ * A board explaining what to do is weaker than a board already doing it,
+ * so these arrive in different buckets, at different temperatures, with a
+ * next step that is late, one due today and one still ahead. Phone numbers
+ * are 555, which is reserved for fiction, so a stray tap cannot reach a
+ * real person.
+ */
+function starterLeads(orgId: string) {
+  const day = (offset: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + offset);
+    return d.toISOString().slice(0, 10);
+  };
+
+  return [
+    {
+      orgId,
+      isSample: true,
+      name: "Dale Whitaker",
+      companyName: "Whitaker Mechanical",
+      email: "dale@example.com",
+      phone: "(555) 014-2200",
+      value: "8500.00",
+      stage: "new_lead" as const,
+      temperature: "warm" as const,
+      nextActionText: "Call to introduce yourself",
+      nextActionDue: day(0),
+      position: 0,
+    },
+    {
+      orgId,
+      isSample: true,
+      name: "Rosa Nunez",
+      companyName: "Copper Ridge Builders",
+      email: "rosa@example.com",
+      phone: "(555) 014-2201",
+      value: "21000.00",
+      stage: "contacted" as const,
+      temperature: "hot" as const,
+      nextActionText: "Send the quote she asked for",
+      nextActionDue: day(2),
+      position: 0,
+    },
+    {
+      orgId,
+      isSample: true,
+      name: "Marcus Hall",
+      companyName: "Hall & Sons Plumbing",
+      email: "marcus@example.com",
+      phone: "(555) 014-2202",
+      value: "34000.00",
+      stage: "proposal_sent" as const,
+      temperature: "cold" as const,
+      nextActionText: "Follow up, he has gone quiet",
+      nextActionDue: day(-3),
+      position: 0,
+    },
+  ];
+}
+
 export async function createOrgForUser(userId: string, name: string) {
   const [org] = await db.insert(organizations).values({ name }).returning();
 
@@ -78,6 +140,8 @@ export async function createOrgForUser(userId: string, name: string) {
   await db
     .insert(templates)
     .values(STARTER_TEMPLATES.map((t) => ({ ...t, orgId: org.id })));
+
+  await db.insert(leads).values(starterLeads(org.id));
 
   return org;
 }

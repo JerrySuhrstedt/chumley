@@ -10,8 +10,10 @@ import type { Lead, Template } from "@/db/schema";
 import type { LeadStage } from "./actions";
 import { BucketHint } from "./bucket-hint";
 import { BucketName } from "./bucket-name";
+import { nextStage } from "./stages";
 import type { StageLabels } from "./stages";
 import { LeadCard } from "./lead-card";
+import { SwipeableCard } from "./swipeable-card";
 import { QuickAddLeadDialog } from "./quick-add-lead-dialog";
 
 /**
@@ -32,6 +34,8 @@ export function LeadColumn({
   isDropTarget = false,
   onCardClick,
   onMove,
+  onSwipeForward,
+  onSwipeArchive,
   onContact,
 }: {
   stage: LeadStage;
@@ -42,6 +46,8 @@ export function LeadColumn({
   isDropTarget?: boolean;
   onCardClick: (leadId: string) => void;
   onMove: (leadId: string, stage: LeadStage) => void;
+  onSwipeForward: (leadId: string) => void;
+  onSwipeArchive: (leadId: string) => void;
   onContact: (leadId: string, type: "call" | "text" | "email") => void;
 }) {
   const { setNodeRef } = useDroppable({ id: stage });
@@ -105,15 +111,21 @@ export function LeadColumn({
           strategy={verticalListSortingStrategy}
         >
           {leads.map((lead) => (
-            <LeadCard
+            <SwipeableCard
               key={lead.id}
-              lead={lead}
-              templates={templates}
-              onClick={() => onCardClick(lead.id)}
-              onMove={(next: LeadStage) => onMove(lead.id, next)}
-              stageLabels={stageLabels}
-              onContact={(type) => onContact(lead.id, type)}
-            />
+              forward={nextStage(lead.stage)}
+              onForward={() => onSwipeForward(lead.id)}
+              onArchive={() => onSwipeArchive(lead.id)}
+            >
+              <LeadCard
+                lead={lead}
+                templates={templates}
+                onClick={() => onCardClick(lead.id)}
+                onMove={(next: LeadStage) => onMove(lead.id, next)}
+                stageLabels={stageLabels}
+                onContact={(type) => onContact(lead.id, type)}
+              />
+            </SwipeableCard>
           ))}
         </SortableContext>
 
