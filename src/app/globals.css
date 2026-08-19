@@ -172,3 +172,13 @@
     @apply font-sans;
   }
 }
+/* Platform marquee. Travels exactly one row width, so the duplicate row
+   lands where the first began and the loop is invisible. */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}

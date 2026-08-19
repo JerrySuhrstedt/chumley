@@ -10,6 +10,7 @@ import {
 import { BoardPreview } from "./_components/board-preview";
 import { CtaButton } from "./_components/cta";
 import { FaqList } from "./_components/faq-list";
+import { PlatformMarquee } from "./_components/platform-marquee";
 
 export const metadata: Metadata = {
   title: "Sell1 | Finally, a sales CRM you'll actually want to use",
@@ -213,6 +214,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <PlatformMarquee />
 
       {/* ------------------------------------------------------- 4. TESTIMONIALS */}
       <section className="bg-white">
