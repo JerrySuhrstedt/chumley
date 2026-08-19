@@ -3,6 +3,7 @@ import { ArrowLeft, CreditCard, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCurrentOrg } from "@/lib/org";
 import { getBillingState } from "@/lib/paddle/access";
+import { Checkout } from "./checkout";
 
 const LABEL: Record<string, string> = {
   active: "Active",
@@ -59,6 +60,14 @@ export default async function BillingSettingsPage() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {billing.billingLive && !sub && current.email && (
+          <Checkout
+            orgId={current.org.id}
+            email={current.email}
+            membersNow={billing.seatsUsed}
+          />
         )}
 
         <Card>
