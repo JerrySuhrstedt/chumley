@@ -6,11 +6,8 @@ import { db } from "@/db";
 import { activities, leads, templates } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
 import { activityMeta, outcomeMeta } from "../_leads/activity-meta";
-import {
-  CONTACT_STAGE,
-  resolveStageLabels,
-  STAGES,
-} from "../_leads/stages";
+import { CONTACT_STAGE } from "../_leads/stages";
+import { getStages } from "@/lib/stages";
 import { NextSteps } from "./next-steps";
 import { PipelineFunnel } from "./pipeline-funnel";
 
@@ -79,21 +76,26 @@ export default async function DashboardPage() {
     { label: "Due today", value: dueLeads.length.toLocaleString() },
   ];
 
-  const labels = resolveStageLabels(current.org.stageLabels);
+  // The team's own buckets, in their own order, so a renamed or added
+  // column appears in the funnel without the dashboard knowing about it.
+  const boardStages = (await getStages(current.org.id)).filter(
+    (s) => s.kind !== "contact"
+  );
 
-  const byStage = STAGES.map((stage) => {
-    const rows = pipeline.filter((l) => l.stage === stage.value);
+  const byStage = boardStages.map((stage) => {
+    const rows = pipeline.filter((l) => l.stage === stage.key);
     return {
-      value: stage.value,
-      label: labels[stage.value],
+      value: stage.key,
+      label: stage.label,
       count: rows.length,
       amount: rows.reduce((sum, l) => sum + Number(l.value ?? 0), 0),
     };
   });
 
   // Lost is an exit, not a rung, so it sits beside the funnel rather than in it.
-  const funnelStages = byStage.filter((s) => s.value !== "lost");
-  const lostStage = byStage.find((s) => s.value === "lost")!;
+  const lostKey = boardStages.find((s) => s.kind === "lost")?.key;
+  const funnelStages = byStage.filter((s) => s.value !== lostKey);
+  const lostStage = byStage.find((s) => s.value === lostKey);
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
@@ -156,7 +158,9 @@ export default async function DashboardPage() {
               </Link>
             </div>
 
-            <PipelineFunnel stages={funnelStages} lost={lostStage} />
+            {lostStage && (
+              <PipelineFunnel stages={funnelStages} lost={lostStage} />
+            )}
 
             <div className="mt-3 flex flex-col gap-1 text-sm">
               {noNextStep > 0 && (

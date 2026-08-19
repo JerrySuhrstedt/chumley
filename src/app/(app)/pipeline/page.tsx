@@ -4,13 +4,10 @@ import { leads, templates } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
 import { EmptyBoard } from "../_leads/empty-board";
 import { LeadsBoard } from "../_leads/leads-board";
-import { resolveStageLabels } from "../_leads/stages";
 
 export default async function PipelinePage() {
   const current = await getCurrentOrg();
   if (!current) return null;
-
-  const stageLabels = resolveStageLabels(current.org.stageLabels);
 
   const [allLeads, allTemplates] = await Promise.all([
     // The board is the pipeline only — contacts live on the Contacts page
@@ -35,11 +32,7 @@ export default async function PipelinePage() {
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <LeadsBoard
-        leads={allLeads}
-        templates={allTemplates}
-        stageLabels={stageLabels}
-      />
+      <LeadsBoard leads={allLeads} templates={allTemplates} />
     </div>
   );
 }

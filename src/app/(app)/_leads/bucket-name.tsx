@@ -1,18 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { renameStage } from "./actions";
-import type { LeadStage } from "./actions";
+import { renameStage } from "./stage-actions";
 
 /**
- * Click the bucket name to rename it. Only the label changes — the stage
- * behind it is fixed, so nothing else on the board has to move.
+ * Click the bucket name to rename it.
+ *
+ * Only the label changes. Leads reference the bucket by a key that never
+ * moves, so renaming touches no lead and no history.
  */
 export function BucketName({
-  stage,
+  stageId,
   label,
 }: {
-  stage: LeadStage;
+  stageId: string;
   label: string;
 }) {
   const [editing, setEditing] = useState(false);
@@ -34,7 +35,7 @@ export function BucketName({
     const next = draft.trim();
     if (next === label) return;
     startTransition(async () => {
-      await renameStage(stage, next);
+      await renameStage(stageId, next);
     });
   }
 

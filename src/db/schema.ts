@@ -25,17 +25,37 @@ export const leadTemperatureEnum = pgEnum("lead_temperature", [
   "cold",
 ]);
 
-export const leadStageEnum = pgEnum("lead_stage", [
+/**
+ * The buckets every team starts with.
+ *
+ * These are seeds, not a fixed set. A team can rename them, reorder them
+ * and add their own, so leads.stage is plain text keyed to a row in
+ * `stages` rather than a database enum. Keeping the original keys means
+ * the leads that already exist needed no rewriting when this changed.
+ */
+export const DEFAULT_STAGE_KEYS = [
   "new_lead",
   "contacted",
   "proposal_sent",
   "won",
   "lost",
   /**
-   * Known to you, but not yet working in the pipeline — imported lists,
-   * networking, past customers. Deliberately not a board column: a contact
-   * earns a place on the board by showing interest.
+   * Known to you, but not yet working in the pipeline: imported lists,
+   * networking, past customers. Deliberately not a board column, and not
+   * something a team can delete, because Contacts is a whole screen.
    */
+  "contact",
+] as const;
+
+/** What a bucket means to the arithmetic, regardless of its name. */
+export const stageKindEnum = pgEnum("stage_kind", [
+  // A live deal, somewhere in the middle. These are the ones a team adds.
+  "open",
+  // Closed and counted as revenue. Exactly one per team.
+  "won",
+  // Closed and not. Exactly one per team.
+  "lost",
+  // Off the board entirely. Exactly one per team, never shown as a column.
   "contact",
 ]);
 
@@ -70,9 +90,9 @@ export const organizations = pgTable("organizations", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   /**
-   * Per-team bucket names, keyed by stage. Only the label is editable —
-   * the stage values stay fixed so ordering, forecasting and logging keep
-   * working. Unset keys fall back to the defaults.
+   * Superseded by the `stages` table, which carries names and order both.
+   * Kept so the first read for a team can carry its existing renames
+   * across. Nothing writes here any more.
    */
   stageLabels: jsonb("stage_labels").$type<Record<string, string>>(),
   webhookToken: uuid("webhook_token").notNull().defaultRandom().unique(),
@@ -122,6 +142,45 @@ export const orgInvites = pgTable("org_invites", {
     .defaultNow(),
 });
 
+/**
+ * A team's board columns.
+ *
+ * Rows are created the first time a team's board is read, seeded from the
+ * defaults and from whatever names they had already set, so nobody has to
+ * be migrated ahead of time and a team that never opens the board never
+ * gets rows at all.
+ *
+ * `key` rather than the row id is what leads store, so renaming a bucket
+ * is free and deleting one leaves data that can still be read.
+ */
+export const stages = pgTable(
+  "stages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    /** What leads.stage holds. Stable for the life of the bucket. */
+    key: text("key").notNull(),
+    label: text("label").notNull(),
+    /** What this bucket means to the arithmetic, whatever it is called. */
+    kind: stageKindEnum("kind").notNull().default("open"),
+    /** Left to right. Won and lost are forced to the end when read. */
+    position: integer("position").notNull().default(0),
+    color: text("color").notNull().default("#2a78d6"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // One bucket per key per team. Also what makes the seeding idempotent:
+    // two simultaneous first-reads cannot produce a doubled board.
+    unique("stages_org_key_unique").on(t.orgId, t.key),
+  ]
+);
+
+export type Stage = typeof stages.$inferSelect;
+
 export const leads = pgTable("leads", {
   id: uuid("id").primaryKey().defaultRandom(),
   orgId: uuid("org_id")
@@ -134,7 +193,13 @@ export const leads = pgTable("leads", {
   title: text("title"),
   avatarUrl: text("avatar_url"),
   value: numeric("value", { precision: 12, scale: 2 }),
-  stage: leadStageEnum("stage").notNull().default("new_lead"),
+  /**
+   * Which bucket this lead sits in, by `stages.key`. Text rather than a
+   * foreign key on purpose: a lead must survive its bucket being renamed
+   * or deleted, and a dangling key falls back to the first column rather
+   * than breaking a query.
+   */
+  stage: text("stage").notNull().default("new_lead"),
   temperature: leadTemperatureEnum("temperature"),
   /** Seeded on signup so a new board demonstrates itself. Clearable. */
   isSample: boolean("is_sample").notNull().default(false),

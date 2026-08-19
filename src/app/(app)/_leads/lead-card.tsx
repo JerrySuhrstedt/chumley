@@ -13,8 +13,8 @@ import {
 import type { Lead, Template } from "@/db/schema";
 import { LeadAvatar } from "./lead-avatar";
 import { TapToContact } from "./tap-to-contact";
-import { nextActionStatus, STAGES, STAGE_COLOR } from "./stages";
-import type { StageLabels } from "./stages";
+import { nextActionStatus, STAGE_COLOR } from "./stages";
+import { useBoardStages } from "./stages-context";
 import { temperature } from "./temperature";
 import type { LeadStage } from "./actions";
 
@@ -30,7 +30,6 @@ export function LeadCardView({
   onContact,
   dragHandleProps,
   overlay = false,
-  stageLabels,
 }: {
   lead: Lead;
   templates: Template[];
@@ -39,12 +38,13 @@ export function LeadCardView({
   onContact?: (type: "call" | "text" | "email") => void;
   dragHandleProps?: HTMLAttributes<HTMLDivElement>;
   overlay?: boolean;
-  stageLabels?: StageLabels;
 }) {
+  const boardStages = useBoardStages();
   const status = nextActionStatus(lead);
   const label = (value: LeadStage) =>
-    stageLabels?.[value] ?? STAGES.find((s) => s.value === value)?.label ?? value;
-  const elsewhere = STAGES.filter((s) => s.value !== lead.stage);
+    boardStages.find((s) => s.key === value)?.label ?? value;
+  // Everywhere this deal is not, so the menu never offers where it is.
+  const elsewhere = boardStages.filter((s) => s.key !== lead.stage);
 
   const temp = temperature(lead.temperature);
 
@@ -134,17 +134,17 @@ export function LeadCardView({
             <DropdownMenuContent align="start" className="min-w-44">
               {elsewhere.map((s) => (
                 <DropdownMenuItem
-                  key={s.value}
+                  key={s.key}
                   onClick={(e) => {
                     e.stopPropagation();
-                    onMove(s.value);
+                    onMove(s.key);
                   }}
                 >
                   <span
                     className="mr-2 size-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: STAGE_COLOR[s.value] }}
+                    style={{ backgroundColor: s.color }}
                   />
-                  {label(s.value)}
+                  {s.label}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -166,14 +166,12 @@ export function LeadCard({
   onClick,
   onMove,
   onContact,
-  stageLabels,
 }: {
   lead: Lead;
   templates: Template[];
   onClick: () => void;
   onMove: (stage: LeadStage) => void;
   onContact: (type: "call" | "text" | "email") => void;
-  stageLabels?: StageLabels;
 }) {
   const {
     attributes,
@@ -209,7 +207,6 @@ export function LeadCard({
           onClick={onClick}
           onMove={onMove}
           onContact={onContact}
-          stageLabels={stageLabels}
           dragHandleProps={{ ...listeners, ...attributes }}
         />
       </div>

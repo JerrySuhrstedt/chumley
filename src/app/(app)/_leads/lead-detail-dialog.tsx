@@ -24,7 +24,8 @@ import { LeadAvatar } from "./lead-avatar";
 import { TemperaturePicker } from "./temperature-picker";
 import { LeadEditForm } from "./lead-edit-form";
 import { NextActionSection } from "./next-action-section";
-import { ALL_STAGES, CONTACT_STAGE } from "./stages";
+import { CONTACT_STAGE } from "./stages";
+import { useStages } from "./stages-context";
 import { TapToContact } from "./tap-to-contact";
 
 type LeadWithActivities = Lead & { activities: Activity[] };
@@ -52,6 +53,7 @@ export function LeadDetailDialog({
   /** Pre-selects the log type when opened straight from a Call/Text/Email tap. */
   initialLogType?: ActivityType;
 }) {
+  const allStages = useStages();
   const [editing, setEditing] = useState(false);
   const [logType, setLogType] = useState<ActivityType>(initialLogType);
   const logRef = useRef<HTMLDivElement>(null);
@@ -73,7 +75,7 @@ export function LeadDetailDialog({
   );
 
   const stageLabel =
-    ALL_STAGES.find((s) => s.value === lead.stage)?.label ?? "";
+    allStages.find((s) => s.key === lead.stage)?.label ?? "";
   const subtitle = [lead.title, lead.companyName].filter(Boolean).join(" at ");
 
   return (

@@ -8,7 +8,8 @@ import type { Activity, Lead, Template } from "@/db/schema";
 import { addToPipeline, type ActivityType } from "../_leads/actions";
 import { LeadAvatar } from "../_leads/lead-avatar";
 import { LeadDetailDialog } from "../_leads/lead-detail-dialog";
-import { ALL_STAGES, CONTACT_STAGE } from "../_leads/stages";
+import { CONTACT_STAGE } from "../_leads/stages";
+import { useStages } from "../_leads/stages-context";
 import { TapToContact } from "../_leads/tap-to-contact";
 import { lastTouched, type SortKey } from "./sort";
 
@@ -28,6 +29,7 @@ export function ContactsList({
   /** Set by header search, so a result opens its record on arrival. */
   openId?: string;
 }) {
+  const allStages = useStages();
   const [selectedId, setSelectedId] = useState<string | null>(openId ?? null);
   const [logType, setLogType] = useState<ActivityType>("note");
 
@@ -59,7 +61,7 @@ export function ContactsList({
         ) : (
           <ul className="divide-y divide-slate-100">
             {leads.map((lead) => {
-              const stage = ALL_STAGES.find((s) => s.value === lead.stage);
+              const stage = allStages.find((s) => s.key === lead.stage);
               const details =
                 [lead.companyName, lead.email, lead.phone]
                   .filter(Boolean)

@@ -8,21 +8,24 @@ import {
   activityOutcomeEnum,
   activityTypeEnum,
   leads,
-  leadStageEnum,
   organizations,
 } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
 import { normalizePhone } from "@/lib/phone";
 
 export type FormState = { error: string | null };
-export type LeadStage = (typeof leadStageEnum.enumValues)[number];
+/**
+ * A bucket key. Free text now that teams can invent their own, so this is
+ * documentation rather than a constraint the compiler can enforce.
+ */
+export type LeadStage = string;
 
 function toNullable(value: FormDataEntryValue | null) {
   const str = String(value ?? "").trim();
   return str.length > 0 ? str : null;
 }
 
-const STAGE_LABELS: Record<LeadStage, string> = {
+const STAGE_LABELS: Record<string, string> = {
   contact: "Contact",
   new_lead: "New Lead",
   contacted: "Contacted",
@@ -31,8 +34,18 @@ const STAGE_LABELS: Record<LeadStage, string> = {
   lost: "Lost",
 };
 
-function stageLabel(stage: LeadStage) {
-  return STAGE_LABELS[stage] ?? stage;
+/**
+ * A readable name for a bucket, for the activity log.
+ *
+ * Reads the team's own name where there is one, so "moved to Site Visit"
+ * is recorded rather than "moved to c_site_visit". Falls back to the
+ * seeded names, then to the key itself, so a deleted bucket still leaves
+ * a legible history.
+ */
+async function stageLabel(orgId: string, stage: LeadStage) {
+  const { getStages } = await import("@/lib/stages");
+  const found = (await getStages(orgId)).find((s) => s.key === stage);
+  return found?.label ?? STAGE_LABELS[stage] ?? stage;
 }
 
 async function requireOrg() {
@@ -127,6 +140,13 @@ export async function reorderStage(stage: LeadStage, orderedIds: string[]) {
 
   const moved = existing.filter((lead) => lead.stage !== stage);
 
+  // Bucket names, resolved once. Looking each one up inside the
+  // transaction would hold it open for the length of a round trip per row.
+  const { getStages } = await import("@/lib/stages");
+  const names = Object.fromEntries(
+    (await getStages(org.id)).map((s) => [s.key, s.label])
+  );
+
   await db.transaction(async (tx) => {
     for (const [index, id] of orderedIds.entries()) {
       await tx
@@ -140,7 +160,7 @@ export async function reorderStage(stage: LeadStage, orderedIds: string[]) {
         orgId: org.id,
         leadId: lead.id,
         type: "stage_change",
-        body: `${stageLabel(lead.stage)} → ${stageLabel(stage)}`,
+        body: `${names[lead.stage] ?? lead.stage} → ${names[stage] ?? stage}`,
         createdBy: userId,
       });
     }
@@ -201,37 +221,12 @@ export async function removeFromPipeline(id: string) {
     orgId: org.id,
     leadId: id,
     type: "stage_change",
-    body: `${stageLabel(lead.stage)} → Contact`,
+    body: `${await stageLabel(org.id, lead.stage)} → Contact`,
     createdBy: userId,
   });
 
   revalidatePath("/pipeline");
   revalidatePath("/contacts");
-}
-
-/**
- * Rename one bucket for this team. Only the label changes — the stage value
- * behind it is fixed, so ordering, forecasting and history are unaffected.
- * Clearing the name restores the default.
- */
-export async function renameStage(stage: LeadStage, label: string) {
-  const { org } = await requireOrg();
-
-  const next = { ...(org.stageLabels ?? {}) };
-  const trimmed = label.trim().slice(0, 30);
-
-  if (trimmed) {
-    next[stage] = trimmed;
-  } else {
-    delete next[stage];
-  }
-
-  await db
-    .update(organizations)
-    .set({ stageLabels: next })
-    .where(eq(organizations.id, org.id));
-
-  revalidatePath("/", "layout");
 }
 
 export type SearchHit = {

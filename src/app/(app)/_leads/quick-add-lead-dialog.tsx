@@ -15,21 +15,19 @@ import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/phone-input";
 import { createLead } from "./actions";
 import type { LeadStage } from "./actions";
-import { ALL_STAGES, STAGE_COLOR } from "./stages";
-import type { StageLabels } from "./stages";
+import { useStages } from "./stages-context";
 
 export function QuickAddLeadDialog({
   stage = "new_lead",
   variant = "button",
-  stageLabels,
   highlight = false,
 }: {
   stage?: LeadStage;
   variant?: "button" | "inline" | "hero" | "contact";
-  stageLabels?: StageLabels;
   /** Draws the eye while a board still has no real deals on it. */
   highlight?: boolean;
 }) {
+  const allStages = useStages();
   const [open, setOpen] = useState(false);
   // Where the person lands. Preset from wherever the dialog was opened,
   // and changeable before saving.
@@ -51,8 +49,6 @@ export function QuickAddLeadDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, pending]);
 
-  const label = (value: LeadStage) =>
-    stageLabels?.[value] ?? ALL_STAGES.find((s) => s.value === value)?.label ?? value;
 
   // The column's own add button already says which bucket it is.
   const showPicker = variant !== "inline";
@@ -107,7 +103,7 @@ export function QuickAddLeadDialog({
           <DialogTitle>
             {showPicker
               ? "Add someone"
-              : `New lead in ${label(stage)}`}
+              : `New lead in ${allStages.find((s) => s.key === stage)?.label ?? stage}`}
           </DialogTitle>
         </DialogHeader>
         <form ref={formRef} action={formAction} className="flex flex-col gap-4">
@@ -117,14 +113,14 @@ export function QuickAddLeadDialog({
             <div className="flex flex-col gap-2">
               <Label>Where does this go?</Label>
               <div className="flex flex-wrap gap-2">
-                {ALL_STAGES.map((s) => {
-                  const active = destination === s.value;
-                  const color = STAGE_COLOR[s.value];
+                {allStages.map((s) => {
+                  const active = destination === s.key;
+                  const color = s.color;
                   return (
                     <button
-                      key={s.value}
+                      key={s.key}
                       type="button"
-                      onClick={() => setDestination(s.value)}
+                      onClick={() => setDestination(s.key)}
                       style={
                         active
                           ? { backgroundColor: color, borderColor: color }
@@ -134,7 +130,7 @@ export function QuickAddLeadDialog({
                         active ? "text-white" : "bg-white hover:bg-slate-50"
                       }`}
                     >
-                      {label(s.value)}
+                      {s.label}
                     </button>
                   );
                 })}

@@ -1,56 +1,48 @@
 import type { LeadStage } from "./actions";
+import type { Stage } from "@/db/schema";
 
-/** The board. A contact is not here until it shows interest. */
-export const STAGES: { value: LeadStage; label: string }[] = [
-  { value: "new_lead", label: "New Lead" },
-  { value: "contacted", label: "Contacted" },
-  { value: "proposal_sent", label: "Proposal Sent" },
-  { value: "won", label: "Won" },
-  { value: "lost", label: "Lost" },
-];
+/** What the board hands around. The database row, unchanged. */
+export type BoardStage = Stage;
 
 export const CONTACT_STAGE: LeadStage = "contact";
 
-/** Includes the off-pipeline state, for labelling records anywhere. */
-export const ALL_STAGES: { value: LeadStage; label: string }[] = [
-  { value: CONTACT_STAGE, label: "Contact" },
-  ...STAGES,
-];
+/** Fallback names for the seeded keys, used where no list is to hand. */
+const SEEDED_LABELS: Record<string, string> = {
+  contact: "Contact",
+  new_lead: "New Lead",
+  contacted: "Contacted",
+  proposal_sent: "Proposal Sent",
+  won: "Won",
+  lost: "Lost",
+};
 
-export function stageLabel(stage: LeadStage) {
-  return ALL_STAGES.find((s) => s.value === stage)?.label ?? stage;
-}
-
-export type StageLabels = Record<string, string>;
-
-/**
- * Merge a team's custom bucket names over the defaults, so a partially
- * renamed board still reads correctly.
- */
-export function resolveStageLabels(
-  custom: StageLabels | null | undefined
-): StageLabels {
-  const resolved: StageLabels = {};
-  for (const stage of ALL_STAGES) {
-    resolved[stage.value] = custom?.[stage.value]?.trim() || stage.label;
-  }
-  return resolved;
+export function stageLabel(stage: LeadStage, stages?: BoardStage[]) {
+  return (
+    stages?.find((s) => s.key === stage)?.label ??
+    SEEDED_LABELS[stage] ??
+    stage
+  );
 }
 
 export function isInPipeline(stage: LeadStage) {
   return stage !== CONTACT_STAGE;
 }
 
-export function nextStage(stage: LeadStage): LeadStage | null {
-  const order: LeadStage[] = [
-    "new_lead",
-    "contacted",
-    "proposal_sent",
-    "won",
-  ];
-  const index = order.indexOf(stage);
-  if (index === -1 || index === order.length - 1) return null;
-  return order[index + 1];
+/**
+ * The bucket to the right, for the swipe-forward gesture.
+ *
+ * Walks the team's own order rather than a fixed list, and stops at the
+ * last working bucket. Swiping never closes a deal by accident: won and
+ * lost are a deliberate drag or a menu choice.
+ */
+export function nextStage(
+  stage: LeadStage,
+  stages: BoardStage[]
+): LeadStage | null {
+  const open = stages.filter((s) => s.kind === "open");
+  const index = open.findIndex((s) => s.key === stage);
+  if (index === -1) return open[0]?.key ?? null;
+  return open[index + 1]?.key ?? stages.find((s) => s.kind === "won")?.key ?? null;
 }
 
 export type NextActionStatus = {
@@ -109,9 +101,8 @@ export function nextActionStatus(lead: {
 }
 
 /**
- * Colours for the "where does this go" picker. Taken from the validated
- * funnel palette so the same stage reads the same everywhere, with the
- * two outcomes in their usual green and red.
+ * Fallback colours for the seeded buckets. A team's own buckets carry
+ * their colour on the row; this covers anywhere a row is not to hand.
  */
 export const STAGE_COLOR: Record<string, string> = {
   contact: "#64748b",

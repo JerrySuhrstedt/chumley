@@ -1,4 +1,3 @@
-import { STAGES } from "../_leads/stages";
 
 /**
  * A loading.tsx file makes Next wrap the page in a Suspense boundary, so
@@ -30,9 +29,11 @@ export default function PipelineLoading() {
       </div>
 
       <div className="flex flex-1 items-start gap-3 overflow-hidden px-4 pt-1.5 pb-5 md:px-6">
-        {STAGES.map((stage, column) => (
+        {/* A fixed five is fine here. The real count is not known until
+            the data arrives, and this is only ever on screen for a moment. */}
+        {[0, 1, 2, 3, 4].map((column) => (
           <div
-            key={stage.value}
+            key={column}
             className="hidden w-72 shrink-0 flex-col gap-2 rounded-xl bg-[var(--board-column)] p-2 first:flex md:flex"
           >
             <div className="flex items-center justify-between px-1 pt-1 pb-1">

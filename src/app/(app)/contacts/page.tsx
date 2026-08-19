@@ -5,7 +5,6 @@ import { db } from "@/db";
 import { leads, templates } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
 import { QuickAddLeadDialog } from "../_leads/quick-add-lead-dialog";
-import { resolveStageLabels } from "../_leads/stages";
 import { ContactsList } from "./contacts-list";
 import { SortSelect } from "./sort-select";
 import { defaultDir, isSortKey, sortContacts, type SortDir } from "./sort";
@@ -101,7 +100,6 @@ export default async function ContactsPage({
           <QuickAddLeadDialog
             stage="contact"
             variant="contact"
-            stageLabels={resolveStageLabels(current.org.stageLabels)}
           />
           </div>
         </div>

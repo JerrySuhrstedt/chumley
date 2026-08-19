@@ -3,11 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { leads, leadStageEnum } from "@/db/schema";
+import { leads } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
 import { normalizePhone } from "@/lib/phone";
 
-type LeadStage = (typeof leadStageEnum.enumValues)[number];
+type LeadStage = string;
 
 export type ImportRow = {
   name: string;

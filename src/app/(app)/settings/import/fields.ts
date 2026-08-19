@@ -1,6 +1,4 @@
-import { leadStageEnum } from "@/db/schema";
-
-type LeadStage = (typeof leadStageEnum.enumValues)[number];
+type LeadStage = string;
 
 export type FieldKey =
   | "name"

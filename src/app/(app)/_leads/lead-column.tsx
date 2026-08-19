@@ -1,17 +1,28 @@
 "use client";
 
+import { useTransition } from "react";
 import { useDroppable } from "@dnd-kit/core";
-import { PartyPopper } from "lucide-react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { GripHorizontal, MoreHorizontal, PartyPopper, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import type { Lead, Template } from "@/db/schema";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { LeadStage } from "./actions";
 import { BucketHint } from "./bucket-hint";
 import { BucketName } from "./bucket-name";
-import { nextStage } from "./stages";
-import type { StageLabels } from "./stages";
+import { deleteStage } from "./stage-actions";
+import { nextStage, type BoardStage } from "./stages";
+import { useBoardStages } from "./stages-context";
 import { LeadCard } from "./lead-card";
 import { SwipeableCard } from "./swipeable-card";
 import { QuickAddLeadDialog } from "./quick-add-lead-dialog";
@@ -20,15 +31,13 @@ import { QuickAddLeadDialog } from "./quick-add-lead-dialog";
  * The two outcome buckets carry a tint so a closed deal is obvious at a
  * glance. Everything still in play stays neutral.
  */
-const BUCKET_TINT: Partial<Record<LeadStage, { base: string; over: string }>> = {
+const BUCKET_TINT: Record<string, { base: string; over: string }> = {
   won: { base: "var(--bucket-won)", over: "var(--bucket-won-hover)" },
   lost: { base: "var(--bucket-lost)", over: "var(--bucket-lost-hover)" },
 };
 
 export function LeadColumn({
   stage,
-  label,
-  stageLabels,
   leads,
   templates,
   isDropTarget = false,
@@ -38,9 +47,7 @@ export function LeadColumn({
   onSwipeArchive,
   onContact,
 }: {
-  stage: LeadStage;
-  label: string;
-  stageLabels?: StageLabels;
+  stage: BoardStage;
   leads: Lead[];
   templates: Template[];
   isDropTarget?: boolean;
@@ -50,15 +57,47 @@ export function LeadColumn({
   onSwipeArchive: (leadId: string) => void;
   onContact: (leadId: string, type: "call" | "text" | "email") => void;
 }) {
-  const { setNodeRef } = useDroppable({ id: stage });
+  const boardStages = useBoardStages();
+  const [, startTransition] = useTransition();
 
-  const tint = BUCKET_TINT[stage];
+  // Cards drop into the column by its key; the column itself sorts by its
+  // row id. Two different ids on purpose, so a card being dragged is never
+  // mistaken for the column being dragged.
+  const { setNodeRef: setDropRef } = useDroppable({ id: stage.key });
+
+  const movable = stage.kind === "open";
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setSortRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: stage.id, disabled: !movable });
+
+  const tint = BUCKET_TINT[stage.kind];
   const total = leads.reduce((sum, l) => sum + Number(l.value ?? 0), 0);
+
+  function remove() {
+    startTransition(async () => {
+      const result = await deleteStage(stage.id);
+      if (result.error) {
+        toast.error(result.error);
+      } else if (result.movedTo) {
+        toast.success(`"${stage.label}" removed. Its deals moved to ${result.movedTo}.`);
+      }
+    });
+  }
 
   return (
     <div
-      ref={setNodeRef}
+      ref={setSortRef}
       style={{
+        transform: CSS.Translate.toString(transform),
+        transition,
+        // The column being dragged is represented by the overlay, so the
+        // original fades rather than leaving a solid duplicate behind.
+        opacity: isDragging ? 0.4 : undefined,
         backgroundColor: tint
           ? isDropTarget
             ? tint.over
@@ -78,12 +117,27 @@ export function LeadColumn({
             : "bg-[var(--board-column)]"
       }`}
     >
-      <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-2">
-        <h2 className="flex min-w-0 flex-1 items-center gap-1.5">
-          <BucketName stage={stage} label={label} />
+      {/* The handle sits above the name, full width, so it reads as
+          "this whole column moves" rather than as a button. */}
+      {movable && (
+        <div
+          {...attributes}
+          {...listeners}
+          aria-label={`Reorder ${stage.label}`}
+          className="flex cursor-grab touch-none justify-center pt-1.5 text-[var(--board-ink-muted)] opacity-50 transition-opacity hover:opacity-100 active:cursor-grabbing"
+        >
+          <GripHorizontal className="size-4" />
+        </div>
+      )}
 
-          {/* Tied to the stage, not the label, so both survive a rename. */}
-          {stage === "new_lead" && (
+      <div
+        className={`flex items-center justify-between gap-2 px-3 pb-2 ${movable ? "pt-1" : "pt-3"}`}
+      >
+        <h2 className="flex min-w-0 flex-1 items-center gap-1.5">
+          <BucketName stageId={stage.id} label={stage.label} />
+
+          {/* Tied to the key, not the label, so both survive a rename. */}
+          {stage.key === "new_lead" && (
             <BucketHint title="How someone gets here">
               Everyone you know sits in Contacts. When one of them shows real
               interest, a reply, a question about price, a booked meeting,
@@ -92,20 +146,46 @@ export function LeadColumn({
             </BucketHint>
           )}
 
-          {stage === "won" && (
+          {stage.kind === "won" && (
             <PartyPopper
               className="size-[1.6rem] shrink-0 text-[#0ca30c]"
               aria-label="Win"
             />
           )}
         </h2>
+
         <span className="shrink-0 text-xs text-[var(--board-ink-muted)]">
           {leads.length}
           {total > 0 ? ` · $${total.toLocaleString()}` : ""}
         </span>
+
+        {movable && (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              aria-label={`${stage.label} options`}
+              className="shrink-0 rounded p-0.5 text-[var(--board-ink-muted)] opacity-60 hover:bg-black/5 hover:opacity-100"
+            >
+              <MoreHorizontal className="size-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={remove} variant="destructive">
+                <Trash2 className="size-4" />
+                Delete bucket
+                {leads.length > 0 && (
+                  <span className="ml-1 text-xs opacity-70">
+                    ({leads.length} move left)
+                  </span>
+                )}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
-      <div className="flex min-h-12 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-1">
+      <div
+        ref={setDropRef}
+        className="flex min-h-12 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-1"
+      >
         <SortableContext
           items={leads.map((l) => l.id)}
           strategy={verticalListSortingStrategy}
@@ -113,7 +193,7 @@ export function LeadColumn({
           {leads.map((lead) => (
             <SwipeableCard
               key={lead.id}
-              forward={nextStage(lead.stage)}
+              forward={nextStage(lead.stage, boardStages)}
               onForward={() => onSwipeForward(lead.id)}
               onArchive={() => onSwipeArchive(lead.id)}
             >
@@ -122,7 +202,6 @@ export function LeadColumn({
                 templates={templates}
                 onClick={() => onCardClick(lead.id)}
                 onMove={(next: LeadStage) => onMove(lead.id, next)}
-                stageLabels={stageLabels}
                 onContact={(type) => onContact(lead.id, type)}
               />
             </SwipeableCard>
@@ -135,7 +214,7 @@ export function LeadColumn({
       </div>
 
       <div className="p-2 pt-1">
-        <QuickAddLeadDialog stage={stage} variant="inline" />
+        <QuickAddLeadDialog stage={stage.key} variant="inline" />
       </div>
     </div>
   );

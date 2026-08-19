@@ -17,7 +17,11 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { arrayMove } from "@dnd-kit/sortable";
+import {
+  arrayMove,
+  SortableContext,
+  horizontalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Activity, Lead, Template } from "@/db/schema";
@@ -27,22 +31,19 @@ import {
   type LeadTemperature,
   reorderStage,
 } from "./actions";
-import {
-  BoardFilters,
-  matchesFilters,
-  type DueFilter,
-} from "./board-filters";
+import { BoardFilters, matchesFilters, type DueFilter } from "./board-filters";
 import { LeadCardView } from "./lead-card";
 import { LeadColumn } from "./lead-column";
 import { LeadDetailDialog } from "./lead-detail-dialog";
 import { QuickAddLeadDialog } from "./quick-add-lead-dialog";
 import { SampleBanner } from "./sample-banner";
 import { Scorecard } from "./scorecard";
-import { nextStage, STAGES, type StageLabels } from "./stages";
+import { nextStage } from "./stages";
+import { useBoardStages } from "./stages-context";
+import { AddStageButton } from "./add-stage";
+import { reorderStages } from "./stage-actions";
 
 type LeadWithActivities = Lead & { activities: Activity[] };
-
-const STAGE_VALUES = STAGES.map((s) => s.value) as string[];
 
 /**
  * Whatever is under the pointer wins. closestCorners measures corner
@@ -57,16 +58,26 @@ const collisionDetection: CollisionDetection = (args) => {
 export function LeadsBoard({
   leads,
   templates,
-  stageLabels,
 }: {
   leads: LeadWithActivities[];
   templates: Template[];
-  stageLabels: StageLabels;
 }) {
+  const boardStages = useBoardStages();
+  const stageKeys = boardStages.map((s) => s.key);
+  const labelOf = (key: string) =>
+    boardStages.find((s) => s.key === key)?.label ?? key;
+
   const [localLeads, setLocalLeads] = useState(leads);
+  // Column order is held locally during a drag for the same reason cards
+  // are: waiting for the server to answer makes the board feel broken.
+  const [columnOrder, setColumnOrder] = useState<string[]>(
+    boardStages.filter((s) => s.kind === "open").map((s) => s.id),
+  );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [mobileStage, setMobileStage] = useState<LeadStage>("new_lead");
+  const [mobileStage, setMobileStage] = useState<LeadStage>(
+    boardStages[0]?.key ?? "new_lead",
+  );
   const [activeId, setActiveId] = useState<string | null>(null);
   const [logType, setLogType] = useState<ActivityType>("note");
   const [temp, setTemp] = useState<LeadTemperature | null>(null);
@@ -79,6 +90,13 @@ export function LeadsBoard({
     setLocalLeads(leads);
   }, [leads]);
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resync after a bucket is added, removed or reordered
+    setColumnOrder(
+      boardStages.filter((s) => s.kind === "open").map((s) => s.id),
+    );
+  }, [boardStages]);
+
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
     // A finger has to rest before it drags, which leaves quick horizontal
@@ -86,8 +104,30 @@ export function LeadsBoard({
     // and swiping does nothing.
     useSensor(TouchSensor, {
       activationConstraint: { delay: 250, tolerance: 8 },
-    })
+    }),
   );
+
+  /**
+   * The columns as drawn: working buckets in the order held locally, then
+   * won and lost, which are outcomes and always sit at the end.
+   */
+  const columns = useMemo(() => {
+    const open = boardStages.filter((s) => s.kind === "open");
+    const ordered = columnOrder
+      .map((id) => open.find((s) => s.id === id))
+      .filter((s): s is (typeof open)[number] => Boolean(s));
+    // Anything the local order has not caught up with yet still gets drawn.
+    const missing = open.filter((s) => !columnOrder.includes(s.id));
+    return [
+      ...ordered,
+      ...missing,
+      ...boardStages.filter((s) => s.kind !== "open"),
+    ];
+  }, [boardStages, columnOrder]);
+
+  const activeColumn = activeId
+    ? (boardStages.find((s) => s.id === activeId) ?? null)
+    : null;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -108,11 +148,11 @@ export function LeadsBoard({
   function swipeForward(leadId: string) {
     const lead = localLeads.find((l) => l.id === leadId);
     if (!lead) return;
-    const next = nextStage(lead.stage);
+    const next = nextStage(lead.stage, boardStages);
     if (!next) return;
     const from = lead.stage;
     moveStage(leadId, next);
-    toast(`${lead.name} moved to ${stageLabels[next] ?? next}`, {
+    toast(`${lead.name} moved to ${labelOf(next)}`, {
       action: { label: "Undo", onClick: () => moveStage(leadId, from) },
     });
   }
@@ -129,14 +169,12 @@ export function LeadsBoard({
 
   /** A drop target is either a column (stage id) or another card (lead id). */
   function stageOf(id: string, source: Lead[]): LeadStage | null {
-    if (STAGE_VALUES.includes(id)) return id as LeadStage;
+    if (stageKeys.includes(id)) return id as LeadStage;
     return source.find((l) => l.id === id)?.stage ?? null;
   }
 
   function persist(stage: LeadStage, source: Lead[]) {
-    const orderedIds = source
-      .filter((l) => l.stage === stage)
-      .map((l) => l.id);
+    const orderedIds = source.filter((l) => l.stage === stage).map((l) => l.id);
     startTransition(async () => {
       await reorderStage(stage, orderedIds);
     });
@@ -152,9 +190,7 @@ export function LeadsBoard({
 
   function moveStage(leadId: string, stage: LeadStage) {
     celebrateIfWon(leadId, stage);
-    const next = localLeads.map((l) =>
-      l.id === leadId ? { ...l, stage } : l
-    );
+    const next = localLeads.map((l) => (l.id === leadId ? { ...l, stage } : l));
     setLocalLeads(next);
     persist(stage, next);
   }
@@ -170,10 +206,18 @@ export function LeadsBoard({
     setSelectedId(leadId);
   }
 
+  /** True when what is being dragged is a column, not a card. */
+  function isColumn(id: string) {
+    return boardStages.some((s) => s.id === id);
+  }
+
   function handleDragStart(event: DragStartEvent) {
     const id = String(event.active.id);
-    dragStartStage.current =
-      localLeads.find((l) => l.id === id)?.stage ?? null;
+    if (isColumn(id)) {
+      setActiveId(id);
+      return;
+    }
+    dragStartStage.current = localLeads.find((l) => l.id === id)?.stage ?? null;
     setActiveId(id);
   }
 
@@ -184,6 +228,7 @@ export function LeadsBoard({
   function handleDragOver(event: DragOverEvent) {
     const { active, over } = event;
     if (!over) return;
+    if (isColumn(String(active.id))) return;
 
     const draggedId = String(active.id);
     const overId = String(over.id);
@@ -195,7 +240,7 @@ export function LeadsBoard({
       if (!dragged || !overStage || dragged.stage === overStage) return prev;
 
       const withStage = prev.map((l) =>
-        l.id === draggedId ? { ...l, stage: overStage } : l
+        l.id === draggedId ? { ...l, stage: overStage } : l,
       );
 
       const from = withStage.findIndex((l) => l.id === draggedId);
@@ -211,6 +256,22 @@ export function LeadsBoard({
 
     const draggedId = String(active.id);
     const overId = String(over.id);
+
+    if (isColumn(draggedId)) {
+      // Dropping a column onto won or lost is a no-op rather than an
+      // error: those two are pinned to the end and cannot take a place.
+      const from = columnOrder.indexOf(draggedId);
+      const to = columnOrder.indexOf(overId);
+      if (from === -1 || to === -1 || from === to) return;
+
+      const next = arrayMove(columnOrder, from, to);
+      setColumnOrder(next);
+      startTransition(async () => {
+        const result = await reorderStages(next);
+        if (result.error) toast.error(result.error);
+      });
+      return;
+    }
 
     const dragged = localLeads.find((l) => l.id === draggedId);
     if (!dragged) return;
@@ -231,7 +292,7 @@ export function LeadsBoard({
     }
 
     next = next.map((l) =>
-      l.id === draggedId ? { ...l, stage: destStage } : l
+      l.id === draggedId ? { ...l, stage: destStage } : l,
     );
 
     setLocalLeads(next);
@@ -263,16 +324,13 @@ export function LeadsBoard({
 
           <div className="md:ml-auto md:shrink-0">
             <QuickAddLeadDialog
-              stageLabels={stageLabels}
               highlight={!localLeads.some((l) => !l.isSample)}
             />
           </div>
         </div>
 
         {localLeads.some((l) => l.isSample) && (
-          <SampleBanner
-            count={localLeads.filter((l) => l.isSample).length}
-          />
+          <SampleBanner count={localLeads.filter((l) => l.isSample).length} />
         )}
 
         <BoardFilters
@@ -285,19 +343,19 @@ export function LeadsBoard({
         />
 
         <div className="flex gap-1.5 overflow-x-auto md:hidden">
-          {STAGES.map((stage) => (
+          {boardStages.map((stage) => (
             <button
-              key={stage.value}
-              onClick={() => setMobileStage(stage.value)}
+              key={stage.key}
+              onClick={() => setMobileStage(stage.key)}
               className={cn(
                 "shrink-0 rounded-full px-3 py-2 text-xs font-medium transition-colors",
-                mobileStage === stage.value
+                mobileStage === stage.key
                   ? "bg-white text-[var(--board-ink)]"
-                  : "bg-white/25 text-white hover:bg-white/35"
+                  : "bg-white/25 text-white hover:bg-white/35",
               )}
             >
-              {stageLabels[stage.value]} (
-              {filtered.filter((l) => l.stage === stage.value).length})
+              {stage.label} (
+              {filtered.filter((l) => l.stage === stage.key).length})
             </button>
           ))}
         </div>
@@ -315,35 +373,53 @@ export function LeadsBoard({
         {/* Vertical padding keeps the drop-target glow from being clipped
             by this scroll container. */}
         <div className="flex flex-1 items-start gap-3 overflow-x-auto overflow-y-hidden px-4 pt-1.5 pb-5 md:px-6">
-          {STAGES.map((stage) => (
-            <div
-              key={stage.value}
-              className={cn(
-                "flex max-h-full",
-                stage.value === mobileStage ? "w-full" : "hidden",
-                "md:flex md:w-auto"
-              )}
-            >
-              <LeadColumn
-                stage={stage.value}
-                label={stageLabels[stage.value]}
-                leads={filtered.filter((l) => l.stage === stage.value)}
-                templates={templates}
-                isDropTarget={!!activeLead && activeLead.stage === stage.value}
-                onCardClick={openRecord}
-                onMove={moveStage}
-                onSwipeForward={swipeForward}
-                onSwipeArchive={swipeArchive}
-                stageLabels={stageLabels}
-                onContact={handleContact}
-              />
-            </div>
-          ))}
+          <SortableContext
+            items={columnOrder}
+            strategy={horizontalListSortingStrategy}
+          >
+            {columns.map((stage) => (
+              <div
+                key={stage.id}
+                className={cn(
+                  "flex max-h-full",
+                  stage.key === mobileStage ? "w-full" : "hidden",
+                  "md:flex md:w-auto",
+                )}
+              >
+                <LeadColumn
+                  stage={stage}
+                  leads={filtered.filter((l) => l.stage === stage.key)}
+                  templates={templates}
+                  isDropTarget={!!activeLead && activeLead.stage === stage.key}
+                  onCardClick={openRecord}
+                  onMove={moveStage}
+                  onSwipeForward={swipeForward}
+                  onSwipeArchive={swipeArchive}
+                  onContact={handleContact}
+                />
+              </div>
+            ))}
+          </SortableContext>
+
+          {/* Sits in the row with the columns, and only on a wide screen:
+              a phone shows one bucket at a time, so a bucket-shaped button
+              among them would read as another bucket. */}
+          <div className="hidden md:flex">
+            <AddStageButton
+              openCount={boardStages.filter((s) => s.kind === "open").length}
+            />
+          </div>
         </div>
 
         <DragOverlay dropAnimation={null}>
           {activeLead ? (
             <LeadCardView lead={activeLead} templates={templates} overlay />
+          ) : activeColumn ? (
+            // A column being dragged shows its name, not a clone of the
+            // whole column, which at full height covers half the board.
+            <div className="rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-[var(--board-ink)] shadow-lg">
+              {activeColumn.label}
+            </div>
           ) : null}
         </DragOverlay>
       </DndContext>

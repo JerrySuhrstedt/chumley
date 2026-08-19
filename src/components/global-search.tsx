@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { searchLeads, type SearchHit } from "@/app/(app)/_leads/actions";
-import { ALL_STAGES } from "@/app/(app)/_leads/stages";
+import { useStages } from "@/app/(app)/_leads/stages-context";
 import { companyDomainFromEmail, companyLogoUrl } from "@/lib/company";
 
 function initials(name: string) {
@@ -17,6 +17,7 @@ function initials(name: string) {
 }
 
 export function GlobalSearch() {
+  const allStages = useStages();
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<SearchHit[]>([]);
@@ -119,7 +120,7 @@ export function GlobalSearch() {
           ) : (
             <ul className="max-h-80 overflow-y-auto py-1">
               {hits.map((hit, i) => {
-                const stage = ALL_STAGES.find((s) => s.value === hit.stage);
+                const stage = allStages.find((s) => s.key === hit.stage);
                 const domain = companyDomainFromEmail(hit.email);
                 const detail =
                   [hit.companyName, hit.email, hit.phone]
