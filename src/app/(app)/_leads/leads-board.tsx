@@ -33,6 +33,8 @@ import {
 import { LeadCardView } from "./lead-card";
 import { LeadColumn } from "./lead-column";
 import { LeadDetailDialog } from "./lead-detail-dialog";
+import { QuickAddLeadDialog } from "./quick-add-lead-dialog";
+import { Scorecard } from "./scorecard";
 import { STAGES, type StageLabels } from "./stages";
 
 type LeadWithActivities = Lead & { activities: Activity[] };
@@ -207,15 +209,25 @@ export function LeadsBoard({
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="flex flex-col gap-3 px-4 pt-3 pb-2 md:px-6">
-        <div className="relative w-full max-w-sm">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-[var(--board-ink-muted)]" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name, company, or phone..."
-            className="h-10 w-full rounded-lg border-0 bg-white pr-3 pl-8 text-sm text-[var(--board-ink)] shadow-sm outline-none placeholder:text-[var(--board-ink-muted)] focus:ring-2 focus:ring-white/80 md:h-9"
-          />
+      <div className="flex flex-col gap-3 px-4 pt-4 pb-2 md:px-6">
+        {/* Numbers, then search, then the add button, all on one line so
+            the board starts higher up the screen. */}
+        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          <Scorecard leads={localLeads} />
+
+          <div className="relative w-full min-w-0 md:max-w-xs md:flex-1">
+            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-[var(--board-ink-muted)]" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by name, company, or phone..."
+              className="h-10 w-full rounded-lg border-0 bg-white pr-3 pl-8 text-sm text-[var(--board-ink)] shadow-sm outline-none placeholder:text-[var(--board-ink-muted)] focus:ring-2 focus:ring-white/80 md:h-9"
+            />
+          </div>
+
+          <div className="md:ml-auto md:shrink-0">
+            <QuickAddLeadDialog stageLabels={stageLabels} />
+          </div>
         </div>
 
         <BoardFilters
