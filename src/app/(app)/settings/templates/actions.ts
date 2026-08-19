@@ -9,23 +9,67 @@ import { getCurrentOrg } from "@/lib/org";
 export type FormState = { error: string | null };
 type Channel = (typeof templateChannelEnum.enumValues)[number];
 
+function read(formData: FormData) {
+  const name = String(formData.get("name") ?? "").trim();
+  const body = String(formData.get("body") ?? "").trim();
+  const subject = String(formData.get("subject") ?? "").trim();
+  const channel = String(formData.get("channel") ?? "") as Channel;
+  return { name, body, subject, channel };
+}
+
 export async function createTemplate(
   _prevState: FormState,
   formData: FormData
 ): Promise<FormState> {
-  const name = String(formData.get("name") ?? "").trim();
-  const body = String(formData.get("body") ?? "").trim();
-  const channel = String(formData.get("channel") ?? "") as Channel;
+  const { name, body, subject, channel } = read(formData);
 
   if (!name || !body) {
-    return { error: "Name and message are required." };
+    return { error: "Give it a name and a message." };
   }
 
   const current = await getCurrentOrg();
-  if (!current) return { error: "No organization." };
+  if (!current) return { error: "No team found." };
 
-  await db.insert(templates).values({ orgId: current.org.id, name, body, channel });
+  await db.insert(templates).values({
+    orgId: current.org.id,
+    name,
+    body,
+    channel,
+    // Texts have no subject, so never store one against them.
+    subject: channel === "email" && subject ? subject : null,
+  });
+
   revalidatePath("/settings/templates");
+  revalidatePath("/pipeline");
+  return { error: null };
+}
+
+export async function updateTemplate(
+  id: string,
+  _prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const { name, body, subject, channel } = read(formData);
+
+  if (!name || !body) {
+    return { error: "Give it a name and a message." };
+  }
+
+  const current = await getCurrentOrg();
+  if (!current) return { error: "No team found." };
+
+  await db
+    .update(templates)
+    .set({
+      name,
+      body,
+      channel,
+      subject: channel === "email" && subject ? subject : null,
+    })
+    .where(and(eq(templates.id, id), eq(templates.orgId, current.org.id)));
+
+  revalidatePath("/settings/templates");
+  revalidatePath("/pipeline");
   return { error: null };
 }
 
@@ -38,4 +82,5 @@ export async function deleteTemplate(id: string) {
     .where(and(eq(templates.id, id), eq(templates.orgId, current.org.id)));
 
   revalidatePath("/settings/templates");
+  revalidatePath("/pipeline");
 }

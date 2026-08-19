@@ -71,6 +71,13 @@
       "when": 1787103877308,
       "tag": "0009_mighty_manta",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1787105855399,
+      "tag": "0010_clumsy_microchip",
+      "breakpoints": true
     }
   ]
 }

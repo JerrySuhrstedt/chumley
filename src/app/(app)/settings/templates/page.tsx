@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { db } from "@/db";
 import { templates } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
-import { CreateTemplateDialog } from "./create-template-dialog";
+import { TemplateDialog } from "./template-dialog";
 import { DeleteTemplateButton } from "./delete-template-button";
 
 export default async function TemplatesSettingsPage() {
@@ -31,13 +31,13 @@ export default async function TemplatesSettingsPage() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Templates</CardTitle>
-          <CreateTemplateDialog />
+          <CardTitle>Saved messages</CardTitle>
+          <TemplateDialog />
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {allTemplates.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              No saved messages yet. Add a couple of follow-ups you send all the time.
+              Nothing saved yet. Add the texts and emails you send over and over.
             </p>
           )}
           {allTemplates.map((template) => (
@@ -45,18 +45,26 @@ export default async function TemplatesSettingsPage() {
               key={template.id}
               className="flex items-start justify-between gap-3 rounded-md border p-3"
             >
-              <div>
+              <div className="min-w-0">
                 <div className="mb-1 flex items-center gap-2">
                   <p className="text-sm font-medium">{template.name}</p>
-                  <Badge variant="secondary" className="uppercase">
-                    {template.channel}
+                  <Badge variant="secondary">
+                    {template.channel === "sms" ? "Text" : "Email"}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                {template.subject && (
+                  <p className="text-sm font-medium text-slate-700">
+                    {template.subject}
+                  </p>
+                )}
+                <p className="text-sm whitespace-pre-line text-muted-foreground">
                   {template.body}
                 </p>
               </div>
-              <DeleteTemplateButton id={template.id} />
+              <div className="flex shrink-0 items-center">
+                <TemplateDialog template={template} />
+                <DeleteTemplateButton id={template.id} />
+              </div>
             </div>
           ))}
         </CardContent>

@@ -1,13 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { Mail, MessageSquare, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Lead, Template } from "@/db/schema";
 import { telDigits } from "@/lib/phone";
-
-function fillTemplate(body: string, lead: Lead) {
-  return body.replaceAll("{{name}}", lead.name);
-}
+import { ComposeSheet } from "./compose-sheet";
 
 export function TapToContact({
   lead,
@@ -20,16 +18,12 @@ export function TapToContact({
   templates?: Template[];
   size?: "icon" | "default";
   stopPropagation?: boolean;
-  /** Fired alongside the tel:/sms:/mailto: hand-off so the caller can log it. */
+  /** Fired alongside the hand-off so the caller can open the log. */
   onContact?: (type: "call" | "text" | "email") => void;
 }) {
-  const smsTemplate = templates?.find((t) => t.channel === "sms");
-  const emailTemplate = templates?.find((t) => t.channel === "email");
-
-  const smsBody = smsTemplate ? fillTemplate(smsTemplate.body, lead) : "";
-  const emailBody = emailTemplate
-    ? fillTemplate(emailTemplate.body, lead)
-    : "";
+  // Text and email open a compose step first, so the sender picks a saved
+  // message and edits it. Calling has nothing to write, so it dials.
+  const [composing, setComposing] = useState<"text" | "email" | null>(null);
 
   const stop = stopPropagation
     ? (e: React.MouseEvent) => e.stopPropagation()
@@ -37,48 +31,55 @@ export function TapToContact({
 
   const dialable = telDigits(lead.phone);
   const telHref = dialable ? `tel:${dialable}` : "#";
-  const smsHref = dialable
-    ? `sms:${dialable}${smsBody ? `?&body=${encodeURIComponent(smsBody)}` : ""}`
-    : "#";
-  const mailHref = lead.email
-    ? `mailto:${lead.email}${emailBody ? `?body=${encodeURIComponent(emailBody)}` : ""}`
-    : "#";
 
   return (
-    <div className="flex gap-1" onClick={stop}>
-      <Button
-        render={<a href={telHref} onClick={() => onContact?.("call")} />}
-        variant="outline"
-        size={size}
-        disabled={!lead.phone}
-        nativeButton={false}
-        className={size === "default" ? "flex-1" : undefined}
-      >
-        <Phone className="size-4" />
-        {size === "default" && "Call"}
-      </Button>
-      <Button
-        render={<a href={smsHref} onClick={() => onContact?.("text")} />}
-        variant="outline"
-        size={size}
-        disabled={!lead.phone}
-        nativeButton={false}
-        className={size === "default" ? "flex-1" : undefined}
-      >
-        <MessageSquare className="size-4" />
-        {size === "default" && "Text"}
-      </Button>
-      <Button
-        render={<a href={mailHref} onClick={() => onContact?.("email")} />}
-        variant="outline"
-        size={size}
-        disabled={!lead.email}
-        nativeButton={false}
-        className={size === "default" ? "flex-1" : undefined}
-      >
-        <Mail className="size-4" />
-        {size === "default" && "Email"}
-      </Button>
-    </div>
+    <>
+      <div className="flex gap-1" onClick={stop}>
+        <Button
+          render={<a href={telHref} onClick={() => onContact?.("call")} />}
+          variant="outline"
+          size={size}
+          disabled={!lead.phone}
+          nativeButton={false}
+          className={size === "default" ? "flex-1" : undefined}
+        >
+          <Phone className="size-4" />
+          {size === "default" && "Call"}
+        </Button>
+
+        <Button
+          onClick={() => setComposing("text")}
+          variant="outline"
+          size={size}
+          disabled={!lead.phone}
+          className={size === "default" ? "flex-1" : undefined}
+        >
+          <MessageSquare className="size-4" />
+          {size === "default" && "Text"}
+        </Button>
+
+        <Button
+          onClick={() => setComposing("email")}
+          variant="outline"
+          size={size}
+          disabled={!lead.email}
+          className={size === "default" ? "flex-1" : undefined}
+        >
+          <Mail className="size-4" />
+          {size === "default" && "Email"}
+        </Button>
+      </div>
+
+      {composing && (
+        <ComposeSheet
+          lead={lead}
+          templates={templates ?? []}
+          channel={composing}
+          open
+          onOpenChange={(next) => !next && setComposing(null)}
+          onSend={() => onContact?.(composing)}
+        />
+      )}
+    </>
   );
 }

@@ -54,12 +54,14 @@ export async function getCurrentOrg() {
 const STARTER_TEMPLATES = [
   {
     channel: "sms" as const,
+    subject: null,
     name: "Quick follow up",
     body: "Hi {{name}}, following up on our conversation. Anything I can answer for you?",
   },
   {
     channel: "email" as const,
     name: "Nice talking today",
+    subject: "Following up on our conversation",
     body: "Hi {{name}},\n\nGood talking with you today. I will get that information over shortly.\n\nThanks",
   },
 ];

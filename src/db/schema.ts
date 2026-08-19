@@ -140,6 +140,8 @@ export const templates = pgTable("templates", {
     .references(() => organizations.id, { onDelete: "cascade" }),
   channel: templateChannelEnum("channel").notNull(),
   name: text("name").notNull(),
+  /** Email only. Texts have no subject line. */
+  subject: text("subject"),
   body: text("body").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
