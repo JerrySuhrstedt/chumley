@@ -23,10 +23,22 @@ import {
  * likes with.
  */
 
+/**
+ * Re-read the buckets everywhere they are shown.
+ *
+ * It has to be the layout, not the pages. The stage list is provided from
+ * the (app) layout so that the board, contacts, the dashboard and the
+ * search box all see the same one, and revalidating a path on its own
+ * leaves that layout untouched. The result was a new bucket that did not
+ * appear until the browser was refreshed by hand.
+ *
+ * The root layout is the honest target rather than one route: a renamed
+ * bucket shows on the board, in Contacts, in the funnel and in search
+ * results, and these changes happen a handful of times in a team's life,
+ * so there is nothing to be won by being clever about the scope.
+ */
 function refresh() {
-  revalidatePath("/pipeline");
-  revalidatePath("/dashboard");
-  revalidatePath("/contacts");
+  revalidatePath("/", "layout");
 }
 
 /** A key that cannot collide with a future default or an existing bucket. */
@@ -122,7 +134,16 @@ export async function reorderStages(orderedIds: string[]) {
   return { error: null };
 }
 
-export async function deleteStage(id: string) {
+/**
+ * Remove a bucket, moving whatever is in it somewhere the team chooses.
+ *
+ * The destination is required rather than guessed. An earlier version
+ * moved deals to the bucket on the left, which is a reasonable default
+ * and still the wrong thing to do silently: the person deleting "Proposal
+ * Sent" usually knows exactly where those deals belong, and finding them
+ * somewhere else afterwards is worse than being asked.
+ */
+export async function deleteStage(id: string, destinationKey: string) {
   const current = await getCurrentOrg();
   if (!current) return { error: "No organization." };
 
@@ -139,11 +160,13 @@ export async function deleteStage(id: string) {
     return { error: "Keep at least one working bucket." };
   }
 
-  // Leads move to the bucket on its left, or the first one if it was
-  // leftmost. Nobody's deals vanish because a column did.
-  const index = open.findIndex((s) => s.id === id);
-  const destination = open[index - 1] ?? open.find((s) => s.id !== id)!;
+  const destination = all.find((s) => s.key === destinationKey);
+  if (!destination || destination.id === target.id) {
+    return { error: "Pick somewhere for the deals to go." };
+  }
 
+  // Move first, delete second. The other order would leave deals pointing
+  // at a bucket the board will not draw if the move then failed.
   await emptyStageInto(current.org.id, target.key, destination.key);
   await db
     .delete(stages)

@@ -1,11 +1,10 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripHorizontal, MoreHorizontal, PartyPopper, Trash2 } from "lucide-react";
-import { toast } from "sonner";
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -20,7 +19,7 @@ import {
 import type { LeadStage } from "./actions";
 import { BucketHint } from "./bucket-hint";
 import { BucketName } from "./bucket-name";
-import { deleteStage } from "./stage-actions";
+import { DeleteStageDialog } from "./delete-stage-dialog";
 import { nextStage, type BoardStage } from "./stages";
 import { useBoardStages } from "./stages-context";
 import { LeadCard } from "./lead-card";
@@ -39,6 +38,7 @@ const BUCKET_TINT: Record<string, { base: string; over: string }> = {
 export function LeadColumn({
   stage,
   leads,
+  totalCount,
   templates,
   isDropTarget = false,
   onCardClick,
@@ -48,7 +48,10 @@ export function LeadColumn({
   onContact,
 }: {
   stage: BoardStage;
+  /** What is drawn, after the board's filters. */
   leads: Lead[];
+  /** Everything in this bucket, filters ignored. What a delete moves. */
+  totalCount: number;
   templates: Template[];
   isDropTarget?: boolean;
   onCardClick: (leadId: string) => void;
@@ -58,7 +61,7 @@ export function LeadColumn({
   onContact: (leadId: string, type: "call" | "text" | "email") => void;
 }) {
   const boardStages = useBoardStages();
-  const [, startTransition] = useTransition();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   // Cards drop into the column by its key; the column itself sorts by its
   // row id. Two different ids on purpose, so a card being dragged is never
@@ -77,17 +80,6 @@ export function LeadColumn({
 
   const tint = BUCKET_TINT[stage.kind];
   const total = leads.reduce((sum, l) => sum + Number(l.value ?? 0), 0);
-
-  function remove() {
-    startTransition(async () => {
-      const result = await deleteStage(stage.id);
-      if (result.error) {
-        toast.error(result.error);
-      } else if (result.movedTo) {
-        toast.success(`"${stage.label}" removed. Its deals moved to ${result.movedTo}.`);
-      }
-    });
-  }
 
   return (
     <div
@@ -168,14 +160,12 @@ export function LeadColumn({
               <MoreHorizontal className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={remove} variant="destructive">
+              <DropdownMenuItem
+                onClick={() => setConfirmingDelete(true)}
+                variant="destructive"
+              >
                 <Trash2 className="size-4" />
                 Delete bucket
-                {leads.length > 0 && (
-                  <span className="ml-1 text-xs opacity-70">
-                    ({leads.length} move left)
-                  </span>
-                )}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -216,6 +206,18 @@ export function LeadColumn({
       <div className="p-2 pt-1">
         <QuickAddLeadDialog stage={stage.key} variant="inline" />
       </div>
+
+      {confirmingDelete && (
+        <DeleteStageDialog
+          stage={stage}
+          // Every deal in the bucket, not just the ones a filter is
+          // letting through. The delete moves all of them, so promising
+          // to move three and moving twelve would be a lie.
+          leadCount={totalCount}
+          open={confirmingDelete}
+          onOpenChange={setConfirmingDelete}
+        />
+      )}
     </div>
   );
 }

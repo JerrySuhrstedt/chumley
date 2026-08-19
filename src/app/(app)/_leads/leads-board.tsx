@@ -389,6 +389,9 @@ export function LeadsBoard({
                 <LeadColumn
                   stage={stage}
                   leads={filtered.filter((l) => l.stage === stage.key)}
+                  totalCount={
+                    localLeads.filter((l) => l.stage === stage.key).length
+                  }
                   templates={templates}
                   isDropTarget={!!activeLead && activeLead.stage === stage.key}
                   onCardClick={openRecord}
