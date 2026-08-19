@@ -2,6 +2,9 @@ import { eq } from "drizzle-orm";
 import type { EventEntity } from "@paddle/paddle-node-sdk";
 import { db } from "@/db";
 import { organizations, subscriptions } from "@/db/schema";
+import { priceFor } from "@/lib/paddle/catalog";
+import { paddle } from "@/lib/paddle/server";
+import { PRICES } from "@/lib/paddle/catalog";
 
 const date = (v: string | null | undefined) => (v ? new Date(v) : null);
 
@@ -18,6 +21,50 @@ function orgIdFrom(data: unknown): string | null {
     ?.customData;
   const value = custom?.orgId ?? custom?.org_id;
   return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+
+const YEARLY_IDS: string[] = [
+  PRICES.solo.yearly,
+  PRICES.team["3to4"].yearly,
+  PRICES.team["5to9"].yearly,
+  PRICES.team["10plus"].yearly,
+];
+
+/**
+ * Put a subscription onto the price its seat count has earned.
+ *
+ * Paddle will not let the price change while a subscription is trialing,
+ * so a team that grew during their trial sits on the single-seat price
+ * with the wrong number of seats attached. This is the first moment that
+ * can be fixed, and it only ever moves the bill down.
+ *
+ * It is deliberately driven off state rather than off a particular event.
+ * Any subscription webhook re-checks it, so a correction that failed once
+ * is retried on the next one instead of being lost.
+ */
+async function correctTier(
+  subId: string,
+  status: string,
+  priceId: string,
+  quantity: number
+): Promise<string> {
+  if (status !== "active") return "";
+  const wanted = priceFor(quantity, YEARLY_IDS.includes(priceId));
+  if (wanted === priceId) return "";
+
+  try {
+    await paddle().subscriptions.update(subId, {
+      items: [{ priceId: wanted, quantity }],
+      prorationBillingMode: "prorated_immediately",
+    });
+    return ` (moved onto the ${quantity}-seat price)`;
+  } catch (error) {
+    // Not fatal. The customer is on the price they were quoted, which is
+    // the higher one, and the next webhook tries again.
+    console.error("tier correction failed", subId, error);
+    return " (tier correction failed, will retry)";
+  }
 }
 
 /**
@@ -89,7 +136,14 @@ export async function syncPaddleEvent(event: EventEntity): Promise<string> {
         .set({ paddleCustomerId: sub.customerId })
         .where(eq(organizations.id, orgId));
 
-      return `${event.eventType} -> ${sub.status}, ${values.quantity} seat(s)`;
+      const fixed = await correctTier(
+        sub.id,
+        values.status,
+        values.priceId,
+        values.quantity
+      );
+
+      return `${event.eventType} -> ${sub.status}, ${values.quantity} seat(s)${fixed}`;
     }
 
     default:

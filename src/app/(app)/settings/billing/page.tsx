@@ -5,6 +5,7 @@ import { getCurrentOrg } from "@/lib/org";
 import { getBillingState } from "@/lib/paddle/access";
 import { Checkout } from "./checkout";
 import { TestModeNotice } from "@/components/test-mode-notice";
+import { Seats } from "./seats";
 
 const LABEL: Record<string, string> = {
   active: "Active",
@@ -104,7 +105,7 @@ export default async function BillingSettingsPage() {
                 <p className="text-sm text-slate-600">
                   {billing.seatsLeft > 0
                     ? `${billing.seatsLeft} seat${billing.seatsLeft === 1 ? "" : "s"} left. Invite from the Team page.`
-                    : "Every seat is taken. Add more to invite anybody else."}
+                    : "Every seat is taken. Add one below before inviting anybody else."}
                 </p>
               </>
             ) : (
@@ -168,6 +169,10 @@ export default async function BillingSettingsPage() {
               )}
             </CardContent>
           </Card>
+        )}
+
+        {sub && current.role === "owner" && (
+          <Seats paidFor={sub.quantity} membersNow={billing.seatsUsed} />
         )}
       </div>
     </div>
