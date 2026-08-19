@@ -64,6 +64,13 @@
       "when": 1787086517458,
       "tag": "0008_slim_captain_midlands",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1787103877308,
+      "tag": "0009_mighty_manta",
+      "breakpoints": true
     }
   ]
 }

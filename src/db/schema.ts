@@ -68,6 +68,8 @@ export const organizations = pgTable("organizations", {
    */
   stageLabels: jsonb("stage_labels").$type<Record<string, string>>(),
   webhookToken: uuid("webhook_token").notNull().defaultRandom().unique(),
+  /** Heading shown above the embeddable website form. Plain text only. */
+  formHeading: text("form_heading"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

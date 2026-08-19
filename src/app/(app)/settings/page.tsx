@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   ChevronRight,
+  Code,
   MessageSquareText,
   Upload,
   UserRound,
@@ -20,6 +21,13 @@ const SECTIONS = [
     label: "Import",
     description: "Bring in leads from a CSV, mapping columns to your fields.",
     icon: Upload,
+  },
+  {
+    href: "/settings/form",
+    label: "Form for your website",
+    description:
+      "Put a contact form on your site. New leads land on your board.",
+    icon: Code,
   },
   {
     href: "/settings/team",
