@@ -15,7 +15,11 @@ import { INCLUDED, PRICE } from "./plans";
  */
 export function PlanCards() {
   const [yearly, setYearly] = useState(false);
-  const price = yearly ? Math.round(PRICE.yearly / 12) : PRICE.monthly;
+
+  // Paying monthly for a year, so the saving has something to be measured
+  // against. A number on its own is just a number.
+  const fullYear = PRICE.monthly * 12;
+  const saving = fullYear - PRICE.yearly;
 
   return (
     <>
@@ -54,13 +58,27 @@ export function PlanCards() {
       <div className="mx-auto mt-10 max-w-xl rounded-2xl border-2 border-[var(--brand)] bg-white p-8 text-left shadow-[0_18px_46px_-18px_rgba(241,101,34,0.45)] sm:p-10">
         <p className="flex items-baseline justify-center gap-2">
           <span className="text-6xl font-extrabold tracking-tight text-[var(--ink)] sm:text-7xl">
-            ${price}
+            ${yearly ? PRICE.yearly : PRICE.monthly}
           </span>
-          <span className="text-lg text-[var(--ink-soft)]">per user</span>
+          <span className="text-lg text-[var(--ink-soft)]">
+            per user, per {yearly ? "year" : "month"}
+          </span>
         </p>
-        <p className="mt-1 text-center text-[15px] text-[var(--ink-muted)]">
-          per month{yearly ? `, billed as $${PRICE.yearly} a year` : ""}
-        </p>
+
+        {yearly ? (
+          <p className="mt-3 flex flex-wrap items-center justify-center gap-2 text-[15px]">
+            <span className="text-[var(--ink-muted)] line-through">
+              ${fullYear}
+            </span>
+            <span className="rounded-full bg-[var(--brand-tint)] px-2.5 py-1 text-sm font-bold text-[var(--brand)]">
+              Two months free, ${saving} back per person
+            </span>
+          </p>
+        ) : (
+          <p className="mt-3 text-center text-[15px] text-[var(--ink-muted)]">
+            Or ${PRICE.yearly} a year and get two months free.
+          </p>
+        )}
 
         <p className="mx-auto mt-6 max-w-[42ch] text-center text-[17px] font-semibold text-[var(--ink)]">
           No tiers. No contracts. Nothing locked behind an upgrade. One price
