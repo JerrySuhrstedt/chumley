@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { Topbar } from "@/components/topbar";
 import { getCurrentOrg } from "@/lib/org";
 import { getOnboardingState } from "@/lib/onboarding";
+import { isAdmin } from "@/lib/admin";
 import { OnboardingChecklist } from "./_onboarding/checklist";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
@@ -11,6 +12,8 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   if (!current) {
     redirect("/onboarding");
   }
+
+  const admin = await isAdmin();
 
   const onboarding = await getOnboardingState(
     current.org.id,
@@ -25,7 +28,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
     // The chrome is one continuous colour: the sidebar and top bar sit on it
     // transparently, and the content is a panel resting inside that frame.
     <div className="flex h-screen w-full overflow-hidden bg-[var(--nav-bg)]">
-      <AppSidebar email={current.email} />
+      <AppSidebar email={current.email} isAdmin={admin} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar
           orgName={current.org.name}

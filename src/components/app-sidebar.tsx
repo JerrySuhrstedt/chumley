@@ -11,6 +11,7 @@ import {
   KanbanSquare,
   LayoutDashboard,
   LogOut,
+  ShieldCheck,
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -26,7 +27,13 @@ const NAV = [
 
 const STORAGE_KEY = "ssc:nav-collapsed";
 
-export function AppSidebar({ email }: { email: string | null }) {
+export function AppSidebar({
+  email,
+  isAdmin = false,
+}: {
+  email: string | null;
+  isAdmin?: boolean;
+}) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -146,6 +153,23 @@ export function AppSidebar({ email }: { email: string | null }) {
             </button>
           </form>
         </div>
+
+        {isAdmin && (
+          <Link
+            href="/admin"
+            title="Back office"
+            className={cn(
+              "flex items-center gap-3 rounded-md py-2 text-sm transition-colors",
+              collapsed ? "justify-center px-0" : "px-3",
+              pathname.startsWith("/admin")
+                ? "bg-[var(--nav-active)] text-white"
+                : "text-[var(--nav-ink)] hover:bg-[var(--nav-hover)] hover:text-white"
+            )}
+          >
+            <ShieldCheck className="size-5 shrink-0" />
+            {!collapsed && <span>Back office</span>}
+          </Link>
+        )}
 
         <Link
           href="/settings"
