@@ -478,3 +478,26 @@ export async function logSentMessage(
   revalidatePath("/pipeline");
   revalidatePath("/contacts");
 }
+
+export type LeadTemperature = "hot" | "warm" | "cold";
+
+/**
+ * Set or clear how warm a lead feels.
+ *
+ * Passing the value that is already set clears it, so the control toggles
+ * rather than trapping somebody who tapped the wrong one.
+ */
+export async function setTemperature(
+  leadId: string,
+  value: LeadTemperature | null
+) {
+  const { org } = await requireOrg();
+
+  await db
+    .update(leads)
+    .set({ temperature: value, updatedAt: new Date() })
+    .where(and(eq(leads.id, leadId), eq(leads.orgId, org.id)));
+
+  revalidatePath("/pipeline");
+  revalidatePath("/contacts");
+}

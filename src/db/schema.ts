@@ -17,6 +17,13 @@ export const membershipRoleEnum = pgEnum("membership_role", [
   "member",
 ]);
 
+/** How warm the lead feels. Set by hand, never inferred. */
+export const leadTemperatureEnum = pgEnum("lead_temperature", [
+  "hot",
+  "warm",
+  "cold",
+]);
+
 export const leadStageEnum = pgEnum("lead_stage", [
   "new_lead",
   "contacted",
@@ -121,6 +128,7 @@ export const leads = pgTable("leads", {
   avatarUrl: text("avatar_url"),
   value: numeric("value", { precision: 12, scale: 2 }),
   stage: leadStageEnum("stage").notNull().default("new_lead"),
+  temperature: leadTemperatureEnum("temperature"),
   position: integer("position").notNull().default(0),
   ownerId: uuid("owner_id"),
   nextActionText: text("next_action_text"),
