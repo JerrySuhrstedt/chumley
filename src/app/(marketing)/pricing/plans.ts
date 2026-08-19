@@ -11,7 +11,7 @@ export const PRICE = {
   monthly: 19,
   /** Ten months for twelve. */
   yearly: 190,
-  trialDays: 30,
+  trialDays: 14,
 } as const;
 
 /** Everything, for everyone. There is no upgrade to sell. */
