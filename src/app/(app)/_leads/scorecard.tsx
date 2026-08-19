@@ -16,9 +16,9 @@ export function Scorecard({ leads }: { leads: Lead[] }) {
   ).length;
 
   const stats = [
-    { label: "Active Deals", value: activeDeals.toLocaleString() },
-    { label: "Closed Revenue", value: `$${closedRevenue.toLocaleString()}` },
-    { label: "Tasks Due Today", value: dueToday.toLocaleString() },
+    { label: "Deals working", value: activeDeals.toLocaleString() },
+    { label: "Money won", value: `$${closedRevenue.toLocaleString()}` },
+    { label: "Due today", value: dueToday.toLocaleString() },
   ];
 
   return (

@@ -149,10 +149,6 @@ export function LeadDetailDialog({
                     size="default"
                     onContact={handleContact}
                   />
-                  <p className="mt-2 text-xs text-slate-500">
-                    Reaching out opens the log below so you can record how it
-                    went.
-                  </p>
                 </section>
 
                 <section
@@ -160,7 +156,7 @@ export function LeadDetailDialog({
                   className="rounded-lg border border-slate-200 bg-white p-4"
                 >
                   <h3 className="mb-3 text-sm font-semibold text-slate-900">
-                    Log activity
+                    Add what happened
                   </h3>
                   <ActivityLogger leadId={lead.id} initialType={logType} />
                 </section>
@@ -207,7 +203,7 @@ export function LeadDetailDialog({
                       label="Value"
                       value={lead.value ? `$${lead.value}` : null}
                     />
-                    <InfoRow label="Stage" value={stageLabel} />
+                    <InfoRow label="Bucket" value={stageLabel} />
                   </dl>
                 </section>
 
@@ -220,7 +216,7 @@ export function LeadDetailDialog({
                   >
                     <Button type="submit" className="w-full">
                       <ArrowRightCircle className="size-4" />
-                      Add to pipeline
+                      Add to board
                     </Button>
                   </form>
                 ) : (
@@ -231,7 +227,7 @@ export function LeadDetailDialog({
                     }}
                   >
                     <Button type="submit" variant="outline" size="sm">
-                      Remove from pipeline
+                      Remove from board
                     </Button>
                   </form>
                 )}

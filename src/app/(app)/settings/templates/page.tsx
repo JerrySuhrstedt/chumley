@@ -37,7 +37,7 @@ export default async function TemplatesSettingsPage() {
         <CardContent className="flex flex-col gap-3">
           {allTemplates.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              No templates yet — add a couple of quick follow-ups.
+              No saved messages yet. Add a couple of follow-ups you send all the time.
             </p>
           )}
           {allTemplates.map((template) => (

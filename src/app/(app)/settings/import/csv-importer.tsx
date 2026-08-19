@@ -211,15 +211,15 @@ export function CsvImporter() {
       <div className="flex flex-col gap-4">
         <div className="rounded-lg border border-slate-200 bg-white p-4">
           <div className="mb-1 flex items-center justify-between">
-            <h2 className="font-semibold text-slate-900">Match your columns</h2>
+            <h2 className="font-semibold text-slate-900">Which column is which?</h2>
             <Button variant="ghost" size="sm" onClick={reset}>
               Choose a different file
             </Button>
           </div>
           <p className="text-sm text-slate-500">
             {fileName} · {rows.length.toLocaleString()} rows. We guessed where
-            each column goes — change anything we got wrong, and set columns you
-            don&apos;t need to &quot;Skip&quot;.
+            each column goes. Change anything we got wrong, and set columns you
+            do not need to &quot;Skip&quot;.
           </p>
         </div>
 
@@ -332,7 +332,7 @@ export function CsvImporter() {
               className="mt-0.5 size-4"
             />
             <span>
-              These are active leads — put them straight on the board
+              These are live deals. Put them straight on the board.
               <span className="block text-xs text-slate-500">
                 Off by default. Imported people land in Contacts, and you move
                 them onto the board when they show interest. Only tick this if
@@ -345,7 +345,7 @@ export function CsvImporter() {
         {!hasName && (
           <p className="flex items-center gap-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
             <TriangleAlert className="size-4 shrink-0" />
-            Map a column to Full name (or First name) before importing.
+            Tell us which column has the person's name before importing.
           </p>
         )}
 

@@ -100,7 +100,7 @@ export async function importLeads(
     );
   }
 
-  revalidatePath("/");
+  revalidatePath("/pipeline");
   revalidatePath("/contacts");
 
   return { inserted: toInsert.length, skippedDuplicate, error: null };

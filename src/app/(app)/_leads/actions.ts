@@ -62,7 +62,7 @@ export async function createLead(
     stage: (toNullable(formData.get("stage")) as LeadStage) ?? "new_lead",
   });
 
-  revalidatePath("/");
+  revalidatePath("/pipeline");
   return { error: null };
 }
 
@@ -91,7 +91,7 @@ export async function updateLead(
     })
     .where(and(eq(leads.id, id), eq(leads.orgId, org.id)));
 
-  revalidatePath("/");
+  revalidatePath("/pipeline");
   return { error: null };
 }
 
@@ -103,7 +103,7 @@ export async function updateLeadStage(id: string, stage: LeadStage) {
     .set({ stage, updatedAt: new Date() })
     .where(and(eq(leads.id, id), eq(leads.orgId, org.id)));
 
-  revalidatePath("/");
+  revalidatePath("/pipeline");
 }
 
 /**
@@ -144,7 +144,7 @@ export async function reorderStage(stage: LeadStage, orderedIds: string[]) {
     }
   });
 
-  revalidatePath("/");
+  revalidatePath("/pipeline");
   revalidatePath("/contacts");
 }
 
@@ -175,7 +175,7 @@ export async function addToPipeline(id: string) {
     createdBy: userId,
   });
 
-  revalidatePath("/");
+  revalidatePath("/pipeline");
   revalidatePath("/contacts");
 }
 
@@ -203,7 +203,7 @@ export async function removeFromPipeline(id: string) {
     createdBy: userId,
   });
 
-  revalidatePath("/");
+  revalidatePath("/pipeline");
   revalidatePath("/contacts");
 }
 
@@ -285,7 +285,7 @@ export async function deleteLead(id: string) {
     .delete(leads)
     .where(and(eq(leads.id, id), eq(leads.orgId, org.id)));
 
-  revalidatePath("/");
+  revalidatePath("/pipeline");
 }
 
 export type ActivityType = (typeof activityTypeEnum.enumValues)[number];
@@ -335,7 +335,7 @@ export async function logActivity(
     createdBy: userId,
   });
 
-  revalidatePath("/");
+  revalidatePath("/pipeline");
   revalidatePath("/contacts");
   return { error: null };
 }
@@ -353,7 +353,7 @@ export async function updateActivityNote(
     .set({ body })
     .where(and(eq(activities.id, activityId), eq(activities.orgId, org.id)));
 
-  revalidatePath("/");
+  revalidatePath("/pipeline");
   revalidatePath("/contacts");
   return { error: null };
 }
@@ -365,7 +365,7 @@ export async function deleteActivity(activityId: string) {
     .delete(activities)
     .where(and(eq(activities.id, activityId), eq(activities.orgId, org.id)));
 
-  revalidatePath("/");
+  revalidatePath("/pipeline");
   revalidatePath("/contacts");
 }
 
@@ -382,7 +382,7 @@ export async function addLeadNote(
   const { org } = await requireOrg();
 
   await db.insert(activities).values({ orgId: org.id, leadId, body });
-  revalidatePath("/");
+  revalidatePath("/pipeline");
   return { error: null };
 }
 
@@ -407,7 +407,7 @@ export async function setNextAction(
     })
     .where(and(eq(leads.id, leadId), eq(leads.orgId, org.id)));
 
-  revalidatePath("/");
+  revalidatePath("/pipeline");
   return { error: null };
 }
 
@@ -444,6 +444,6 @@ export async function completeNextAction(
     })
     .where(and(eq(leads.id, leadId), eq(leads.orgId, org.id)));
 
-  revalidatePath("/");
+  revalidatePath("/pipeline");
   return { error: null };
 }

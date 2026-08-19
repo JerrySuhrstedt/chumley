@@ -58,12 +58,13 @@ export default async function TeamSettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Webhook (Zapier, Make, website forms)</CardTitle>
+          <CardTitle>Send leads here automatically</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
           <p className="text-sm text-muted-foreground">
-            POST JSON (<code>name</code>, <code>email</code>, <code>phone</code>,{" "}
-            <code>company</code>, <code>value</code>) to this URL to create a lead.
+            Give this address to your website person, or paste it into Zapier
+            or Make. Anyone who fills out your contact form shows up on the
+            board on their own.
           </p>
           <div className="flex items-center gap-2">
             <code className="flex-1 truncate rounded bg-muted px-2 py-1.5 text-xs">
@@ -86,8 +87,8 @@ export default async function TeamSettingsPage() {
             >
               <div>
                 <p>{member.email ?? member.userId}</p>
-                <p className="text-xs capitalize text-muted-foreground">
-                  {member.role}
+                <p className="text-xs text-muted-foreground">
+                  {member.role === "owner" ? "Owner" : "Team member"}
                 </p>
               </div>
               {current.role === "owner" && member.userId !== current.userId && (

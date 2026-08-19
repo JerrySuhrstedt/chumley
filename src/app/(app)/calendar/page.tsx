@@ -127,7 +127,7 @@ export default async function CalendarPage({
                     {items.map((lead) => (
                       <div
                         key={lead.id}
-                        title={`${lead.name} — ${lead.nextActionText}`}
+                        title={`${lead.name}: ${lead.nextActionText}`}
                         className={cn(
                           "truncate rounded px-1.5 py-1 text-[11px] leading-tight",
                           key < today

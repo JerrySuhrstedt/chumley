@@ -73,9 +73,9 @@ export default async function DashboardPage() {
   ).length;
 
   const stats = [
-    { label: "Active deals", value: open.length.toLocaleString() },
-    { label: "Open pipeline", value: money(openValue) },
-    { label: "Closed revenue", value: money(closedValue) },
+    { label: "Deals working", value: open.length.toLocaleString() },
+    { label: "Money in play", value: money(openValue) },
+    { label: "Money won", value: money(closedValue) },
     { label: "Due today", value: dueLeads.length.toLocaleString() },
   ];
 
@@ -152,7 +152,7 @@ export default async function DashboardPage() {
                 href="/pipeline"
                 className="flex items-center gap-1 text-sm font-medium text-[var(--board-bg)] hover:underline"
               >
-                Open board <ArrowRight className="size-3.5" />
+                Open the board <ArrowRight className="size-3.5" />
               </Link>
             </div>
 

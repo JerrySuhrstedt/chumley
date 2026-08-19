@@ -22,7 +22,7 @@ export function QuickAddLeadDialog({
   variant = "button",
 }: {
   stage?: LeadStage;
-  variant?: "button" | "inline";
+  variant?: "button" | "inline" | "hero";
 }) {
   const [open, setOpen] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
@@ -45,7 +45,18 @@ export function QuickAddLeadDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {variant === "inline" ? (
+      {variant === "hero" ? (
+        <DialogTrigger
+          className={buttonVariants({
+            size: "lg",
+            className:
+              "h-12 bg-[var(--brand)] px-7 text-base hover:bg-[var(--brand-dark)]",
+          })}
+        >
+          <Plus className="size-5" />
+          Add a deal
+        </DialogTrigger>
+      ) : variant === "inline" ? (
         <DialogTrigger className="flex w-full items-center gap-1.5 rounded-lg px-2 py-2 text-left text-sm text-[var(--board-ink-muted)] transition-colors hover:bg-[var(--board-column-hover)] hover:text-[var(--board-ink)]">
           <Plus className="size-4" />
           Add a lead

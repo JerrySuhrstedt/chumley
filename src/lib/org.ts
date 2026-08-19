@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { memberships, organizations } from "@/db/schema";
+import { memberships, organizations, templates } from "@/db/schema";
 import { createClient } from "@/lib/supabase/server";
 
 export async function getCurrentUser() {
@@ -46,6 +46,24 @@ export async function getCurrentOrg() {
   };
 }
 
+/**
+ * Starter messages. The tap-to-text and tap-to-email buttons pre-fill from
+ * these, and a brand new team has none, so the feature looks broken until
+ * somebody stumbles into Settings. Seeding two means it works on day one.
+ */
+const STARTER_TEMPLATES = [
+  {
+    channel: "sms" as const,
+    name: "Quick follow up",
+    body: "Hi {{name}}, following up on our conversation. Anything I can answer for you?",
+  },
+  {
+    channel: "email" as const,
+    name: "Nice talking today",
+    body: "Hi {{name}},\n\nGood talking with you today. I will get that information over shortly.\n\nThanks",
+  },
+];
+
 export async function createOrgForUser(userId: string, name: string) {
   const [org] = await db.insert(organizations).values({ name }).returning();
 
@@ -54,6 +72,10 @@ export async function createOrgForUser(userId: string, name: string) {
     userId,
     role: "owner",
   });
+
+  await db
+    .insert(templates)
+    .values(STARTER_TEMPLATES.map((t) => ({ ...t, orgId: org.id })));
 
   return org;
 }

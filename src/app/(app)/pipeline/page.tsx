@@ -2,6 +2,7 @@ import { and, eq, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { leads, templates } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
+import { EmptyBoard } from "../_leads/empty-board";
 import { LeadsBoard } from "../_leads/leads-board";
 import { QuickAddLeadDialog } from "../_leads/quick-add-lead-dialog";
 import { Scorecard } from "../_leads/scorecard";
@@ -21,6 +22,16 @@ export default async function PipelinePage() {
     }),
     db.select().from(templates).where(eq(templates.orgId, current.org.id)),
   ]);
+
+  // An empty five-column board explains nothing to somebody who just
+  // signed up, so the first run gets an instruction instead.
+  if (allLeads.length === 0) {
+    return (
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <EmptyBoard />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">

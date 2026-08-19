@@ -11,6 +11,20 @@ function toNullable(value: unknown) {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+/**
+ * Zapier, Make and most form builders post a deal value as a JSON number,
+ * not a string, so accept both rather than silently dropping it.
+ */
+function toAmount(value: unknown) {
+  const n =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && value.trim()
+        ? Number(value.replace(/[$,\s]/g, ""))
+        : NaN;
+  return Number.isFinite(n) ? String(n) : null;
+}
+
 export async function POST(
   request: Request,
   { params }: RouteContext<"/api/webhooks/leads/[orgToken]">
@@ -45,7 +59,7 @@ export async function POST(
       email: toNullable(body.email),
       phone: normalizePhone(toNullable(body.phone)),
       companyName: toNullable(body.company),
-      value: toNullable(body.value),
+      value: toAmount(body.value),
     })
     .returning({ id: leads.id });
 
@@ -60,7 +74,7 @@ export async function POST(
       : "Inbound form submission",
   });
 
-  revalidatePath("/");
+  revalidatePath("/pipeline");
 
   return NextResponse.json({ id: lead.id }, { status: 201 });
 }

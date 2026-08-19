@@ -54,7 +54,7 @@ export function NextActionSection({ lead }: { lead: Lead }) {
           className="border-transparent bg-white text-[#172b4d] hover:bg-white/90 hover:text-[#172b4d]"
           onClick={() => setEditing(true)}
         >
-          {lead.nextActionText ? "Mark done" : "Set next action"}
+          {lead.nextActionText ? "Mark done" : "Set what's next"}
         </Button>
       </div>
     );
@@ -68,7 +68,7 @@ export function NextActionSection({ lead }: { lead: Lead }) {
         </p>
       )}
       <div className="flex flex-col gap-2">
-        <Label htmlFor="nextActionText">Next action</Label>
+        <Label htmlFor="nextActionText">What&apos;s next</Label>
         <Input
           id="nextActionText"
           name="nextActionText"

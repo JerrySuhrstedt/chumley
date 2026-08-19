@@ -64,7 +64,7 @@ export default async function ContactsPage({
           <div>
             <h1 className="text-xl font-semibold text-slate-900">Contacts</h1>
             <p className="text-sm text-slate-500">
-              Everyone in your pipeline, in one list.
+              Everyone you know. Move someone to the board when they show interest.
             </p>
           </div>
           <form className="relative w-full sm:w-72">
