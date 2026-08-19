@@ -10,6 +10,7 @@ import { LeadAvatar } from "../_leads/lead-avatar";
 import { LeadDetailDialog } from "../_leads/lead-detail-dialog";
 import { ALL_STAGES, CONTACT_STAGE } from "../_leads/stages";
 import { TapToContact } from "../_leads/tap-to-contact";
+import { lastTouched, type SortKey } from "./sort";
 
 type LeadWithActivities = Lead & { activities: Activity[] };
 
@@ -18,10 +19,12 @@ export function ContactsList({
   templates,
   query,
   openId,
+  sortKey = "last",
 }: {
   leads: LeadWithActivities[];
   templates: Template[];
   query: string;
+  sortKey?: SortKey;
   /** Set by header search, so a result opens its record on arrival. */
   openId?: string;
 }) {
@@ -62,6 +65,18 @@ export function ContactsList({
                   .filter(Boolean)
                   .join(" · ") || "No contact details yet";
 
+              const touched = lastTouched(lead);
+              const dateNote =
+                sortKey === "newest"
+                  ? `Added ${new Date(lead.createdAt).toLocaleDateString()}`
+                  : sortKey === "changed"
+                    ? `Changed ${new Date(lead.updatedAt).toLocaleDateString()}`
+                  : sortKey === "recent" || sortKey === "cold"
+                    ? touched
+                      ? `Last talked ${new Date(touched).toLocaleDateString()}`
+                      : "Never talked to"
+                    : null;
+
               return (
                 <li
                   key={lead.id}
@@ -84,6 +99,12 @@ export function ContactsList({
                         )}
                       </span>
                       <span className="mt-0.5 block truncate text-sm text-slate-500">
+                        {dateNote && (
+                          <span className="text-slate-400">
+                            {dateNote}
+                            {" · "}
+                          </span>
+                        )}
                         {details}
                       </span>
                       {lead.nextActionText && (

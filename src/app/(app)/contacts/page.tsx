@@ -7,6 +7,8 @@ import { getCurrentOrg } from "@/lib/org";
 import { QuickAddLeadDialog } from "../_leads/quick-add-lead-dialog";
 import { resolveStageLabels } from "../_leads/stages";
 import { ContactsList } from "./contacts-list";
+import { SortSelect } from "./sort-select";
+import { isSortKey, sortContacts } from "./sort";
 
 export default async function ContactsPage({
   searchParams,
@@ -14,7 +16,8 @@ export default async function ContactsPage({
   const current = await getCurrentOrg();
   if (!current) return null;
 
-  const { q, view, open } = await searchParams;
+  const { q, view, open, sort } = await searchParams;
+  const sortKey = isSortKey(sort) ? sort : "last";
   const query = typeof q === "string" ? q.trim() : "";
   const filter = view === "pipeline" || view === "contacts" ? view : "all";
 
@@ -38,7 +41,6 @@ export default async function ContactsPage({
     db.query.leads.findMany({
       where: and(eq(leads.orgId, current.org.id), search, stageFilter),
       with: { activities: true },
-      orderBy: (l, { asc }) => [asc(l.name)],
     }),
     db
       .select({ stage: leads.stage, count: count() })
@@ -47,6 +49,10 @@ export default async function ContactsPage({
       .groupBy(leads.stage),
     db.select().from(templates).where(eq(templates.orgId, current.org.id)),
   ]);
+
+  // Sorted here rather than in SQL because "not talked to longest" depends
+  // on each row's activity history, which is already loaded.
+  const sortedRows = sortContacts(rows, sortKey);
 
   const total = counts.reduce((sum, row) => sum + Number(row.count), 0);
   const offPipeline = Number(
@@ -74,6 +80,9 @@ export default async function ContactsPage({
             {filter !== "all" && (
               <input type="hidden" name="view" value={filter} />
             )}
+            {sortKey !== "last" && (
+              <input type="hidden" name="sort" value={sortKey} />
+            )}
             <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-slate-400" />
             <input
               name="q"
@@ -82,6 +91,7 @@ export default async function ContactsPage({
               className="h-10 w-full rounded-md border border-slate-300 bg-white pr-3 pl-8 text-sm outline-none focus:border-[var(--board-bg)] focus:ring-3 focus:ring-[var(--board-bg)]/20"
             />
           </form>
+          <SortSelect value={sortKey} />
           {/* Lands off the board, since a contact has not shown interest yet. */}
           <QuickAddLeadDialog
             stage="contact"
@@ -96,6 +106,7 @@ export default async function ContactsPage({
             const params = new URLSearchParams();
             if (tab.key !== "all") params.set("view", tab.key);
             if (query) params.set("q", query);
+            if (sortKey !== "last") params.set("sort", sortKey);
             const href = params.toString()
               ? `/contacts?${params}`
               : "/contacts";
@@ -117,7 +128,8 @@ export default async function ContactsPage({
         </div>
 
         <ContactsList
-          leads={rows}
+          leads={sortedRows}
+          sortKey={sortKey}
           templates={allTemplates}
           query={query}
           openId={typeof open === "string" ? open : undefined}
