@@ -34,7 +34,7 @@ export default async function TeamSettingsPage() {
   const webhookUrl = `${origin}/api/webhooks/leads/${current.org.webhookToken}`;
 
   return (
-    <div className="flex-1 overflow-y-auto bg-muted/30 p-4 md:p-6">
+    <div className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
       <div className="mx-auto flex max-w-lg flex-col gap-6">
       <Link
         href="/settings"

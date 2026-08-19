@@ -22,7 +22,6 @@ const NAV = [
   { href: "/pipeline", label: "Pipeline", icon: KanbanSquare },
   { href: "/contacts", label: "Contacts", icon: Contact },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
-  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 const STORAGE_KEY = "ssc:nav-collapsed";
@@ -114,10 +113,12 @@ export function AppSidebar({ email }: { email: string | null }) {
         )}
       </button>
 
+      {/* Who you are, then Settings underneath. Settings is occasional
+          housekeeping, so it sits away from the work you do every day. */}
       <div className="mt-2 border-t border-white/10 p-2">
         <div
           className={cn(
-            "flex items-center gap-2",
+            "flex items-center gap-2 pb-1",
             collapsed ? "flex-col" : "px-1"
           )}
         >
@@ -145,6 +146,21 @@ export function AppSidebar({ email }: { email: string | null }) {
             </button>
           </form>
         </div>
+
+        <Link
+          href="/settings"
+          title="Settings"
+          className={cn(
+            "flex items-center gap-3 rounded-md py-2 text-sm transition-colors",
+            collapsed ? "justify-center px-0" : "px-3",
+            pathname.startsWith("/settings")
+              ? "bg-[var(--nav-active)] text-white"
+              : "text-[var(--nav-ink)] hover:bg-[var(--nav-hover)] hover:text-white"
+          )}
+        >
+          <Settings className="size-5 shrink-0" />
+          {!collapsed && <span>Settings</span>}
+        </Link>
       </div>
     </aside>
   );
