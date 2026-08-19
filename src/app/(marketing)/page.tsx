@@ -91,6 +91,11 @@ export default function HomePage() {
               Sell1 is stupid simple... on purpose.
             </p>
 
+            <p className="mt-3 max-w-[52ch] text-[1.35rem] leading-snug font-semibold text-[var(--ink)] sm:text-2xl">
+              From zero to organized sales leads in zero time. Nothing to set
+              up, nothing to learn.
+            </p>
+
             <p className="mt-3 max-w-[52ch] text-[1.35rem] leading-relaxed text-[var(--ink-soft)] sm:text-2xl">
               Add a name and a phone number, drag a card when the deal moves,
               and you are done. No setup, no training, no manual. If you can
