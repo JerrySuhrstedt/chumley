@@ -8,6 +8,7 @@ import {
 } from "@dnd-kit/sortable";
 import type { Lead, Template } from "@/db/schema";
 import type { LeadStage } from "./actions";
+import { BucketHint } from "./bucket-hint";
 import { BucketName } from "./bucket-name";
 import { LeadCard } from "./lead-card";
 import { QuickAddLeadDialog } from "./quick-add-lead-dialog";
@@ -71,7 +72,17 @@ export function LeadColumn({
       <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-2">
         <h2 className="flex min-w-0 flex-1 items-center gap-1.5">
           <BucketName stage={stage} label={label} />
-          {/* Tied to the stage, not the label, so it survives a rename. */}
+
+          {/* Tied to the stage, not the label, so both survive a rename. */}
+          {stage === "new_lead" && (
+            <BucketHint title="How someone gets here">
+              Everyone you know sits in Contacts. When one of them shows real
+              interest, a reply, a question about price, a booked meeting,
+              they earn a spot on the board. That is when they become a lead
+              and you start working the deal.
+            </BucketHint>
+          )}
+
           {stage === "won" && (
             <PartyPopper
               className="size-[1.6rem] shrink-0 text-[#0ca30c]"
