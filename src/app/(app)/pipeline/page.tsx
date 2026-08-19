@@ -12,6 +12,8 @@ export default async function PipelinePage() {
   const current = await getCurrentOrg();
   if (!current) return null;
 
+  const stageLabels = resolveStageLabels(current.org.stageLabels);
+
   const [allLeads, allTemplates] = await Promise.all([
     // The board is the pipeline only — contacts live on the Contacts page
     // until they show interest.
@@ -38,14 +40,14 @@ export default async function PipelinePage() {
       <div className="flex flex-col gap-3 px-4 pt-4 md:flex-row md:items-center md:justify-between md:px-6">
         <Scorecard leads={allLeads} />
         <div className="md:shrink-0">
-          <QuickAddLeadDialog />
+          <QuickAddLeadDialog stageLabels={stageLabels} />
         </div>
       </div>
 
       <LeadsBoard
         leads={allLeads}
         templates={allTemplates}
-        stageLabels={resolveStageLabels(current.org.stageLabels)}
+        stageLabels={stageLabels}
       />
     </div>
   );

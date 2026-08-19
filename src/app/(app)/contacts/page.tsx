@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { leads, templates } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
 import { QuickAddLeadDialog } from "../_leads/quick-add-lead-dialog";
+import { resolveStageLabels } from "../_leads/stages";
 import { ContactsList } from "./contacts-list";
 
 export default async function ContactsPage({
@@ -82,7 +83,11 @@ export default async function ContactsPage({
             />
           </form>
           {/* Lands off the board, since a contact has not shown interest yet. */}
-          <QuickAddLeadDialog stage="contact" variant="contact" />
+          <QuickAddLeadDialog
+            stage="contact"
+            variant="contact"
+            stageLabels={resolveStageLabels(current.org.stageLabels)}
+          />
           </div>
         </div>
 

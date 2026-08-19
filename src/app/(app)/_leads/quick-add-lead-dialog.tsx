@@ -15,16 +15,22 @@ import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/phone-input";
 import { createLead } from "./actions";
 import type { LeadStage } from "./actions";
-import { STAGES } from "./stages";
+import { ALL_STAGES, STAGE_COLOR } from "./stages";
+import type { StageLabels } from "./stages";
 
 export function QuickAddLeadDialog({
   stage = "new_lead",
   variant = "button",
+  stageLabels,
 }: {
   stage?: LeadStage;
   variant?: "button" | "inline" | "hero" | "contact";
+  stageLabels?: StageLabels;
 }) {
   const [open, setOpen] = useState(false);
+  // Where the person lands. Preset from wherever the dialog was opened,
+  // and changeable before saving.
+  const [destination, setDestination] = useState<LeadStage>(stage);
   const [showDetails, setShowDetails] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction, pending] = useActionState(createLead, {
@@ -36,12 +42,17 @@ export function QuickAddLeadDialog({
       formRef.current?.reset();
       // eslint-disable-next-line react-hooks/set-state-in-effect -- close the dialog once the create action succeeds
       setShowDetails(false);
+      setDestination(stage);
       setOpen(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, pending]);
 
-  const stageLabel = STAGES.find((s) => s.value === stage)?.label ?? "";
+  const label = (value: LeadStage) =>
+    stageLabels?.[value] ?? ALL_STAGES.find((s) => s.value === value)?.label ?? value;
+
+  // The column's own add button already says which bucket it is.
+  const showPicker = variant !== "inline";
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -84,13 +95,47 @@ export function QuickAddLeadDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {stage === "contact"
-              ? "New contact"
-              : `New lead${stageLabel ? ` in ${stageLabel}` : ""}`}
+            {showPicker
+              ? "Add someone"
+              : `New lead in ${label(stage)}`}
           </DialogTitle>
         </DialogHeader>
         <form ref={formRef} action={formAction} className="flex flex-col gap-4">
-          <input type="hidden" name="stage" value={stage} />
+          <input type="hidden" name="stage" value={destination} />
+
+          {showPicker && (
+            <div className="flex flex-col gap-2">
+              <Label>Where does this go?</Label>
+              <div className="flex flex-wrap gap-2">
+                {ALL_STAGES.map((s) => {
+                  const active = destination === s.value;
+                  const color = STAGE_COLOR[s.value];
+                  return (
+                    <button
+                      key={s.value}
+                      type="button"
+                      onClick={() => setDestination(s.value)}
+                      style={
+                        active
+                          ? { backgroundColor: color, borderColor: color }
+                          : { borderColor: color, color }
+                      }
+                      className={`rounded-full border-2 px-3 py-1.5 text-sm font-semibold transition-colors ${
+                        active ? "text-white" : "bg-white hover:bg-slate-50"
+                      }`}
+                    >
+                      {label(s.value)}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-slate-500">
+                {destination === "contact"
+                  ? "Contacts stay off the board until they show interest."
+                  : "This puts them straight on the board."}
+              </p>
+            </div>
+          )}
           <div className="flex flex-col gap-2">
             <Label htmlFor="name">Name</Label>
             <Input id="name" name="name" required autoFocus />

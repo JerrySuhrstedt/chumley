@@ -107,3 +107,17 @@ export function nextActionStatus(lead: {
     color: "var(--label-upcoming)",
   };
 }
+
+/**
+ * Colours for the "where does this go" picker. Taken from the validated
+ * funnel palette so the same stage reads the same everywhere, with the
+ * two outcomes in their usual green and red.
+ */
+export const STAGE_COLOR: Record<string, string> = {
+  contact: "#64748b",
+  new_lead: "#2a78d6",
+  contacted: "#eb6834",
+  proposal_sent: "#4a3aa7",
+  won: "#1baf7a",
+  lost: "#d94436",
+};
