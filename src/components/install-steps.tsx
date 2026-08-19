@@ -1,43 +1,27 @@
 "use client";
 
+import { Share } from "lucide-react";
 import type { IosBrowser } from "@/components/use-install";
 
 /**
  * How to add Sell1 to the home screen on an iPhone.
  *
- * Every iOS browser is WebKit underneath and none of them agree on where
- * this lives. Chrome and Edge put it behind a menu at the bottom right,
- * Safari beside the address bar or under Share, Firefox behind its own
- * menu. Pointing at a control that is not on the reader's screen makes a
- * working feature look broken, which is exactly what happened here, so
- * each one is named separately rather than approximated.
+ * Every iOS browser ends in the same place, the system share sheet, with
+ * "Add to Home Screen" some way down it. The only thing that differs is
+ * where the Share button lives, so that is the only thing worth varying.
+ * Earlier versions of this pointed at browser menus instead and sent
+ * people hunting for controls that were not on their screen.
+ *
+ * The share glyph is drawn inline rather than described, because "the
+ * square with an arrow coming out of it" is a lot of words for something
+ * a reader can simply be shown.
  */
-const STEPS: Record<IosBrowser, string[][]> = {
-  chrome: [
-    ["Tap the", "•••", "button at the bottom right of Chrome."],
-    ["Choose", "Add to Home Screen", "from the menu."],
-    ["Tap", "Add", "."],
-  ],
-  edge: [
-    ["Tap the", "•••", "button at the bottom of Edge."],
-    ["Choose", "Add to Phone", "or", "Add to Home Screen", "."],
-    ["Tap", "Add", "."],
-  ],
-  firefox: [
-    ["Tap the", "•••", "menu in Firefox."],
-    ["Choose", "Share", ", then", "Add to Home Screen", "."],
-    ["Tap", "Add", "."],
-  ],
-  safari: [
-    ["Tap the", "share", "button. It is the square with an arrow, either beside the address bar or at the bottom."],
-    ["Scroll down and choose", "Add to Home Screen", "."],
-    ["Tap", "Add", "."],
-  ],
-  other: [
-    ["Open your browser's", "menu", "."],
-    ["Look for", "Add to Home Screen", ", sometimes under Share."],
-    ["Tap", "Add", "."],
-  ],
+const WHERE: Record<IosBrowser, string> = {
+  chrome: "at the right-hand end of the address bar, up at the top",
+  edge: "in the toolbar at the bottom",
+  firefox: "in the menu, under the three dots",
+  safari: "in the toolbar at the bottom, or beside the address bar",
+  other: "in your browser's toolbar or menu",
 };
 
 export function IosSteps({
@@ -49,24 +33,23 @@ export function IosSteps({
 }) {
   const muted = tone === "dark" ? "text-white/75" : "text-slate-500";
   const strong = tone === "dark" ? "text-white" : "text-slate-900";
+  const bold = `font-semibold ${strong}`;
 
   return (
-    <ol className={`mt-1.5 flex flex-col gap-1 text-xs leading-relaxed ${muted}`}>
-      {STEPS[browser].map((parts, i) => (
-        <li key={i}>
-          {i + 1}.{" "}
-          {parts.map((part, j) =>
-            // Odd positions are the thing to tap, so they carry the weight.
-            j % 2 === 1 ? (
-              <strong key={j} className={`font-semibold ${strong}`}>
-                {part}
-              </strong>
-            ) : (
-              <span key={j}>{part}</span>
-            )
-          )}
-        </li>
-      ))}
+    <ol className={`mt-1.5 flex flex-col gap-1.5 text-xs leading-relaxed ${muted}`}>
+      <li>
+        1. Tap the <strong className={bold}>Share</strong> button
+        <Share className={`mx-1 inline size-3.5 shrink-0 ${strong}`} />
+        {WHERE[browser]}.
+      </li>
+      <li>
+        2. <strong className={bold}>Scroll down</strong> the list that opens.
+        It is a long way down, past Copy, Bookmarks and Print.
+      </li>
+      <li>
+        3. Tap <strong className={bold}>Add to Home Screen</strong>, then{" "}
+        <strong className={bold}>Add</strong>.
+      </li>
     </ol>
   );
 }
