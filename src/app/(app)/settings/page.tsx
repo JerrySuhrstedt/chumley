@@ -61,6 +61,10 @@ export default async function SettingsPage() {
         <h1 className="text-xl font-semibold text-slate-900">Settings</h1>
         <p className="mb-4 text-sm text-slate-500">{current.org.name}</p>
 
+        <div className="mb-4">
+          <InstallCard />
+        </div>
+
         <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
           <ul className="divide-y divide-slate-100">
             {SECTIONS.map((section) => (
@@ -85,10 +89,6 @@ export default async function SettingsPage() {
               </li>
             ))}
           </ul>
-        </div>
-
-        <div className="mt-4">
-          <InstallCard />
         </div>
       </div>
     </div>

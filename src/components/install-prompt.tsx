@@ -7,6 +7,15 @@ import { IosSteps } from "@/components/install-steps";
 import { runInstall, useInstall } from "@/components/use-install";
 
 const DISMISSED = "sell1:install-dismissed";
+/**
+ * How long "not now" lasts.
+ *
+ * It used to be forever, which turned one stray tap into a feature the
+ * person could never find again. Two weeks is long enough that it is not
+ * nagging and short enough that it is not a dead end. Settings carries the
+ * same offer permanently for anyone who wants it sooner.
+ */
+const QUIET_DAYS = 14;
 
 /**
  * Offers to put Sell1 on the home screen, once.
@@ -24,11 +33,13 @@ export function InstallPrompt() {
   const [dismissed, setDismissed] = useState(true);
 
   useEffect(() => {
-    setDismissed(Boolean(localStorage.getItem(DISMISSED)));
+    const until = Number(localStorage.getItem(DISMISSED) ?? 0);
+    setDismissed(Number.isFinite(until) && until > Date.now());
   }, []);
 
   function dismiss() {
-    localStorage.setItem(DISMISSED, "1");
+    const until = Date.now() + QUIET_DAYS * 24 * 60 * 60 * 1000;
+    localStorage.setItem(DISMISSED, String(until));
     setDismissed(true);
   }
 

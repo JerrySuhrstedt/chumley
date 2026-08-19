@@ -37,7 +37,7 @@ export function InstallCard() {
             <>
               <p className="mt-0.5 text-sm text-slate-500">
                 Opens like a normal app, with no browser bar taking up the
-                screen. Works offline for reading your board.
+                screen, and sits with your other apps.
               </p>
 
               {event && (
