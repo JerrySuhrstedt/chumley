@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Topbar } from "@/components/topbar";
 import { getCurrentOrg } from "@/lib/org";
+import { getOnboardingState } from "@/lib/onboarding";
+import { OnboardingChecklist } from "./_onboarding/checklist";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const current = await getCurrentOrg();
@@ -9,6 +11,15 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   if (!current) {
     redirect("/onboarding");
   }
+
+  const onboarding = await getOnboardingState(
+    current.org.id,
+    current.displayName
+  );
+
+  // Pre-fill from whatever the sign-in provider already told us, so most
+  // people confirm a name rather than type one.
+  const [firstName = "", ...rest] = (current.displayName ?? "").split(" ");
 
   return (
     // The chrome is one continuous colour: the sidebar and top bar sit on it
@@ -27,6 +38,12 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           {children}
         </main>
       </div>
+
+      <OnboardingChecklist
+        state={onboarding}
+        firstName={firstName}
+        lastName={rest.join(" ")}
+      />
     </div>
   );
 }

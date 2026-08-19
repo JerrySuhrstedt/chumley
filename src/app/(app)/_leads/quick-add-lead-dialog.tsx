@@ -22,10 +22,13 @@ export function QuickAddLeadDialog({
   stage = "new_lead",
   variant = "button",
   stageLabels,
+  highlight = false,
 }: {
   stage?: LeadStage;
   variant?: "button" | "inline" | "hero" | "contact";
   stageLabels?: StageLabels;
+  /** Draws the eye while a board still has no real deals on it. */
+  highlight?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   // Where the person lands. Preset from wherever the dialog was opened,
@@ -85,7 +88,14 @@ export function QuickAddLeadDialog({
         <DialogTrigger
           className={buttonVariants({
             size: "lg",
-            className: "h-11 w-full text-base md:h-9 md:w-auto md:text-sm",
+            className: `h-11 w-full text-base md:h-9 md:w-auto md:text-sm ${
+              // A ring on the real control rather than a pop-up over it.
+              // It points at the thing itself and disappears the moment the
+              // first deal exists, so it can never become furniture.
+              highlight
+                ? "ring-4 ring-white/70 animate-pulse motion-reduce:animate-none"
+                : ""
+            }`,
           })}
         >
           <Plus className="size-5 md:size-4" />

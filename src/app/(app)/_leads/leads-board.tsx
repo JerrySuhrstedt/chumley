@@ -262,7 +262,10 @@ export function LeadsBoard({
           </div>
 
           <div className="md:ml-auto md:shrink-0">
-            <QuickAddLeadDialog stageLabels={stageLabels} />
+            <QuickAddLeadDialog
+              stageLabels={stageLabels}
+              highlight={!localLeads.some((l) => !l.isSample)}
+            />
           </div>
         </div>
 
