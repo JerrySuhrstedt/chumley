@@ -19,7 +19,17 @@ import { arrayMove } from "@dnd-kit/sortable";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Activity, Lead, Template } from "@/db/schema";
-import { type ActivityType, type LeadStage, reorderStage } from "./actions";
+import {
+  type ActivityType,
+  type LeadStage,
+  type LeadTemperature,
+  reorderStage,
+} from "./actions";
+import {
+  BoardFilters,
+  matchesFilters,
+  type DueFilter,
+} from "./board-filters";
 import { LeadCardView } from "./lead-card";
 import { LeadColumn } from "./lead-column";
 import { LeadDetailDialog } from "./lead-detail-dialog";
@@ -54,6 +64,8 @@ export function LeadsBoard({
   const [mobileStage, setMobileStage] = useState<LeadStage>("new_lead");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [logType, setLogType] = useState<ActivityType>("note");
+  const [temp, setTemp] = useState<LeadTemperature | null>(null);
+  const [due, setDue] = useState<DueFilter | null>(null);
   const dragStartStage = useRef<LeadStage | null>(null);
   const [, startTransition] = useTransition();
 
@@ -68,13 +80,14 @@ export function LeadsBoard({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return localLeads;
-    return localLeads.filter((lead) =>
-      [lead.name, lead.companyName, lead.phone]
+    return localLeads.filter((lead) => {
+      if (!matchesFilters(lead, temp, due)) return false;
+      if (!q) return true;
+      return [lead.name, lead.companyName, lead.phone]
         .filter(Boolean)
-        .some((field) => field!.toLowerCase().includes(q))
-    );
-  }, [localLeads, query]);
+        .some((field) => field!.toLowerCase().includes(q));
+    });
+  }, [localLeads, query, temp, due]);
 
   /** A drop target is either a column (stage id) or another card (lead id). */
   function stageOf(id: string, source: Lead[]): LeadStage | null {
@@ -204,6 +217,15 @@ export function LeadsBoard({
             className="h-10 w-full rounded-lg border-0 bg-white pr-3 pl-8 text-sm text-[var(--board-ink)] shadow-sm outline-none placeholder:text-[var(--board-ink-muted)] focus:ring-2 focus:ring-white/80 md:h-9"
           />
         </div>
+
+        <BoardFilters
+          temp={temp}
+          due={due}
+          onTemp={setTemp}
+          onDue={setDue}
+          showing={filtered.length}
+          total={localLeads.length}
+        />
 
         <div className="flex gap-1.5 overflow-x-auto md:hidden">
           {STAGES.map((stage) => (

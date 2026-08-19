@@ -8,6 +8,7 @@ import type { Lead, Template } from "@/db/schema";
 import { LeadAvatar } from "./lead-avatar";
 import { TapToContact } from "./tap-to-contact";
 import { nextActionStatus, nextStage, STAGES } from "./stages";
+import { temperature } from "./temperature";
 import type { LeadStage } from "./actions";
 
 /**
@@ -36,6 +37,8 @@ export function LeadCardView({
   const upcomingLabel = upcoming
     ? STAGES.find((s) => s.value === upcoming)?.label
     : null;
+
+  const temp = temperature(lead.temperature);
 
   const meta = [lead.companyName, lead.value ? `$${lead.value}` : null]
     .filter(Boolean)
@@ -81,12 +84,27 @@ export function LeadCardView({
       </div>
 
       <div className="flex flex-col gap-1 px-3 pb-2.5">
-        <TapToContact
-          lead={lead}
-          templates={templates}
-          stopPropagation
-          onContact={onContact}
-        />
+        <div className="flex items-center justify-between gap-2">
+          <TapToContact
+            lead={lead}
+            templates={templates}
+            stopPropagation
+            onContact={onContact}
+          />
+
+          {/* Scannable across the whole board, which is the point of
+              rating a lead in the first place. */}
+          {temp && (
+            <span
+              title={temp.label}
+              aria-label={temp.label}
+              className="flex size-7 shrink-0 items-center justify-center rounded-md"
+              style={{ backgroundColor: temp.bg }}
+            >
+              <temp.icon className="size-4 text-white" strokeWidth={2.4} />
+            </span>
+          )}
+        </div>
 
         {upcoming && upcomingLabel && onMoveNext && (
           <button
