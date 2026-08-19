@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Check, Copy, Mail, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { Lead, Template } from "@/db/schema";
 import { telDigits } from "@/lib/phone";
+import { logSentMessage } from "./actions";
 
 function fill(text: string, lead: Lead) {
   return text.replaceAll("{{name}}", lead.name.split(" ")[0] || lead.name);
@@ -54,6 +55,7 @@ export function ComposeSheet({
   const [body, setBody] = useState("");
   const [copied, setCopied] = useState(false);
   const [canOpenSms, setCanOpenSms] = useState(true);
+  const [, startLogging] = useTransition();
 
   // Reset each time it opens so the last lead's message never leaks over.
   useEffect(() => {
@@ -85,9 +87,17 @@ export function ComposeSheet({
 
   const segments = Math.max(1, Math.ceil(body.length / SMS_SEGMENT));
 
+  function record() {
+    if (!body.trim()) return;
+    startLogging(async () => {
+      await logSentMessage(lead.id, channel, body);
+    });
+  }
+
   async function copy() {
     await navigator.clipboard.writeText(body);
     setCopied(true);
+    record();
     setTimeout(() => setCopied(false), 2000);
   }
 
@@ -176,6 +186,7 @@ export function ComposeSheet({
                   <a
                     href={href}
                     onClick={() => {
+                      record();
                       onSend?.();
                       onOpenChange(false);
                     }}

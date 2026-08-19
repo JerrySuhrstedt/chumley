@@ -22,7 +22,7 @@ export function QuickAddLeadDialog({
   variant = "button",
 }: {
   stage?: LeadStage;
-  variant?: "button" | "inline" | "hero";
+  variant?: "button" | "inline" | "hero" | "contact";
 }) {
   const [open, setOpen] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
@@ -45,7 +45,16 @@ export function QuickAddLeadDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {variant === "hero" ? (
+      {variant === "contact" ? (
+        <DialogTrigger
+          className={buttonVariants({
+            className: "h-10 shrink-0 whitespace-nowrap",
+          })}
+        >
+          <Plus className="size-4" />
+          Add a contact
+        </DialogTrigger>
+      ) : variant === "hero" ? (
         <DialogTrigger
           className={buttonVariants({
             size: "lg",
@@ -74,7 +83,11 @@ export function QuickAddLeadDialog({
       )}
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>New lead {stageLabel && `in ${stageLabel}`}</DialogTitle>
+          <DialogTitle>
+            {stage === "contact"
+              ? "New contact"
+              : `New lead${stageLabel ? ` in ${stageLabel}` : ""}`}
+          </DialogTitle>
         </DialogHeader>
         <form ref={formRef} action={formAction} className="flex flex-col gap-4">
           <input type="hidden" name="stage" value={stage} />

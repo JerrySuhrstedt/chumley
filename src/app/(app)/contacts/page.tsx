@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import { db } from "@/db";
 import { leads, templates } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
+import { QuickAddLeadDialog } from "../_leads/quick-add-lead-dialog";
 import { ContactsList } from "./contacts-list";
 
 export default async function ContactsPage({
@@ -67,6 +68,7 @@ export default async function ContactsPage({
               Everyone you know. Move someone to the board when they show interest.
             </p>
           </div>
+          <div className="flex w-full items-center gap-2 sm:w-auto">
           <form className="relative w-full sm:w-72">
             {filter !== "all" && (
               <input type="hidden" name="view" value={filter} />
@@ -79,6 +81,9 @@ export default async function ContactsPage({
               className="h-10 w-full rounded-md border border-slate-300 bg-white pr-3 pl-8 text-sm outline-none focus:border-[var(--board-bg)] focus:ring-3 focus:ring-[var(--board-bg)]/20"
             />
           </form>
+          {/* Lands off the board, since a contact has not shown interest yet. */}
+          <QuickAddLeadDialog stage="contact" variant="contact" />
+          </div>
         </div>
 
         <div className="mb-4 flex gap-1.5">

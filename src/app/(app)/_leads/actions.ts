@@ -63,6 +63,8 @@ export async function createLead(
   });
 
   revalidatePath("/pipeline");
+  // A new contact lands off the board, so that list has to refresh too.
+  revalidatePath("/contacts");
   return { error: null };
 }
 
@@ -446,4 +448,33 @@ export async function completeNextAction(
 
   revalidatePath("/pipeline");
   return { error: null };
+}
+
+/**
+ * Records a text or email at the moment it is handed to the phone or the
+ * mail client.
+ *
+ * That hand-off is the last thing Sell1 can observe: the message is sent
+ * from the user's own number or address, so there is no delivery receipt
+ * coming back. Logging on hand-off is therefore a record of what was
+ * written and when, not proof it left. A rep who changes their mind can
+ * delete the entry from the timeline.
+ */
+export async function logSentMessage(
+  leadId: string,
+  channel: "text" | "email",
+  body: string
+) {
+  const { org, userId } = await requireOrg();
+
+  await db.insert(activities).values({
+    orgId: org.id,
+    leadId,
+    type: channel,
+    body: body.trim().slice(0, 2000),
+    createdBy: userId,
+  });
+
+  revalidatePath("/pipeline");
+  revalidatePath("/contacts");
 }
