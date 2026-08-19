@@ -9,7 +9,7 @@ import { runInstall, useInstall } from "@/components/use-install";
  * one tap, and before this there was no way back to it.
  */
 export function InstallCard() {
-  const { event, ios, installed, ready } = useInstall();
+  const { event, ios, browser, installed, ready } = useInstall();
 
   if (!ready) return null;
 
@@ -50,7 +50,7 @@ export function InstallCard() {
                 </button>
               )}
 
-              {!event && ios && <IosSteps />}
+              {!event && ios && <IosSteps browser={browser} />}
 
               {!event && !ios && (
                 // Desktop Chrome puts it in the address bar; Firefox has no

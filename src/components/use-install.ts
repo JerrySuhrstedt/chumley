@@ -23,6 +23,27 @@ export function isIos() {
   );
 }
 
+/**
+ * Which iOS browser this is.
+ *
+ * It matters because none of them put "Add to Home Screen" in the same
+ * place, and every one of them is WebKit underneath so the usual engine
+ * sniffing tells you nothing. Chrome and Edge hide it behind a menu at
+ * the bottom right; Safari keeps it beside the address bar or under
+ * Share. Naming the wrong control reads as the feature being broken.
+ */
+export type IosBrowser = "safari" | "chrome" | "edge" | "firefox" | "other";
+
+export function iosBrowser(): IosBrowser {
+  if (typeof navigator === "undefined") return "safari";
+  const ua = navigator.userAgent;
+  if (/CriOS/.test(ua)) return "chrome";
+  if (/EdgiOS/.test(ua)) return "edge";
+  if (/FxiOS/.test(ua)) return "firefox";
+  if (/Safari/.test(ua)) return "safari";
+  return "other";
+}
+
 export function isStandalone() {
   if (typeof window === "undefined") return false;
   return (
@@ -37,6 +58,8 @@ export type InstallState = {
   event: InstallEvent | null;
   /** Safari cannot be prompted at all, so it gets directions instead. */
   ios: boolean;
+  /** Which iOS browser, so the directions name the right control. */
+  browser: IosBrowser;
   /** Already on the home screen. Nothing to offer. */
   installed: boolean;
   /** Settled after mount, so nothing renders from a server guess. */
@@ -55,6 +78,7 @@ export function useInstall(): InstallState {
   const [state, setState] = useState<InstallState>({
     event: null,
     ios: false,
+    browser: "safari",
     installed: false,
     ready: false,
   });
@@ -64,6 +88,7 @@ export function useInstall(): InstallState {
       setState({
         event: window.__sell1Install ?? null,
         ios: isIos(),
+        browser: iosBrowser(),
         installed: isStandalone(),
         ready: true,
       });

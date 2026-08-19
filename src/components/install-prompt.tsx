@@ -29,7 +29,7 @@ const QUIET_DAYS = 14;
  * lives in Settings where it cannot be lost.
  */
 export function InstallPrompt() {
-  const { event, ios, installed, ready } = useInstall();
+  const { event, ios, browser, installed, ready } = useInstall();
   const [dismissed, setDismissed] = useState(true);
 
   useEffect(() => {
@@ -82,7 +82,7 @@ export function InstallPrompt() {
               </button>
             </>
           ) : (
-            <IosSteps tone="dark" />
+            <IosSteps browser={browser} tone="dark" />
           )}
         </div>
       </div>
