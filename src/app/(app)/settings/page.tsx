@@ -9,6 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import { getCurrentOrg } from "@/lib/org";
+import { InstallCard } from "@/components/install-card";
 
 const SECTIONS = [
   {
@@ -84,6 +85,10 @@ export default async function SettingsPage() {
               </li>
             ))}
           </ul>
+        </div>
+
+        <div className="mt-4">
+          <InstallCard />
         </div>
       </div>
     </div>

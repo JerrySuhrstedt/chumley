@@ -41,6 +41,21 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${interTight.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        {/*
+          Chromium fires beforeinstallprompt as soon as it decides the app
+          is installable, which on a return visit is well before React has
+          hydrated. A listener attached inside an effect is simply too late
+          and the event is gone for the life of the page, which is why the
+          install offer could never appear twice. Catching it here, in a
+          script that runs while the document is still parsing, keeps it.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__sell1Install=e;window.dispatchEvent(new Event('sell1:installable'))});window.addEventListener('appinstalled',function(){window.__sell1Install=null;window.dispatchEvent(new Event('sell1:installed'))});`,
+          }}
+        />
+      </head>
       <body className="flex min-h-full flex-col">
         {children}
         <Toaster />
