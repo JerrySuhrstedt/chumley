@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { getCurrentOrg } from "@/lib/org";
 import { InstallCard } from "@/components/install-card";
+import { ReportButton } from "../_report/report-button";
 
 const SECTIONS = [
   {
@@ -89,6 +90,13 @@ export default async function SettingsPage() {
               </li>
             ))}
           </ul>
+        </div>
+
+        {/* The sidebar carries this too, but the sidebar does not exist
+            on a phone, and a phone is where most of the going wrong
+            happens. */}
+        <div className="mt-4 overflow-hidden rounded-lg border border-slate-200 bg-white md:hidden">
+          <ReportButton variant="row" />
         </div>
       </div>
     </div>

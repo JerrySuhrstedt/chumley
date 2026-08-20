@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { CreditCard, ShieldCheck } from "lucide-react";
+import { Reports } from "./reports";
 import { requireAdmin } from "@/lib/admin";
 import {
   getAdminAccounts,
   getAdminMetrics,
+  getAdminReports,
   getAdminUsers,
 } from "@/lib/admin-data";
 
@@ -23,10 +25,31 @@ function ago(d: Date | null) {
   return `${days}d ago`;
 }
 
-function Stat({ label, value, note }: { label: string; value: string; note?: string }) {
+function Stat({
+  label,
+  value,
+  note,
+  alert = false,
+}: {
+  label: string;
+  value: string;
+  note?: string;
+  /** Draws the eye when the number is one that needs acting on. */
+  alert?: boolean;
+}) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <p className="text-2xl font-bold text-slate-900">{value}</p>
+    <div
+      className={`rounded-lg border p-4 ${
+        alert
+          ? "border-[var(--brand)]/40 bg-[var(--brand-tint)]"
+          : "border-slate-200 bg-white"
+      }`}
+    >
+      <p
+        className={`text-2xl font-bold ${alert ? "text-[var(--brand)]" : "text-slate-900"}`}
+      >
+        {value}
+      </p>
       <p className="text-xs font-medium text-slate-600">{label}</p>
       {note && <p className="mt-0.5 text-xs text-slate-400">{note}</p>}
     </div>
@@ -37,10 +60,11 @@ export default async function AdminPage() {
   // Gate first, before a single row is read.
   await requireAdmin();
 
-  const [metrics, accounts, users] = await Promise.all([
+  const [metrics, accounts, users, reports] = await Promise.all([
     getAdminMetrics(),
     getAdminAccounts(),
     getAdminUsers(),
+    getAdminReports(),
   ]);
 
   const activation = metrics.teams
@@ -61,6 +85,12 @@ export default async function AdminPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+          <Stat
+            label="New reports"
+            value={String(metrics.newReports)}
+            note={metrics.newReports > 0 ? "waiting on you" : "nothing waiting"}
+            alert={metrics.newReports > 0}
+          />
           <Stat label="Users" value={String(metrics.users)} />
           <Stat label="Teams" value={String(metrics.teams)} />
           <Stat
@@ -80,6 +110,16 @@ export default async function AdminPage() {
           />
           <Stat label="Logged actions" value={metrics.activities.toLocaleString()} />
         </div>
+
+        <section>
+          <h2 className="mb-2 text-sm font-semibold text-slate-900">
+            Feedback ({reports.length})
+          </h2>
+          <p className="mb-3 text-xs text-slate-500">
+            What people reported from inside the app, unread first.
+          </p>
+          <Reports reports={reports} />
+        </section>
 
         <section>
           <h2 className="mb-2 text-sm font-semibold text-slate-900">

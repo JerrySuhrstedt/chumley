@@ -15,6 +15,7 @@ import {
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ReportButton } from "@/app/(app)/_report/report-button";
 import { signOut } from "@/app/(app)/actions";
 import { Sell1Logo } from "@/components/sell1-logo";
 
@@ -170,6 +171,8 @@ export function AppSidebar({
             {!collapsed && <span>Back office</span>}
           </Link>
         )}
+
+        <ReportButton collapsed={collapsed} />
 
         <Link
           href="/settings"

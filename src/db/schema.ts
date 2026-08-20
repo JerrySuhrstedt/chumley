@@ -153,6 +153,45 @@ export const orgInvites = pgTable("org_invites", {
  * `key` rather than the row id is what leads store, so renaming a bucket
  * is free and deleting one leaves data that can still be read.
  */
+export const reportStatusEnum = pgEnum("report_status", [
+  "new",
+  "read",
+  "closed",
+]);
+
+/**
+ * Problems people tell us about from inside the app.
+ *
+ * Kept even when the team that raised it is deleted, which is why orgId
+ * is nullable and set null rather than cascade: the report is evidence
+ * about the product, and the most useful ones often come from somebody
+ * on their way out.
+ *
+ * The page and the browser are captured automatically because nobody
+ * types "Safari 26 on an iPhone, on the pipeline board" and a report
+ * without them usually cannot be acted on.
+ */
+export const problemReports = pgTable("problem_reports", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orgId: uuid("org_id").references(() => organizations.id, {
+    onDelete: "set null",
+  }),
+  /** Supabase uid of whoever reported it. Null once the account is gone. */
+  userId: uuid("user_id"),
+  /** Copied at write time so a reply is possible after the account goes. */
+  email: text("email"),
+  message: text("message").notNull(),
+  /** Where they were when it went wrong. */
+  pageUrl: text("page_url"),
+  userAgent: text("user_agent"),
+  status: reportStatusEnum("status").notNull().default("new"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export type ProblemReport = typeof problemReports.$inferSelect;
+
 export const stages = pgTable(
   "stages",
   {

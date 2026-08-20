@@ -24,6 +24,17 @@ export type AdminUser = {
   role: string | null;
 };
 
+export type AdminReport = {
+  id: string;
+  message: string;
+  email: string | null;
+  orgName: string | null;
+  pageUrl: string | null;
+  userAgent: string | null;
+  status: "new" | "read" | "closed";
+  createdAt: Date;
+};
+
 export type AdminMetrics = {
   users: number;
   teams: number;
@@ -32,6 +43,8 @@ export type AdminMetrics = {
   activatedTeams: number;
   realLeads: number;
   activities: number;
+  /** Reports nobody has looked at yet. The number worth acting on. */
+  newReports: number;
 };
 
 /**
@@ -50,7 +63,9 @@ export async function getAdminMetrics(): Promise<AdminMetrics> {
       (SELECT count(DISTINCT org_id) FROM leads
          WHERE is_sample = false)::int AS activated_teams,
       (SELECT count(*) FROM leads WHERE is_sample = false)::int AS real_leads,
-      (SELECT count(*) FROM activities)::int AS activities
+      (SELECT count(*) FROM activities)::int AS activities,
+      (SELECT count(*) FROM problem_reports
+        WHERE status = 'new')::int AS new_reports
   `)) as unknown as Record<string, number>[];
 
   const r = rows[0];
@@ -61,6 +76,7 @@ export async function getAdminMetrics(): Promise<AdminMetrics> {
     activatedTeams: Number(r.activated_teams),
     realLeads: Number(r.real_leads),
     activities: Number(r.activities),
+    newReports: Number(r.new_reports),
   };
 }
 
@@ -135,5 +151,33 @@ export async function getAdminUsers(): Promise<AdminUser[]> {
       : null,
     teamName: (r.team_name as string) ?? null,
     role: (r.role as string) ?? null,
+  }));
+}
+
+/**
+ * What people have told us is broken, newest first.
+ *
+ * Unread ones come first regardless of age, because the point of the
+ * list is what still needs answering, not a chronology.
+ */
+export async function getAdminReports(limit = 50): Promise<AdminReport[]> {
+  const rows = (await db.execute(sql`
+    SELECT r.id, r.message, r.email, r.page_url, r.user_agent,
+           r.status, r.created_at, o.name AS org_name
+    FROM problem_reports r
+    LEFT JOIN organizations o ON o.id = r.org_id
+    ORDER BY (r.status = 'new') DESC, r.created_at DESC
+    LIMIT ${limit}
+  `)) as unknown as Record<string, unknown>[];
+
+  return rows.map((r) => ({
+    id: String(r.id),
+    message: String(r.message),
+    email: r.email ? String(r.email) : null,
+    orgName: r.org_name ? String(r.org_name) : null,
+    pageUrl: r.page_url ? String(r.page_url) : null,
+    userAgent: r.user_agent ? String(r.user_agent) : null,
+    status: r.status as AdminReport["status"],
+    createdAt: new Date(String(r.created_at)),
   }));
 }
