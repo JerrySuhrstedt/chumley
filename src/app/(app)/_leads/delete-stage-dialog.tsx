@@ -122,9 +122,10 @@ export function DeleteStageDialog({
           <Button
             variant="destructive"
             onClick={confirm}
-            disabled={saving || (leadCount > 0 && !destination)}
+            loading={saving}
+            disabled={leadCount > 0 && !destination}
           >
-            {saving ? "Deleting..." : "Delete bucket"}
+            Delete bucket
           </Button>
         </DialogFooter>
       </DialogContent>

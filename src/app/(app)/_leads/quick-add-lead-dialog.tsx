@@ -181,8 +181,8 @@ export function QuickAddLeadDialog({
           {state.error && (
             <p className="text-sm text-destructive">{state.error}</p>
           )}
-          <Button type="submit" size="lg" disabled={pending}>
-            {pending ? "Adding..." : "Add lead"}
+          <Button type="submit" size="lg" loading={pending}>
+            Add lead
           </Button>
         </form>
       </DialogContent>

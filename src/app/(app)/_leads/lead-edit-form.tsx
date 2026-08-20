@@ -68,8 +68,8 @@ export function LeadEditForm({
       {state.error && (
         <p className="text-sm text-destructive">{state.error}</p>
       )}
-      <Button type="submit" disabled={pending}>
-        {pending ? "Saving..." : "Save changes"}
+      <Button type="submit" loading={pending}>
+        Save changes
       </Button>
     </form>
   );

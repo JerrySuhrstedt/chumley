@@ -1,5 +1,6 @@
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
+import { Loader2 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -40,18 +41,47 @@ const buttonVariants = cva(
   }
 )
 
+/**
+ * `loading` swaps the label for a spinner and stops the button being
+ * pressed twice.
+ *
+ * A button that has been clicked and looks exactly as it did is the most
+ * common way an app appears broken: nothing happened, so the person
+ * clicks again, and now the work has been asked for twice. The width is
+ * held while it spins so the layout does not jump underneath the cursor.
+ */
 function Button({
   className,
   variant = "default",
   size = "default",
+  loading = false,
+  children,
+  disabled,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonPrimitive.Props &
+  VariantProps<typeof buttonVariants> & { loading?: boolean }) {
   return (
     <ButtonPrimitive
       data-slot="button"
+      aria-busy={loading || undefined}
+      disabled={disabled || loading}
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
-    />
+    >
+      {loading ? (
+        <>
+          <Loader2 className="animate-spin" aria-hidden="true" />
+          {/* Kept in the flow but invisible, so the button does not
+              shrink to the width of a spinner and shift its neighbours. */}
+          <span className="sr-only">Working</span>
+          <span aria-hidden="true" className="invisible">
+            {children}
+          </span>
+        </>
+      ) : (
+        children
+      )}
+    </ButtonPrimitive>
   )
 }
 

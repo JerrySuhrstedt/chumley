@@ -114,9 +114,9 @@ export function ActivityLogger({
         type="submit"
         size="sm"
         className="self-start"
-        disabled={pending}
+        loading={pending}
       >
-        {pending ? "Saving..." : "Log it"}
+        Log it
       </Button>
     </form>
   );

@@ -102,8 +102,8 @@ export function ActivityItem({ activity }: { activity: Activity }) {
               <p className="text-sm text-destructive">{state.error}</p>
             )}
             <div className="flex gap-2">
-              <Button type="submit" size="sm" disabled={pending}>
-                {pending ? "Saving..." : "Save note"}
+              <Button type="submit" size="sm" loading={pending}>
+                Save note
               </Button>
               <Button
                 type="button"

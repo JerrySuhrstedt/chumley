@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { Sparkles, X } from "lucide-react";
+import { Loader2, Sparkles, X } from "lucide-react";
 import { clearSamples } from "./actions";
 
 /**
@@ -25,8 +25,12 @@ export function SampleBanner({ count }: { count: number }) {
         onClick={() => start(async () => await clearSamples())}
         className="flex shrink-0 items-center gap-1.5 rounded-md bg-white/20 px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-white/30 disabled:opacity-60"
       >
-        <X className="size-3.5" />
-        {pending ? "Clearing..." : "Clear the examples"}
+        {pending ? (
+          <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+        ) : (
+          <X className="size-3.5" />
+        )}
+        Clear the examples
       </button>
     </div>
   );

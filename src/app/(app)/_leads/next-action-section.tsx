@@ -84,8 +84,8 @@ export function NextActionSection({ lead }: { lead: Lead }) {
       {state.error && (
         <p className="text-sm text-destructive">{state.error}</p>
       )}
-      <Button type="submit" size="sm" disabled={pending}>
-        {pending ? "Saving..." : "Save"}
+      <Button type="submit" size="sm" loading={pending}>
+        Save
       </Button>
     </form>
   );

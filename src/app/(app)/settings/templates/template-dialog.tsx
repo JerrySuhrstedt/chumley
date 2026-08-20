@@ -136,8 +136,8 @@ export function TemplateDialog({ template }: { template?: Template }) {
             <p className="text-sm text-destructive">{state.error}</p>
           )}
 
-          <Button type="submit" disabled={pending}>
-            {pending ? "Saving..." : "Save"}
+          <Button type="submit" loading={pending}>
+            Save
           </Button>
         </form>
       </DialogContent>
