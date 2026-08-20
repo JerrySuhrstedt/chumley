@@ -97,7 +97,10 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
-      <div className="mx-auto flex max-w-5xl flex-col gap-6">
+      {/* Was capped at 5xl, which left a column of dead space on a wide
+          screen while the funnel was squeezed into a fraction of what was
+          left. */}
+      <div className="mx-auto flex max-w-7xl flex-col gap-6">
         <LocalHeading />
 
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -125,7 +128,9 @@ export default async function DashboardPage() {
         </section>
 
         {/* The funnel needs the room; the activity feed reads fine narrower. */}
-        <div className="grid gap-6 lg:grid-cols-[1.55fr_1fr]">
+        {/* The funnel needs the room. The activity feed is a list of
+            short lines and reads fine narrow. */}
+        <div className="grid gap-6 lg:grid-cols-[1.9fr_1fr]">
           <section>
             <div className="mb-2 flex items-baseline justify-between">
               <h2 className="font-semibold text-slate-900">Pipeline</h2>

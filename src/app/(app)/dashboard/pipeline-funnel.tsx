@@ -69,7 +69,7 @@ export function PipelineFunnel({
 
   const heights = bands.map(
     (stage) =>
-      MIN_BAND + flexible * (totalCount > 0 ? stage.count / totalCount : 0)
+      MIN_BAND + flexible * (totalCount > 0 ? stage.count / totalCount : 0),
   );
 
   const shaped = bands.map((stage, i) => {
@@ -112,113 +112,115 @@ export function PipelineFunnel({
         </p>
       </div>
 
-      {/* Side by side only once there is genuinely room for both. The
-          funnel column is a fraction of a grid, so sm was far too eager:
-          at laptop widths the chart kept its 340px and the legend had
-          nowhere to go. */}
-      <div className="flex flex-col items-center gap-6 xl:flex-row xl:items-start">
-        <svg
-          viewBox={`0 0 ${W} ${H}`}
-          className="w-full max-w-[340px] shrink"
-          role="img"
-          aria-label="Deals by pipeline stage"
-        >
-          {shaped.map(({ stage, top, bottom }) => {
-            const t = top * scale;
-            const b = bottom * scale;
-            const wt = widthAt(t);
-            const wb = widthAt(b);
-            const mid = (t + b) / 2;
-            const roomy = b - t >= 30;
+      {/* A container query, not a breakpoint. This card sits in a grid
+          column, so what matters is how wide the card is, not how wide
+          the window is. xl: was still wrong: a 1400px window with a
+          narrow column went side by side and clipped the legend again. */}
+      <div className="@container">
+        <div className="flex flex-col items-center gap-6 @xl:flex-row @xl:items-start">
+          <svg
+            viewBox={`0 0 ${W} ${H}`}
+            className="w-full max-w-[340px] shrink-0"
+            role="img"
+            aria-label="Deals by pipeline stage"
+          >
+            {shaped.map(({ stage, top, bottom }) => {
+              const t = top * scale;
+              const b = bottom * scale;
+              const wt = widthAt(t);
+              const wb = widthAt(b);
+              const mid = (t + b) / 2;
+              const roomy = b - t >= 30;
 
-            return (
-              <g key={stage.value}>
-                <polygon
-                  points={[
-                    `${cx - wt / 2},${t}`,
-                    `${cx + wt / 2},${t}`,
-                    `${cx + wb / 2},${b}`,
-                    `${cx - wb / 2},${b}`,
-                  ].join(" ")}
-                  fill={FILL[stage.value] ?? "#2a78d6"}
-                  /* A hairline in the surface colour separates the bands
+              return (
+                <g key={stage.value}>
+                  <polygon
+                    points={[
+                      `${cx - wt / 2},${t}`,
+                      `${cx + wt / 2},${t}`,
+                      `${cx + wb / 2},${b}`,
+                      `${cx - wb / 2},${b}`,
+                    ].join(" ")}
+                    fill={FILL[stage.value] ?? "#2a78d6"}
+                    /* A hairline in the surface colour separates the bands
                      without breaking the funnel silhouette. */
-                  stroke="#ffffff"
-                  strokeWidth={2}
-                />
-                <text
-                  x={cx}
-                  y={mid}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fill="#ffffff"
-                  fontSize={roomy ? 15 : 12}
-                  fontWeight={600}
-                >
-                  {/* Always money, so the bands share one unit. A $0 band is
+                    stroke="#ffffff"
+                    strokeWidth={2}
+                  />
+                  <text
+                    x={cx}
+                    y={mid}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fill="#ffffff"
+                    fontSize={roomy ? 15 : 12}
+                    fontWeight={600}
+                  >
+                    {/* Always money, so the bands share one unit. A $0 band is
                       true information: deals with no value recorded. */}
-                  {money(stage.amount)}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
+                    {money(stage.amount)}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
 
-        {/* min-w-0 and flex-1, never w-full. Inside a row, w-full means
+          {/* min-w-0 and flex-1, never w-full. Inside a row, w-full means
             the whole container, so the legend sat beside a 340px chart
             and ran off the edge of the card, clipping every label. */}
-        <ul className="flex w-full min-w-0 flex-1 flex-col gap-2 text-sm">
-          {stages.map((stage) => {
-            const odds = CLOSE_ODDS[stage.value] ?? 0;
-            return (
-              <li key={stage.value} className="flex items-start gap-2">
-                <span
-                  aria-hidden
-                  className="mt-1 size-2.5 shrink-0 rounded-sm"
-                  style={{ backgroundColor: FILL[stage.value] }}
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="flex justify-between gap-2">
-                    <span className="min-w-0 truncate text-slate-700">
-                      {stage.label}
+          <ul className="flex w-full min-w-0 flex-1 flex-col gap-2 text-sm">
+            {stages.map((stage) => {
+              const odds = CLOSE_ODDS[stage.value] ?? 0;
+              return (
+                <li key={stage.value} className="flex items-start gap-2">
+                  <span
+                    aria-hidden
+                    className="mt-1 size-2.5 shrink-0 rounded-sm"
+                    style={{ backgroundColor: FILL[stage.value] }}
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex justify-between gap-2">
+                      <span className="min-w-0 truncate text-slate-700">
+                        {stage.label}
+                      </span>
+                      <span className="shrink-0 font-medium text-slate-900">
+                        {moneyFull(stage.amount)}
+                      </span>
                     </span>
-                    <span className="shrink-0 font-medium text-slate-900">
-                      {moneyFull(stage.amount)}
+                    <span className="flex justify-between gap-2 text-xs text-slate-500">
+                      <span>
+                        {stage.count} {stage.count === 1 ? "deal" : "deals"}
+                      </span>
+                      <span>
+                        {stage.value === "won"
+                          ? "closed"
+                          : `${Math.round(odds * 100)}% to close`}
+                      </span>
                     </span>
                   </span>
-                  <span className="flex justify-between gap-2 text-xs text-slate-500">
-                    <span>
-                      {stage.count} {stage.count === 1 ? "deal" : "deals"}
-                    </span>
-                    <span>
-                      {stage.value === "won"
-                        ? "closed"
-                        : `${Math.round(odds * 100)}% to close`}
-                    </span>
-                  </span>
-                </span>
-              </li>
-            );
-          })}
+                </li>
+              );
+            })}
 
-          <li className="flex items-start gap-2 border-t border-slate-100 pt-2">
-            <span
-              aria-hidden
-              className="mt-1 size-2.5 shrink-0 rounded-sm bg-slate-300"
-            />
-            <span className="min-w-0 flex-1">
-              <span className="flex justify-between gap-2">
-                <span className="min-w-0 truncate text-slate-700">Lost</span>
-                <span className="shrink-0 font-medium text-slate-500">
-                  {moneyFull(lost.amount)}
+            <li className="flex items-start gap-2 border-t border-slate-100 pt-2">
+              <span
+                aria-hidden
+                className="mt-1 size-2.5 shrink-0 rounded-sm bg-slate-300"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="flex justify-between gap-2">
+                  <span className="min-w-0 truncate text-slate-700">Lost</span>
+                  <span className="shrink-0 font-medium text-slate-500">
+                    {moneyFull(lost.amount)}
+                  </span>
+                </span>
+                <span className="block text-xs text-slate-500">
+                  {lost.count} {lost.count === 1 ? "deal" : "deals"}
                 </span>
               </span>
-              <span className="block text-xs text-slate-500">
-                {lost.count} {lost.count === 1 ? "deal" : "deals"}
-              </span>
-            </span>
-          </li>
-        </ul>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   );
