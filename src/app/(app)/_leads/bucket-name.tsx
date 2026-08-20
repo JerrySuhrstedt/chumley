@@ -57,7 +57,7 @@ export function BucketName({
         }}
         maxLength={30}
         aria-label={`Rename ${label} bucket`}
-        className="w-full min-w-0 rounded border border-[var(--board-bg)] bg-white px-1.5 py-0.5 text-xl font-semibold text-[var(--board-ink)] outline-none"
+        className="w-full min-w-0 rounded border border-[var(--board-bg)] bg-white px-1.5 py-0.5 text-xl font-semibold text-[var(--board-ink)] outline-none focus:ring-3 focus:ring-[var(--board-bg)]/30"
       />
     );
   }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CopiedChip } from "@/components/copied-chip";
 
 /**
  * The one thing the customer's web person needs. Kept to a single line so
@@ -22,19 +23,17 @@ export function EmbedCode({ code }: { code: string }) {
       <pre className="overflow-x-auto rounded-lg bg-slate-900 p-4 text-xs leading-relaxed text-slate-100">
         <code>{code}</code>
       </pre>
-      <Button onClick={copy} variant="outline" className="self-start">
-        {copied ? (
-          <>
+      <span className="relative inline-flex self-start">
+        <CopiedChip show={copied} />
+        <Button onClick={copy} variant="outline">
+          {copied ? (
             <Check className="size-4" />
-            Copied
-          </>
-        ) : (
-          <>
+          ) : (
             <Copy className="size-4" />
-            Copy the code
-          </>
-        )}
-      </Button>
+          )}
+          Copy the code
+        </Button>
+      </span>
     </div>
   );
 }

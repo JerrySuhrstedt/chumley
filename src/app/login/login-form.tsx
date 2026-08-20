@@ -15,7 +15,7 @@ import {
   signUpWithPassword,
   type LoginState,
 } from "./actions";
-import { Mail } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 import { OAuthButton } from "./oauth-buttons";
 
 /**
@@ -171,7 +171,18 @@ export function LoginForm({
           </p>
         )}
 
-        <button type="submit" disabled={pending} className={authButton}>
+        <button
+          type="submit"
+          disabled={pending}
+          aria-busy={pending || undefined}
+          className={authButton}
+        >
+          {pending && (
+            <Loader2
+              className="mr-2 inline size-4 animate-spin align-[-3px]"
+              aria-hidden="true"
+            />
+          )}
           {pending ? copy.pending : copy.cta}
         </button>
       </form>

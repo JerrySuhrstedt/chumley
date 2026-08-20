@@ -1,5 +1,7 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
+
 import { useActionState } from "react";
 import { submitPublicForm, type FormState } from "./actions";
 
@@ -114,6 +116,12 @@ export function PublicForm({
           disabled={pending}
           className="h-11 w-full rounded-lg bg-slate-900 text-[15px] font-semibold text-white transition-colors hover:bg-slate-800 disabled:bg-slate-300"
         >
+          {pending && (
+            <Loader2
+              className="mr-2 inline size-4 animate-spin align-[-3px]"
+              aria-hidden="true"
+            />
+          )}
           {pending ? "Sending..." : "Send"}
         </button>
       </div>
