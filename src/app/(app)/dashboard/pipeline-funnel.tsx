@@ -112,10 +112,14 @@ export function PipelineFunnel({
         </p>
       </div>
 
-      <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
+      {/* Side by side only once there is genuinely room for both. The
+          funnel column is a fraction of a grid, so sm was far too eager:
+          at laptop widths the chart kept its 340px and the legend had
+          nowhere to go. */}
+      <div className="flex flex-col items-center gap-6 xl:flex-row xl:items-start">
         <svg
           viewBox={`0 0 ${W} ${H}`}
-          className="w-full max-w-[340px] shrink-0"
+          className="w-full max-w-[340px] shrink"
           role="img"
           aria-label="Deals by pipeline stage"
         >
@@ -160,7 +164,10 @@ export function PipelineFunnel({
           })}
         </svg>
 
-        <ul className="flex w-full flex-col gap-2 text-sm">
+        {/* min-w-0 and flex-1, never w-full. Inside a row, w-full means
+            the whole container, so the legend sat beside a 340px chart
+            and ran off the edge of the card, clipping every label. */}
+        <ul className="flex w-full min-w-0 flex-1 flex-col gap-2 text-sm">
           {stages.map((stage) => {
             const odds = CLOSE_ODDS[stage.value] ?? 0;
             return (
@@ -172,8 +179,10 @@ export function PipelineFunnel({
                 />
                 <span className="min-w-0 flex-1">
                   <span className="flex justify-between gap-2">
-                    <span className="text-slate-700">{stage.label}</span>
-                    <span className="font-medium text-slate-900">
+                    <span className="min-w-0 truncate text-slate-700">
+                      {stage.label}
+                    </span>
+                    <span className="shrink-0 font-medium text-slate-900">
                       {moneyFull(stage.amount)}
                     </span>
                   </span>
@@ -199,8 +208,8 @@ export function PipelineFunnel({
             />
             <span className="min-w-0 flex-1">
               <span className="flex justify-between gap-2">
-                <span className="text-slate-700">Lost</span>
-                <span className="font-medium text-slate-500">
+                <span className="min-w-0 truncate text-slate-700">Lost</span>
+                <span className="shrink-0 font-medium text-slate-500">
                   {moneyFull(lost.amount)}
                 </span>
               </span>
