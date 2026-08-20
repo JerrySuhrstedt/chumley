@@ -1,3 +1,5 @@
+"use client";
+
 import type { LeadStage } from "../_leads/actions";
 
 export type FunnelStage = {
@@ -5,7 +7,11 @@ export type FunnelStage = {
   label: string;
   count: number;
   amount: number;
+  /** The bucket's own colour. Custom buckets are not in the FILL map. */
+  color?: string;
 };
+
+
 
 /**
  * Categorical hues, one per stage, validated with the palette checker:
@@ -45,9 +51,14 @@ const MIN_BAND = 26;
 export function PipelineFunnel({
   stages,
   lost,
+  selected,
+  onSelect,
 }: {
   stages: FunnelStage[];
   lost: FunnelStage;
+  /** Which bucket the panel beside this is showing. */
+  selected: string | null;
+  onSelect: (value: string) => void;
 }) {
   const totalCount = stages.reduce((sum, s) => sum + s.count, 0);
 
@@ -133,7 +144,21 @@ export function PipelineFunnel({
               const roomy = b - t >= 30;
 
               return (
-                <g key={stage.value}>
+                <g
+                  key={stage.value}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={selected === stage.value}
+                  onClick={() => onSelect(stage.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onSelect(stage.value);
+                    }
+                  }}
+                  className="cursor-pointer outline-none [&:focus-visible>polygon]:opacity-80 [&:hover>polygon]:opacity-80"
+                >
+                  <title>{`${stage.label}: ${stage.count} ${stage.count === 1 ? "deal" : "deals"}`}</title>
                   <polygon
                     points={[
                       `${cx - wt / 2},${t}`,
@@ -141,11 +166,11 @@ export function PipelineFunnel({
                       `${cx + wb / 2},${b}`,
                       `${cx - wb / 2},${b}`,
                     ].join(" ")}
-                    fill={FILL[stage.value] ?? "#2a78d6"}
+                    fill={stage.color ?? FILL[stage.value] ?? "#2a78d6"}
                     /* A hairline in the surface colour separates the bands
                      without breaking the funnel silhouette. */
-                    stroke="#ffffff"
-                    strokeWidth={2}
+                    stroke={selected === stage.value ? "#172b4d" : "#ffffff"}
+                    strokeWidth={selected === stage.value ? 3 : 2}
                   />
                   <text
                     x={cx}
@@ -172,52 +197,78 @@ export function PipelineFunnel({
             {stages.map((stage) => {
               const odds = CLOSE_ODDS[stage.value] ?? 0;
               return (
-                <li key={stage.value} className="flex items-start gap-2">
-                  <span
-                    aria-hidden
-                    className="mt-1 size-2.5 shrink-0 rounded-sm"
-                    style={{ backgroundColor: FILL[stage.value] }}
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="flex justify-between gap-2">
-                      <span className="min-w-0 truncate text-slate-700">
-                        {stage.label}
+                <li key={stage.value}>
+                  <button
+                    type="button"
+                    aria-pressed={selected === stage.value}
+                    onClick={() => onSelect(stage.value)}
+                    className={`-mx-2 flex w-[calc(100%+1rem)] items-start gap-2 rounded-md px-2 py-1 text-left transition-colors focus-visible:ring-3 focus-visible:ring-[var(--board-bg)]/25 focus-visible:outline-none ${
+                      selected === stage.value
+                        ? "bg-slate-100"
+                        : "hover:bg-slate-50"
+                    }`}
+                  >
+                    <span
+                      aria-hidden
+                      className="mt-1 size-2.5 shrink-0 rounded-sm"
+                      style={{
+                        backgroundColor:
+                          stage.color ?? FILL[stage.value] ?? "#2a78d6",
+                      }}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex justify-between gap-2">
+                        <span className="min-w-0 truncate text-slate-700">
+                          {stage.label}
+                        </span>
+                        <span className="shrink-0 font-medium text-slate-900">
+                          {moneyFull(stage.amount)}
+                        </span>
                       </span>
-                      <span className="shrink-0 font-medium text-slate-900">
-                        {moneyFull(stage.amount)}
+                      <span className="flex justify-between gap-2 text-xs text-slate-500">
+                        <span>
+                          {stage.count} {stage.count === 1 ? "deal" : "deals"}
+                        </span>
+                        <span>
+                          {stage.value === "won"
+                            ? "closed"
+                            : `${Math.round(odds * 100)}% to close`}
+                        </span>
                       </span>
                     </span>
-                    <span className="flex justify-between gap-2 text-xs text-slate-500">
-                      <span>
-                        {stage.count} {stage.count === 1 ? "deal" : "deals"}
-                      </span>
-                      <span>
-                        {stage.value === "won"
-                          ? "closed"
-                          : `${Math.round(odds * 100)}% to close`}
-                      </span>
-                    </span>
-                  </span>
+                  </button>
                 </li>
               );
             })}
 
-            <li className="flex items-start gap-2 border-t border-slate-100 pt-2">
-              <span
-                aria-hidden
-                className="mt-1 size-2.5 shrink-0 rounded-sm bg-slate-300"
-              />
-              <span className="min-w-0 flex-1">
-                <span className="flex justify-between gap-2">
-                  <span className="min-w-0 truncate text-slate-700">Lost</span>
-                  <span className="shrink-0 font-medium text-slate-500">
-                    {moneyFull(lost.amount)}
+            <li className="border-t border-slate-100 pt-2">
+              <button
+                type="button"
+                aria-pressed={selected === lost.value}
+                onClick={() => onSelect(lost.value)}
+                className={`-mx-2 flex w-[calc(100%+1rem)] items-start gap-2 rounded-md px-2 py-1 text-left transition-colors focus-visible:ring-3 focus-visible:ring-[var(--board-bg)]/25 focus-visible:outline-none ${
+                  selected === lost.value ? "bg-slate-100" : "hover:bg-slate-50"
+                }`}
+              >
+                <span
+                  aria-hidden
+                  className="mt-1 size-2.5 shrink-0 rounded-sm"
+                  style={{ backgroundColor: lost.color ?? "#cbd5e1" }}
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="flex justify-between gap-2">
+                    <span className="min-w-0 truncate text-slate-700">
+                      {lost.label}
+                    </span>
+                    <span className="shrink-0 font-medium text-slate-500">
+                      {moneyFull(lost.amount)}
+                    </span>
+                  </span>
+                  <span className="block text-xs text-slate-500">
+                    {lost.count} {lost.count === 1 ? "deal" : "deals"}
                   </span>
                 </span>
-                <span className="block text-xs text-slate-500">
-                  {lost.count} {lost.count === 1 ? "deal" : "deals"}
-                </span>
-              </span>
+              </button>
             </li>
           </ul>
         </div>

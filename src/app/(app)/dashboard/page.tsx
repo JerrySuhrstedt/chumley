@@ -14,7 +14,7 @@ import {
   OverdueBadge,
 } from "./local-heading";
 import { NextSteps } from "./next-steps";
-import { PipelineFunnel } from "./pipeline-funnel";
+import { PipelineExplorer } from "./pipeline-explorer";
 
 const money = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
@@ -85,6 +85,7 @@ export default async function DashboardPage() {
     return {
       value: stage.key,
       label: stage.label,
+      color: stage.color,
       count: rows.length,
       amount: rows.reduce((sum, l) => sum + Number(l.value ?? 0), 0),
     };
@@ -127,10 +128,11 @@ export default async function DashboardPage() {
           <NextSteps leads={scheduled} templates={allTemplates} />
         </section>
 
-        {/* The funnel needs the room; the activity feed reads fine narrower. */}
-        {/* The funnel needs the room. The activity feed is a list of
-            short lines and reads fine narrow. */}
-        <div className="grid gap-6 lg:grid-cols-[1.9fr_1fr]">
+        {/* The funnel takes the full width, with the bucket you clicked
+            beside it. Recent activity sits underneath: it is a list of
+            short lines, and it was only ever alongside because there was
+            room, not because the two belong together. */}
+        <div className="flex flex-col gap-6">
           <section>
             <div className="mb-2 flex items-baseline justify-between">
               <h2 className="font-semibold text-slate-900">Pipeline</h2>
@@ -143,7 +145,11 @@ export default async function DashboardPage() {
             </div>
 
             {lostStage && (
-              <PipelineFunnel stages={funnelStages} lost={lostStage} />
+              <PipelineExplorer
+                stages={funnelStages}
+                lost={lostStage}
+                leads={pipeline}
+              />
             )}
 
             <div className="mt-3 flex flex-col gap-1 text-sm">
