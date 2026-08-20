@@ -10,12 +10,13 @@ import {
 import { signOut } from "@/app/(app)/actions";
 import { GlobalSearch } from "@/components/global-search";
 
+// Where you can go, not what you can change. Settings lives in the
+// profile menu, which sits beside this one on a phone.
 const MOBILE_NAV = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/pipeline", label: "Pipeline" },
   { href: "/contacts", label: "Contacts" },
   { href: "/calendar", label: "Calendar" },
-  { href: "/settings", label: "Settings" },
 ];
 
 export function Topbar({

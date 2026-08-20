@@ -12,7 +12,6 @@ import {
   LayoutDashboard,
   LogOut,
   ShieldCheck,
-  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ReportButton } from "@/app/(app)/_report/report-button";
@@ -121,8 +120,10 @@ export function AppSidebar({
         )}
       </button>
 
-      {/* Who you are, then Settings underneath. Settings is occasional
-          housekeeping, so it sits away from the work you do every day. */}
+      {/* Who you are. Settings used to sit here as well as in the profile
+          menu at the top right, which meant two doors into one room. The
+          profile menu keeps it: account housekeeping belongs with the
+          account, not in the navigation for daily work. */}
       <div className="mt-2 border-t border-white/10 p-2">
         <div
           className={cn(
@@ -173,21 +174,6 @@ export function AppSidebar({
         )}
 
         <ReportButton collapsed={collapsed} />
-
-        <Link
-          href="/settings"
-          title="Settings"
-          className={cn(
-            "flex items-center gap-3 rounded-md py-2 text-sm transition-colors",
-            collapsed ? "justify-center px-0" : "px-3",
-            pathname.startsWith("/settings")
-              ? "bg-[var(--nav-active)] text-white"
-              : "text-[var(--nav-ink)] hover:bg-[var(--nav-hover)] hover:text-white"
-          )}
-        >
-          <Settings className="size-5 shrink-0" />
-          {!collapsed && <span>Settings</span>}
-        </Link>
       </div>
     </aside>
   );
