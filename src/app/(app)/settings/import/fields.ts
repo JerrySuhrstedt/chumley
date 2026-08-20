@@ -1,3 +1,5 @@
+import { localToday } from "@/lib/today";
+
 type LeadStage = string;
 
 export type FieldKey =
@@ -144,7 +146,11 @@ export function parseDate(raw: string | undefined): string | null {
   const parsed = new Date(trimmed);
   if (Number.isNaN(parsed.getTime())) return null;
 
-  return parsed.toISOString().slice(0, 10);
+  // Local components, not toISOString. "3/15/2026" parses as local
+  // midnight, and converting that to UTC moves it back a day for anybody
+  // east of Greenwich, so a spreadsheet imported in Sydney would land
+  // every follow-up a day early.
+  return localToday(parsed);
 }
 
 export function textOrNull(raw: string | undefined): string | null {
