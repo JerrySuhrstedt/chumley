@@ -36,7 +36,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           on it transparently, and the content is a panel resting inside
           that frame. */}
       <div className="flex h-screen w-full overflow-hidden bg-[var(--nav-bg)]">
-        <AppSidebar email={current.email} isAdmin={admin} />
+        <AppSidebar isAdmin={admin} />
         <div className="flex flex-1 flex-col overflow-hidden">
           <Topbar
             orgName={current.org.name}

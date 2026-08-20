@@ -10,12 +10,10 @@ import {
   Contact,
   KanbanSquare,
   LayoutDashboard,
-  LogOut,
   ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ReportButton } from "@/app/(app)/_report/report-button";
-import { signOut } from "@/app/(app)/actions";
 import { Sell1Logo } from "@/components/sell1-logo";
 
 const NAV = [
@@ -28,10 +26,8 @@ const NAV = [
 const STORAGE_KEY = "ssc:nav-collapsed";
 
 export function AppSidebar({
-  email,
   isAdmin = false,
 }: {
-  email: string | null;
   isAdmin?: boolean;
 }) {
   const pathname = usePathname();
@@ -49,8 +45,6 @@ export function AppSidebar({
       return !prev;
     });
   }
-
-  const initial = (email ?? "?").charAt(0).toUpperCase();
 
   return (
     <aside
@@ -120,41 +114,11 @@ export function AppSidebar({
         )}
       </button>
 
-      {/* Who you are. Settings used to sit here as well as in the profile
-          menu at the top right, which meant two doors into one room. The
-          profile menu keeps it: account housekeeping belongs with the
-          account, not in the navigation for daily work. */}
+      {/* Who you are, and how you leave, both live in the profile menu at
+          the top right. They were here as well, which put the same avatar
+          and the same sign-out on screen twice, and crowded the two things
+          that only exist down here. */}
       <div className="mt-2 border-t border-white/10 p-2">
-        <div
-          className={cn(
-            "flex items-center gap-2 pb-1",
-            collapsed ? "flex-col" : "px-1"
-          )}
-        >
-          <div
-            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[var(--nav-active)] text-sm font-semibold text-white"
-            title={email ?? undefined}
-          >
-            {initial}
-          </div>
-
-          {!collapsed && (
-            <p className="min-w-0 flex-1 truncate text-xs text-[var(--nav-ink)]">
-              {email ?? "Signed in"}
-            </p>
-          )}
-
-          <form action={signOut}>
-            <button
-              type="submit"
-              aria-label="Sign out"
-              title="Sign out"
-              className="flex size-8 items-center justify-center rounded-md text-[var(--nav-ink)] transition-colors hover:bg-[var(--nav-hover)] hover:text-white"
-            >
-              <LogOut className="size-4" />
-            </button>
-          </form>
-        </div>
 
         {isAdmin && (
           <Link
