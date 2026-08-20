@@ -83,7 +83,15 @@ export function LeadColumn({
 
   return (
     <div
-      ref={setSortRef}
+      // Both refs on the same node. Adding column reordering moved the
+      // card drop target onto the inner list, which quietly shrank it to
+      // exclude the header, the count and the footer. On a phone, where
+      // the column is full width and a finger is not precise, most drops
+      // then landed on nothing at all.
+      ref={(node) => {
+        setSortRef(node);
+        setDropRef(node);
+      }}
       style={{
         transform: CSS.Translate.toString(transform),
         transition,
@@ -176,10 +184,7 @@ export function LeadColumn({
         )}
       </div>
 
-      <div
-        ref={setDropRef}
-        className="flex min-h-12 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-1"
-      >
+      <div className="flex min-h-12 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-1">
         <SortableContext
           items={leads.map((l) => l.id)}
           strategy={verticalListSortingStrategy}

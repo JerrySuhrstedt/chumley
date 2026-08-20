@@ -180,8 +180,21 @@ export function LeadsBoard({
 
   /** A drop target is either a column (stage id) or another card (lead id). */
   function stageOf(id: string, source: Lead[]): LeadStage | null {
+    // A column is now both a drop target (keyed by stage key) and a
+    // sortable (keyed by row id) on the same element, so collision
+    // detection can hand back either. Both have to resolve, or a card
+    // dropped on a column header goes nowhere.
     if (stageKeys.includes(id)) return id as LeadStage;
+    const asColumn = boardStages.find((st) => st.id === id);
+    if (asColumn) return asColumn.key;
     return source.find((l) => l.id === id)?.stage ?? null;
+  }
+
+  /** The column something belongs to, whatever kind of id it is. */
+  function columnIdOf(id: string, source: Lead[]): string | null {
+    if (boardStages.some((st) => st.id === id)) return id;
+    const key = stageOf(id, source);
+    return key ? (boardStages.find((st) => st.key === key)?.id ?? null) : null;
   }
 
   function persist(stage: LeadStage, source: Lead[]) {
@@ -272,7 +285,9 @@ export function LeadsBoard({
       // Dropping a column onto won or lost is a no-op rather than an
       // error: those two are pinned to the end and cannot take a place.
       const from = columnOrder.indexOf(draggedId);
-      const to = columnOrder.indexOf(overId);
+      // The thing under the pointer may be a card, a drop key or the
+      // column itself. All three mean the same column.
+      const to = columnOrder.indexOf(columnIdOf(overId, localLeads) ?? "");
       if (from === -1 || to === -1 || from === to) return;
 
       const next = arrayMove(columnOrder, from, to);
