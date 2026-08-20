@@ -13,6 +13,14 @@ import { setReportStatus } from "../_report/actions";
  * a report actionable, and the email because the fastest useful response
  * is often a reply rather than a fix.
  */
+/** Colour carries the kind, so a wall of reports can be skimmed. */
+const KIND: Record<AdminReport["kind"], { label: string; className: string }> = {
+  broke: { label: "Broke", className: "bg-red-100 text-red-800" },
+  confusing: { label: "Confusing", className: "bg-amber-100 text-amber-900" },
+  idea: { label: "Idea", className: "bg-indigo-100 text-indigo-800" },
+  praise: { label: "Nice work", className: "bg-emerald-100 text-emerald-800" },
+};
+
 export function Reports({ reports }: { reports: AdminReport[] }) {
   const [busy, start] = useTransition();
 
@@ -43,9 +51,16 @@ export function Reports({ reports }: { reports: AdminReport[] }) {
           }`}
         >
           <div className="flex items-start justify-between gap-3">
-            <p className="min-w-0 flex-1 text-sm whitespace-pre-wrap text-slate-900">
-              {r.message}
-            </p>
+            <div className="min-w-0 flex-1">
+              <span
+                className={`mb-1.5 inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-bold tracking-wide uppercase ${KIND[r.kind].className}`}
+              >
+                {KIND[r.kind].label}
+              </span>
+              <p className="text-sm whitespace-pre-wrap text-slate-900">
+                {r.message}
+              </p>
+            </div>
             {r.status !== "closed" && (
               <button
                 type="button"

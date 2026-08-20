@@ -26,6 +26,7 @@ export type AdminUser = {
 
 export type AdminReport = {
   id: string;
+  kind: "broke" | "confusing" | "idea" | "praise";
   message: string;
   email: string | null;
   orgName: string | null;
@@ -162,7 +163,7 @@ export async function getAdminUsers(): Promise<AdminUser[]> {
  */
 export async function getAdminReports(limit = 50): Promise<AdminReport[]> {
   const rows = (await db.execute(sql`
-    SELECT r.id, r.message, r.email, r.page_url, r.user_agent,
+    SELECT r.id, r.kind, r.message, r.email, r.page_url, r.user_agent,
            r.status, r.created_at, o.name AS org_name
     FROM problem_reports r
     LEFT JOIN organizations o ON o.id = r.org_id
@@ -172,6 +173,7 @@ export async function getAdminReports(limit = 50): Promise<AdminReport[]> {
 
   return rows.map((r) => ({
     id: String(r.id),
+    kind: r.kind as AdminReport["kind"],
     message: String(r.message),
     email: r.email ? String(r.email) : null,
     orgName: r.org_name ? String(r.org_name) : null,

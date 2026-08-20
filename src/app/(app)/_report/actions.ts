@@ -29,8 +29,17 @@ export async function sendReport(
     .trim()
     .slice(0, 4000);
   if (message.length < 3) {
-    return { error: "Tell us what went wrong first.", sent: false };
+    return { error: "Tell us what happened first.", sent: false };
   }
+
+  // Validated against the list rather than trusted, since it arrives as
+  // a form value and lands in a database enum.
+  const raw = String(formData.get("kind") ?? "broke");
+  const kind = (["broke", "confusing", "idea", "praise"] as const).includes(
+    raw as "broke"
+  )
+    ? (raw as "broke" | "confusing" | "idea" | "praise")
+    : "broke";
 
   const h = await headers();
   const path = String(formData.get("path") ?? "").slice(0, 500);
@@ -40,6 +49,7 @@ export async function sendReport(
     orgId: current.org.id,
     userId: current.userId,
     email: current.email,
+    kind,
     message,
     pageUrl: path ? `${host}${path}` : null,
     userAgent: h.get("user-agent")?.slice(0, 500) ?? null,

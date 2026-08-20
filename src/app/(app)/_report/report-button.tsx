@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -16,6 +15,28 @@ import { Textarea } from "@/components/ui/textarea";
 import { sendReport, type ReportState } from "./actions";
 
 const INITIAL: ReportState = { error: null, sent: false };
+
+/**
+ * What kind of thing this is, asked before the words.
+ *
+ * "Nice work" is not decoration. A form that only accepts complaints is
+ * one most people never open, and sorting the good from the broken at
+ * the point of writing costs the sender nothing and saves reading every
+ * one to find out which is which.
+ */
+const KINDS = [
+  { value: "broke", label: "Something broke" },
+  { value: "confusing", label: "Confusing" },
+  { value: "idea", label: "Idea" },
+  { value: "praise", label: "Nice work" },
+] as const;
+
+const PROMPT: Record<string, string> = {
+  broke: "What were you trying to do, and what happened instead?",
+  confusing: "What did you expect to happen, and what did you see?",
+  idea: "What would you like it to do?",
+  praise: "What worked well?",
+};
 
 /**
  * "Report a problem", on every screen.
@@ -38,6 +59,7 @@ export function ReportButton({
   collapsed?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [kind, setKind] = useState<string>("broke");
   const [state, action, pending] = useActionState(sendReport, INITIAL);
   const pathname = usePathname();
 
@@ -92,33 +114,58 @@ export function ReportButton({
               <div>
                 <p className="font-semibold text-slate-900">Got it, thank you</p>
                 <p className="mt-1 text-sm text-slate-600">
-                  Jerry reads every one of these.
+                  Every one of these gets read.
                 </p>
               </div>
             </div>
           ) : (
             <form action={action}>
               <DialogHeader>
-                <DialogTitle>Report a problem</DialogTitle>
-                <DialogDescription>
-                  What went wrong? Plain words are fine. We already know
-                  which page you are on and what you are using, so there is
-                  no need to explain any of that.
-                </DialogDescription>
+                <DialogTitle>What happened?</DialogTitle>
               </DialogHeader>
 
               <input type="hidden" name="path" value={pathname} />
+              <input type="hidden" name="kind" value={kind} />
 
-              <div className="mt-4">
+              <div className="mt-3 flex flex-wrap gap-2">
+                {KINDS.map((k) => {
+                  const active = kind === k.value;
+                  return (
+                    <button
+                      key={k.value}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => setKind(k.value)}
+                      className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors focus-visible:ring-3 focus-visible:ring-[var(--board-bg)]/30 focus-visible:outline-none ${
+                        active
+                          ? "border-[var(--board-bg)] bg-[var(--board-bg)] text-white"
+                          : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      {k.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-3">
                 <Textarea
                   name="message"
                   required
                   autoFocus
                   rows={5}
                   maxLength={4000}
-                  placeholder="The card would not drag to Won and nothing happened when I tapped it."
+                  // Changes with the chip, because "what happened instead"
+                  // is the wrong question to ask somebody who picked
+                  // "Nice work".
+                  placeholder={PROMPT[kind]}
                 />
               </div>
+
+              <p className="mt-2 text-xs text-slate-500">
+                We automatically include the page you are on, so you do not
+                have to describe where you were.
+              </p>
 
               {state.error && (
                 <p className="mt-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -126,17 +173,13 @@ export function ReportButton({
                 </p>
               )}
 
-              <DialogFooter className="mt-4">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setOpen(false)}
-                >
-                  Never mind
+              <DialogFooter className="mt-4 flex-col gap-1">
+                <Button type="submit" loading={pending} className="w-full">
+                  Send
                 </Button>
-                <Button type="submit" loading={pending}>
-                  Send it
-                </Button>
+                <p className="text-center font-mono text-[11px] text-slate-400">
+                  {pathname}
+                </p>
               </DialogFooter>
             </form>
           )}

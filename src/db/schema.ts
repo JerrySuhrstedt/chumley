@@ -153,6 +153,20 @@ export const orgInvites = pgTable("org_invites", {
  * `key` rather than the row id is what leads store, so renaming a bucket
  * is free and deleting one leaves data that can still be read.
  */
+/**
+ * What kind of thing somebody is telling us.
+ *
+ * "praise" earns its place alongside the complaints. A form that only
+ * accepts problems is a form most people never open, and the ones who
+ * would have said something kind say nothing instead.
+ */
+export const reportKindEnum = pgEnum("report_kind", [
+  "broke",
+  "confusing",
+  "idea",
+  "praise",
+]);
+
 export const reportStatusEnum = pgEnum("report_status", [
   "new",
   "read",
@@ -180,6 +194,7 @@ export const problemReports = pgTable("problem_reports", {
   userId: uuid("user_id"),
   /** Copied at write time so a reply is possible after the account goes. */
   email: text("email"),
+  kind: reportKindEnum("kind").notNull().default("broke"),
   message: text("message").notNull(),
   /** Where they were when it went wrong. */
   pageUrl: text("page_url"),
