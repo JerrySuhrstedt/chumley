@@ -116,7 +116,11 @@ export function LeadColumn({
           {...attributes}
           {...listeners}
           aria-label={`Reorder ${stage.label}`}
-          className="flex cursor-grab touch-none justify-center pt-1.5 text-[var(--board-ink-muted)] opacity-50 transition-opacity hover:opacity-100 active:cursor-grabbing"
+          // Full strength by default, and only fades where there is a
+          // mouse to bring it back. Held at half opacity everywhere, it
+          // was permanently dim on a phone and signified nothing, which
+          // is how a working feature reads as a smudge.
+          className="flex cursor-grab touch-none justify-center pt-1.5 text-[var(--board-ink-muted)] transition-opacity active:cursor-grabbing pointer-fine:opacity-50 pointer-fine:hover:opacity-100"
         >
           <GripHorizontal className="size-4" />
         </div>
@@ -155,7 +159,7 @@ export function LeadColumn({
           <DropdownMenu>
             <DropdownMenuTrigger
               aria-label={`${stage.label} options`}
-              className="shrink-0 rounded p-0.5 text-[var(--board-ink-muted)] opacity-60 hover:bg-black/5 hover:opacity-100"
+              className="shrink-0 rounded p-0.5 text-[var(--board-ink)] hover:bg-black/5 pointer-fine:text-[var(--board-ink-muted)] pointer-fine:opacity-60 pointer-fine:hover:opacity-100"
             >
               <MoreHorizontal className="size-4" />
             </DropdownMenuTrigger>

@@ -46,9 +46,21 @@ export function LeadCardView({
 
   const temp = temperature(lead.temperature);
 
-  const meta = [lead.companyName, lead.value ? `$${lead.value}` : null]
-    .filter(Boolean)
-    .join(" · ");
+  /**
+   * The deal size, as money rather than a raw column value.
+   *
+   * It used to be joined onto the company name in grey, which put the one
+   * number the job is measured on in the least prominent place on the
+   * card. Cents are dropped: nobody scans a board for 45,000.00.
+   */
+  const amount =
+    lead.value !== null && lead.value !== undefined && lead.value !== ""
+      ? Number(lead.value)
+      : null;
+  const money =
+    amount !== null && Number.isFinite(amount)
+      ? `$${amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+      : null;
 
   return (
     <div
@@ -63,22 +75,36 @@ export function LeadCardView({
         onClick={onClick}
         className="cursor-pointer px-3 pt-2.5 pb-2"
       >
-        <span
-          className="mb-2 inline-flex max-w-full items-center truncate rounded px-2 py-0.5 text-xs font-medium"
-          style={{
-            backgroundColor: status.color,
-            color: status.key === "today" ? "#172b4d" : "#fff",
-          }}
-          title={status.label}
-        >
-          {status.label}
-        </span>
+        {/* The next step and the money share the top line: what to do, and
+            what it is worth. The amount is right-aligned and coloured
+            because being different from everything around it is what
+            draws the eye to it. */}
+        <div className="mb-2 flex items-start justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <span
+              className="inline-flex min-w-0 items-center truncate rounded px-2 py-0.5 text-xs font-medium"
+              style={{
+                backgroundColor: status.color,
+                color: status.key === "today" ? "#172b4d" : "#fff",
+              }}
+              title={status.label}
+            >
+              {status.label}
+            </span>
 
-        {lead.isSample && (
-          <span className="mb-2 ml-1.5 inline-flex items-center rounded bg-[var(--board-ink-muted)] px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-white uppercase">
-            Example
-          </span>
-        )}
+            {lead.isSample && (
+              <span className="inline-flex shrink-0 items-center rounded bg-[var(--board-ink-muted)] px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-white uppercase">
+                Example
+              </span>
+            )}
+          </div>
+
+          {money && (
+            <span className="shrink-0 text-lg leading-tight font-semibold text-[var(--board-bg)]">
+              {money}
+            </span>
+          )}
+        </div>
 
         <div className="flex items-center gap-2">
           <LeadAvatar lead={lead} className="size-7 text-[11px]" />
@@ -86,9 +112,9 @@ export function LeadCardView({
             <p className="truncate text-sm font-medium text-[var(--board-ink)]">
               {lead.name}
             </p>
-            {meta && (
+            {lead.companyName && (
               <p className="truncate text-xs text-[var(--board-ink-muted)]">
-                {meta}
+                {lead.companyName}
               </p>
             )}
           </div>

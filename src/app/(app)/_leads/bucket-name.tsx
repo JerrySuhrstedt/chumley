@@ -57,7 +57,7 @@ export function BucketName({
         }}
         maxLength={30}
         aria-label={`Rename ${label} bucket`}
-        className="w-full min-w-0 rounded border border-[var(--board-bg)] bg-white px-1.5 py-0.5 text-[1.2rem] font-semibold text-[var(--board-ink)] outline-none"
+        className="w-full min-w-0 rounded border border-[var(--board-bg)] bg-white px-1.5 py-0.5 text-xl font-semibold text-[var(--board-ink)] outline-none"
       />
     );
   }
@@ -67,7 +67,11 @@ export function BucketName({
       type="button"
       onClick={() => setEditing(true)}
       title="Rename this bucket"
-      className="-mx-1 block max-w-full truncate rounded px-1 text-left text-[1.2rem] leading-tight font-semibold text-[var(--board-ink)] hover:bg-black/5"
+      // The dashed underline is the whole point: this is a button
+      // dressed as a heading, and a hover background is invisible on a
+      // phone. Something has to say "you can change this" while the
+      // finger is still deciding.
+      className="-mx-1 block max-w-full truncate rounded border-b border-dashed border-[var(--board-ink-muted)]/45 px-1 text-left text-xl leading-tight font-semibold text-[var(--board-ink)] hover:bg-black/5"
     >
       {label}
     </button>
