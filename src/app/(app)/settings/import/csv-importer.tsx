@@ -345,7 +345,7 @@ export function CsvImporter() {
         {!hasName && (
           <p className="flex items-center gap-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
             <TriangleAlert className="size-4 shrink-0" />
-            Tell us which column has the person's name before importing.
+            Tell us which column has the person&apos;s name before importing.
           </p>
         )}
 
