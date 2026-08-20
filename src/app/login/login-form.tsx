@@ -15,8 +15,16 @@ import {
   signUpWithPassword,
   type LoginState,
 } from "./actions";
+import { Mail } from "lucide-react";
 import { OAuthButton } from "./oauth-buttons";
 
+/**
+ * "magic" is one action with two meanings. The same emailed link both
+ * creates an account and signs an existing person in, because
+ * sendMagicLink passes shouldCreateUser. What has to change is the
+ * wording: somebody creating an account should not be shown a panel
+ * headed "Sign in".
+ */
 type Mode = "signin" | "signup" | "magic";
 
 const INITIAL: LoginState = { error: null, sent: false };
@@ -29,7 +37,7 @@ const COPY: Record<Mode, { title: string; cta: string; pending: string }> = {
     pending: "Creating account...",
   },
   magic: {
-    title: "Sign in",
+    title: "No password needed",
     cta: "Email me a sign-in link",
     pending: "Sending...",
   },
@@ -46,6 +54,11 @@ export function LoginForm({
 }) {
   // The marketing page links straight to signup, so honour ?mode=signup.
   const [mode, setMode] = useState<Mode>(initialMode);
+  // Where the magic-link panel came from, so leaving it returns there
+  // rather than always dropping people on the sign-in form.
+  const [cameFrom, setCameFrom] = useState<"signin" | "signup">(
+    initialMode === "signup" ? "signup" : "signin"
+  );
 
   const action =
     mode === "signin"
@@ -66,7 +79,11 @@ export function LoginForm({
           Check your email
         </h1>
         <p className="mt-2 text-sm text-slate-600">
-          We sent you a link to finish signing in.
+          We sent you a link. Open it on this device and you are in. No
+          password to choose, and nothing else to fill in.
+        </p>
+        <p className="mt-3 text-xs text-slate-500">
+          It can take a minute to arrive. Check spam if it does not.
         </p>
       </div>
     );
@@ -77,8 +94,13 @@ export function LoginForm({
       <h1 className="text-center text-2xl font-semibold text-slate-800">
         {copy.title}
       </h1>
+      {/* Not shown on the link panel. That one already creates accounts,
+          so offering "create an account" beside it implies it does not,
+          and the way back to a password sits under the form. */}
       <p className="mt-1 text-center text-sm text-slate-600">
-        {mode === "signup" ? (
+        {mode === "magic" ? (
+          "One link. It signs you in, or sets you up if you are new."
+        ) : mode === "signup" ? (
           <>
             or{" "}
             <button
@@ -175,19 +197,35 @@ export function LoginForm({
           <input type="hidden" name="next" value={next ?? "/pipeline"} />
           <OAuthButton provider="linkedin" />
         </form>
+
+        {mode !== "magic" && (
+          <button
+            type="button"
+            onClick={() => {
+              setCameFrom(mode === "signup" ? "signup" : "signin");
+              setMode("magic");
+            }}
+            className="flex w-full items-center justify-center gap-2.5 rounded-md border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+          >
+            <Mail className="size-[18px] text-slate-500" aria-hidden="true" />
+            {mode === "signup"
+              ? "Sign up with an emailed link"
+              : "Email me a sign-in link"}
+          </button>
+        )}
       </div>
 
-      <div className="mt-6 text-center">
-        <button
-          type="button"
-          onClick={() => setMode(mode === "magic" ? "signin" : "magic")}
-          className="text-sm font-semibold text-slate-600 hover:underline"
-        >
-          {mode === "magic"
-            ? "Sign in with a password instead"
-            : "Sign in a different way"}
-        </button>
-      </div>
+      {mode === "magic" && (
+        <div className="mt-6 text-center">
+          <button
+            type="button"
+            onClick={() => setMode(cameFrom)}
+            className="text-sm font-semibold text-slate-600 hover:underline"
+          >
+            Use a password instead
+          </button>
+        </div>
+      )}
     </div>
   );
 }
