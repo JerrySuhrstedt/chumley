@@ -6,6 +6,7 @@ import { getBillingState } from "@/lib/paddle/access";
 import { Checkout } from "./checkout";
 import { TestModeNotice } from "@/components/test-mode-notice";
 import { Seats } from "./seats";
+import { CancelPlan } from "./cancel-plan";
 
 const LABEL: Record<string, string> = {
   active: "Active",
@@ -152,14 +153,10 @@ export default async function BillingSettingsPage() {
                 </div>
               )}
 
-              {billing.endingAt && (
-                <p className="mt-2 rounded-md bg-amber-50 px-3 py-2 text-amber-900">
-                  {/* Status is still active until this date. Saying "cancelled"
-                      here would be wrong and would look like access is gone. */}
-                  Your plan ends on {when(billing.endingAt)}. Everything keeps
-                  working until then.
-                </p>
-              )}
+              {/* The end date used to be announced here too. It now lives
+                  with the control that undoes it, so somebody reading
+                  "your plan ends" has the way back in the same breath
+                  rather than further down the page. */}
 
               {sub.status === "past_due" && (
                 <p className="mt-2 rounded-md bg-red-50 px-3 py-2 text-red-800">
@@ -173,6 +170,22 @@ export default async function BillingSettingsPage() {
 
         {sub && current.role === "owner" && (
           <Seats paidFor={sub.quantity} membersNow={billing.seatsUsed} />
+        )}
+
+        {/* Last on the page, and only for the person who pays. Somewhere
+            findable, not hidden: a cancel button that has to be hunted for
+            is the thing people write about afterwards. */}
+        {sub && current.role === "owner" && (
+          <div className="flex flex-col">
+            <CancelPlan
+              endsAt={
+                sub.scheduledChangeAction === "cancel"
+                  ? sub.scheduledChangeAt
+                  : null
+              }
+              periodEnd={sub.currentPeriodEnd}
+            />
+          </div>
         )}
       </div>
     </div>

@@ -175,3 +175,73 @@ export async function changeSeats(want: number) {
   revalidatePath("/settings/team");
   return { error: null };
 }
+
+/**
+ * Cancel at the end of the period the team has already paid for.
+ *
+ * The subscription id is never accepted from the caller. It is looked up
+ * from the signed-in person's own team, so there is no id to forge and no
+ * ownership check that can be got wrong: a server action is callable by
+ * anyone who can reach the site, and the only safe input is none.
+ *
+ * "immediately" is deliberately not offered. They pressed cancel, not
+ * cancel and refund the rest of the month, and taking the remainder away
+ * on the spot is the kind of thing that gets written about.
+ */
+export async function cancelSubscription() {
+  const loaded = await load();
+  if (loaded.error) return { error: loaded.error, endsAt: null };
+  const { sub } = loaded;
+
+  if (sub.scheduledChangeAction === "cancel") {
+    return { error: null, endsAt: sub.scheduledChangeAt };
+  }
+
+  try {
+    const result = await paddle().subscriptions.cancel(sub.id, {
+      effectiveFrom: "next_billing_period",
+    });
+
+    // The status is still active and stays that way until the date
+    // arrives. The webhook writes the row; this only refreshes the page,
+    // so the screen and the database cannot disagree.
+    revalidatePath("/settings/billing");
+    return {
+      error: null,
+      endsAt: result.scheduledChange?.effectiveAt
+        ? new Date(result.scheduledChange.effectiveAt)
+        : null,
+    };
+  } catch (e) {
+    return {
+      error: e instanceof Error ? e.message : "Could not cancel that.",
+      endsAt: null,
+    };
+  }
+}
+
+/**
+ * Change your mind before the date arrives.
+ *
+ * Clearing the scheduled change is all this takes, because the
+ * subscription never stopped being active. Worth having: somebody who
+ * cancels in a bad week and wants back in on Monday should not have to
+ * put a card in again.
+ */
+export async function resumeSubscription() {
+  const loaded = await load();
+  if (loaded.error) return { error: loaded.error };
+  const { sub } = loaded;
+
+  if (sub.scheduledChangeAction !== "cancel") return { error: null };
+
+  try {
+    await paddle().subscriptions.update(sub.id, { scheduledChange: null });
+    revalidatePath("/settings/billing");
+    return { error: null };
+  } catch (e) {
+    return {
+      error: e instanceof Error ? e.message : "Could not undo that.",
+    };
+  }
+}
