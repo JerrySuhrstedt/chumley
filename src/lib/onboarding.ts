@@ -1,9 +1,9 @@
-import { and, count, eq, isNotNull, ne, sql } from "drizzle-orm";
+import { and, count, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { activities, leads } from "@/db/schema";
 
 export type OnboardingStep = {
-  key: "account" | "name" | "deal" | "move" | "next";
+  key: "account" | "name" | "deal" | "move" | "contact";
   label: string;
   /** What they get, not what we want. */
   hint: string;
@@ -35,7 +35,7 @@ export async function getOnboardingState(
   orgId: string,
   displayName: string | null
 ): Promise<OnboardingState> {
-  const [realLeads, moved, planned] = await Promise.all([
+  const [realLeads, moved, contacted] = await Promise.all([
     db
       .select({ n: count() })
       .from(leads)
@@ -47,15 +47,16 @@ export async function getOnboardingState(
       .from(activities)
       .where(and(eq(activities.orgId, orgId), eq(activities.type, "stage_change"))),
 
+    // Reaching out, by any of the three routes. Logged automatically when
+    // the call, text or email button is tapped, so this cannot be ticked
+    // off by intending to do it.
     db
       .select({ n: count() })
-      .from(leads)
+      .from(activities)
       .where(
         and(
-          eq(leads.orgId, orgId),
-          eq(leads.isSample, false),
-          isNotNull(leads.nextActionText),
-          ne(leads.nextActionText, sql`''`)
+          eq(activities.orgId, orgId),
+          inArray(activities.type, ["call", "text", "email"])
         )
       ),
   ]);
@@ -89,10 +90,14 @@ export async function getOnboardingState(
       done: Number(moved[0]?.n ?? 0) > 0,
     },
     {
-      key: "next",
-      label: "Set what happens next",
-      hint: "The card turns red when it is late. That is the whole system.",
-      done: Number(planned[0]?.n ?? 0) > 0,
+      key: "contact",
+      label: "Call, text or email someone",
+      hint: "Tap the phone, message or mail icon on any card. It logs itself.",
+      // The step that proves the product. Tapping a name to ring it is
+      // the reason a rep would use this instead of a spreadsheet, and it
+      // was the only part of the first five minutes the list never asked
+      // for. Two thirds of teams had never once tried it.
+      done: Number(contacted[0]?.n ?? 0) > 0,
     },
   ];
 
