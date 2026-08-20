@@ -73,14 +73,20 @@ export function LoginForm({
   const error = state.error ?? initialError ?? null;
 
   if (state.sent) {
+    // Both the emailed link and a password signup land here, because
+    // Supabase confirms the address either way. They are not the same
+    // message: telling somebody who just chose a password that there is
+    // "no password to choose" reads as though the form did not work.
+    const viaLink = mode === "magic";
     return (
       <div className="text-center">
         <h1 className="text-2xl font-semibold text-slate-800">
           Check your email
         </h1>
         <p className="mt-2 text-sm text-slate-600">
-          We sent you a link. Open it on this device and you are in. No
-          password to choose, and nothing else to fill in.
+          {viaLink
+            ? "We sent you a link. Open it on this device and you are in. No password to choose, and nothing else to fill in."
+            : "We sent you a link to confirm your address. Open it and your account is ready, with the password you just chose."}
         </p>
         <p className="mt-3 text-xs text-slate-500">
           It can take a minute to arrive. Check spam if it does not.
