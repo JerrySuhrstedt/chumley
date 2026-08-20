@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { X } from "lucide-react";
 import { Sell1Logo } from "@/components/sell1-logo";
 import { IosSteps } from "@/components/install-steps";
@@ -30,12 +30,14 @@ const QUIET_DAYS = 14;
  */
 export function InstallPrompt() {
   const { event, ios, browser, installed, ready } = useInstall();
-  const [dismissed, setDismissed] = useState(true);
-
-  useEffect(() => {
+  // Read once, on the first client render. An effect that copies
+  // localStorage into state renders twice and flashes the banner at
+  // somebody who already dismissed it.
+  const [dismissed, setDismissed] = useState(() => {
+    if (typeof window === "undefined") return true;
     const until = Number(localStorage.getItem(DISMISSED) ?? 0);
-    setDismissed(Number.isFinite(until) && until > Date.now());
-  }, []);
+    return Number.isFinite(until) && until > Date.now();
+  });
 
   function dismiss() {
     const until = Date.now() + QUIET_DAYS * 24 * 60 * 60 * 1000;

@@ -29,27 +29,32 @@ export function Seats({
 }) {
   const [want, setWant] = useState(paidFor);
   const [quote, setQuote] = useState<Quote | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [pricing, setPricing] = useState(false);
+  // Kept with the seat count it belongs to, so a failure for four seats
+  // is not still on screen when the stepper says six.
+  const [failure, setFailure] = useState<{ seats: number; message: string } | null>(
+    null
+  );
   const [saving, startSaving] = useTransition();
 
   const floor = Math.max(1, membersNow);
   const changed = want !== paidFor;
 
+  // Both derived rather than stored. An answer for the number currently on
+  // screen is the only one worth showing, and "still working it out" is
+  // simply the absence of one, so neither needs its own state and the
+  // effect never has to set any synchronously.
+  const error = failure?.seats === want ? failure.message : null;
+  const answer = quote?.seats === want ? quote : null;
+  const pricing = changed && !answer && !error;
+
   // Price it as they step, so the number is on screen before they commit.
   useEffect(() => {
-    if (!changed) {
-      setQuote(null);
-      setError(null);
-      return;
-    }
+    if (!changed) return;
     let live = true;
-    setPricing(true);
     const t = setTimeout(async () => {
       const r = await previewSeats(want);
       if (!live) return;
-      setPricing(false);
-      setError(r.error);
+      setFailure(r.error ? { seats: want, message: r.error } : null);
       setQuote(r.quote);
     }, 400);
     return () => {
@@ -70,7 +75,7 @@ export function Seats({
   const save = () =>
     startSaving(async () => {
       const r = await changeSeats(want);
-      if (r.error) setError(r.error);
+      if (r.error) setFailure({ seats: want, message: r.error });
     });
 
   return (
@@ -118,29 +123,29 @@ export function Seats({
           <p className="text-sm text-slate-500">Working out the cost...</p>
         )}
 
-        {changed && !pricing && quote && (
+        {answer && (
           <div className="rounded-lg border border-slate-200 p-4 text-sm">
             <div className="flex justify-between">
               <span className="text-slate-600">Charged today</span>
               <span className="font-semibold text-slate-900">
-                {money(quote.dueNow, quote.currency)}
+                {money(answer.dueNow, answer.currency)}
               </span>
             </div>
-            {quote.recurring && (
+            {answer.recurring && (
               <div className="mt-1.5 flex justify-between">
                 <span className="text-slate-600">Your bill after that</span>
                 <span className="font-semibold text-slate-900">
-                  {money(quote.recurring, quote.currency)}
+                  {money(answer.recurring, answer.currency)}
                 </span>
               </div>
             )}
-            {Number(quote.dueNow) === 0 && (
+            {Number(answer.dueNow) === 0 && (
               <p className="mt-2.5 text-xs text-slate-500">
                 Nothing today. You are still in your free trial.
               </p>
             )}
 
-            {quote.beforeTeamRate && (
+            {answer.beforeTeamRate && (
               <p className="mt-2.5 rounded-md bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
                 That figure is at the single-person rate, because your plan
                 cannot move to team pricing until the trial ends. It drops to

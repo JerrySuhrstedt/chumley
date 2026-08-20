@@ -24,10 +24,6 @@ export function stageLabel(stage: LeadStage, stages?: BoardStage[]) {
   );
 }
 
-export function isInPipeline(stage: LeadStage) {
-  return stage !== CONTACT_STAGE;
-}
-
 /**
  * The bucket to the right, for the swipe-forward gesture.
  *

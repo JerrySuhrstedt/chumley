@@ -13,7 +13,7 @@ import {
 import type { Lead, Template } from "@/db/schema";
 import { LeadAvatar } from "./lead-avatar";
 import { TapToContact } from "./tap-to-contact";
-import { nextActionStatus, STAGE_COLOR } from "./stages";
+import { nextActionStatus } from "./stages";
 import { useBoardStages } from "./stages-context";
 import { temperature } from "./temperature";
 import type { LeadStage } from "./actions";
@@ -41,8 +41,6 @@ export function LeadCardView({
 }) {
   const boardStages = useBoardStages();
   const status = nextActionStatus(lead);
-  const label = (value: LeadStage) =>
-    boardStages.find((s) => s.key === value)?.label ?? value;
   // Everywhere this deal is not, so the menu never offers where it is.
   const elsewhere = boardStages.filter((s) => s.key !== lead.stage);
 

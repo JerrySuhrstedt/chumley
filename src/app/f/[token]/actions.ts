@@ -3,13 +3,32 @@
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
+import { defaultStageKey } from "@/lib/stages";
 import { activities, leads, organizations } from "@/db/schema";
 import { normalizePhone } from "@/lib/phone";
 
 export type FormState = { error: string | null; done: boolean };
 
+/**
+ * Caps on what a stranger can put in the database.
+ *
+ * This form is public and unauthenticated by design, so nothing else
+ * stands between the open internet and an insert. Generous enough that no
+ * real person hits them, short enough that nobody stores a novel in the
+ * name field.
+ */
+const LIMITS: Record<string, number> = {
+  firstName: 80,
+  lastName: 80,
+  email: 200,
+  phone: 40,
+  company: 120,
+};
+
 function text(formData: FormData, key: string) {
-  const value = String(formData.get(key) ?? "").trim();
+  const value = String(formData.get(key) ?? "")
+    .trim()
+    .slice(0, LIMITS[key] ?? 200);
   return value.length > 0 ? value : null;
 }
 
@@ -47,6 +66,7 @@ export async function submitPublicForm(
       email,
       phone: normalizePhone(text(formData, "phone")),
       companyName: text(formData, "company"),
+      stage: await defaultStageKey(org.id),
     })
     .returning({ id: leads.id });
 

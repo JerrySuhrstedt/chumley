@@ -8,10 +8,8 @@ import { getCurrentOrg } from "@/lib/org";
 import {
   MAX_OPEN_STAGES,
   emptyStageInto,
-  fallbackStage,
   getStages,
   nextOpenPosition,
-  stageCounts,
 } from "@/lib/stages";
 
 /**
@@ -184,17 +182,4 @@ export async function deleteStage(id: string, destinationKey: string) {
 
   refresh();
   return { error: null, movedTo: destination.label };
-}
-
-/** Lead counts per bucket, so a delete can warn before it moves anything. */
-export async function getStageCounts() {
-  const current = await getCurrentOrg();
-  if (!current) return {};
-  return stageCounts(current.org.id);
-}
-
-export async function getFallbackKey() {
-  const current = await getCurrentOrg();
-  if (!current) return "new_lead";
-  return fallbackStage(await getStages(current.org.id)).key;
 }

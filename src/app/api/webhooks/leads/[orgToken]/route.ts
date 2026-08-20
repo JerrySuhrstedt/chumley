@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
+import { defaultStageKey } from "@/lib/stages";
 import { activities, leads, organizations } from "@/db/schema";
 import { normalizePhone } from "@/lib/phone";
 
@@ -46,7 +47,11 @@ export async function POST(
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const name = toNullable(body.name);
+  // Same reasoning as the website form: this URL is public, so the only
+  // thing bounding what lands in the database is what is bounded here.
+  const cap = (v: string | null, n: number) => (v ? v.slice(0, n) : null);
+
+  const name = cap(toNullable(body.name), 120);
   if (!name) {
     return NextResponse.json({ error: "\"name\" is required" }, { status: 400 });
   }
@@ -56,10 +61,13 @@ export async function POST(
     .values({
       orgId: org.id,
       name,
-      email: toNullable(body.email),
+      email: cap(toNullable(body.email), 200),
       phone: normalizePhone(toNullable(body.phone)),
-      companyName: toNullable(body.company),
+      companyName: cap(toNullable(body.company), 120),
       value: toAmount(body.value),
+      // The team's own first bucket, not a hardcoded one. They are free
+      // to rename or delete the bucket this used to assume existed.
+      stage: await defaultStageKey(org.id),
     })
     .returning({ id: leads.id });
 

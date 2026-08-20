@@ -8,10 +8,10 @@ import {
   activityOutcomeEnum,
   activityTypeEnum,
   leads,
-  organizations,
 } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
 import { normalizePhone } from "@/lib/phone";
+import { defaultStageKey, resolveStageKey } from "@/lib/stages";
 
 export type FormState = { error: string | null };
 /**
@@ -72,7 +72,7 @@ export async function createLead(
     email: toNullable(formData.get("email")),
     companyName: toNullable(formData.get("companyName")),
     value: toNullable(formData.get("value")),
-    stage: (toNullable(formData.get("stage")) as LeadStage) ?? "new_lead",
+    stage: await resolveStageKey(org.id, toNullable(formData.get("stage"))),
   });
 
   revalidatePath("/pipeline");
@@ -186,7 +186,7 @@ export async function addToPipeline(id: string) {
 
   await db
     .update(leads)
-    .set({ stage: "new_lead", updatedAt: new Date() })
+    .set({ stage: await defaultStageKey(org.id), updatedAt: new Date() })
     .where(and(eq(leads.id, id), eq(leads.orgId, org.id)));
 
   await db.insert(activities).values({

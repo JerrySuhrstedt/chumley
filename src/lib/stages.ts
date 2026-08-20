@@ -12,7 +12,6 @@ import { leads, organizations, stages, type Stage } from "@/db/schema";
  */
 
 export { MAX_OPEN_STAGES } from "@/app/(app)/_leads/stage-limits";
-import { MAX_OPEN_STAGES } from "@/app/(app)/_leads/stage-limits";
 
 /** The board a team starts with, and the meaning behind each column. */
 const SEED: { key: string; label: string; kind: Stage["kind"]; color: string }[] =
@@ -80,6 +79,38 @@ export async function getStages(orgId: string): Promise<Stage[]> {
 /** Just the board columns, left to right. */
 export async function getBoardStages(orgId: string): Promise<Stage[]> {
   return (await getStages(orgId)).filter((s) => s.kind !== "contact");
+}
+
+
+/**
+ * Where a new lead goes, for this team, right now.
+ *
+ * Never a hardcoded "new_lead". That key belongs to a bucket the team is
+ * free to rename or delete, and a lead written against a bucket that no
+ * longer exists is drawn by no column: it is not lost, but nobody can see
+ * it, which in a sales pipeline amounts to the same thing.
+ */
+export async function defaultStageKey(orgId: string): Promise<string> {
+  const all = await getStages(orgId);
+  return fallbackStage(all).key;
+}
+
+/**
+ * Accept a bucket key only if this team actually has it.
+ *
+ * Everything that can name a stage from outside the board goes through
+ * here: the CSV importer, the inbound webhook, the website form. None of
+ * them know what a given team's board looks like, and the column is plain
+ * text with no foreign key behind it, so nothing else would stop them
+ * writing a bucket that does not exist.
+ */
+export async function resolveStageKey(
+  orgId: string,
+  wanted: string | null | undefined
+): Promise<string> {
+  const all = await getStages(orgId);
+  if (wanted && all.some((s) => s.key === wanted)) return wanted;
+  return fallbackStage(all).key;
 }
 
 /** Where a lead goes when its bucket is deleted, or its key is unknown. */

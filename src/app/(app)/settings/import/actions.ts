@@ -6,6 +6,7 @@ import { db } from "@/db";
 import { leads } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
 import { normalizePhone } from "@/lib/phone";
+import { defaultStageKey, getStages } from "@/lib/stages";
 
 type LeadStage = string;
 
@@ -84,6 +85,13 @@ export async function importLeads(
   }
 
   if (toInsert.length > 0) {
+    // The spreadsheet's idea of a stage is mapped to a key by aliases,
+    // which knows nothing about this team's actual board. A key that
+    // matches no bucket would produce leads no column draws, so every
+    // row is checked against the real list before it is written.
+    const valid = new Set((await getStages(current.org.id)).map((s) => s.key));
+    const fallback = await defaultStageKey(current.org.id);
+
     await db.insert(leads).values(
       toInsert.map((row) => ({
         orgId: current.org.id,
@@ -93,7 +101,7 @@ export async function importLeads(
         phone: normalizePhone(row.phone),
         title: row.title,
         value: row.value,
-        stage: row.stage,
+        stage: valid.has(row.stage) ? row.stage : fallback,
         nextActionText: row.nextActionText,
         nextActionDue: row.nextActionDue,
       }))
