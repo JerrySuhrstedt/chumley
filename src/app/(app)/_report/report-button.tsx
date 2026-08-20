@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -173,14 +172,19 @@ export function ReportButton({
                 </p>
               )}
 
-              <DialogFooter className="mt-4 flex-col gap-1">
+              {/* Deliberately not DialogFooter. That component turns
+                  itself into a row at the sm breakpoint, which put the
+                  path beside the button and pushed it outside the
+                  dialog. One button and a caption is a stack at every
+                  width. */}
+              <div className="mt-5 flex flex-col gap-1.5">
                 <Button type="submit" loading={pending} className="w-full">
                   Send
                 </Button>
                 <p className="text-center font-mono text-[11px] text-slate-400">
                   {pathname}
                 </p>
-              </DialogFooter>
+              </div>
             </form>
           )}
         </DialogContent>
