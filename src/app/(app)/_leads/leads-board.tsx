@@ -90,12 +90,23 @@ export function LeadsBoard({
     setLocalLeads(leads);
   }, [leads]);
 
+  /**
+   * The working columns as the server sees them, as a plain string.
+   *
+   * A primitive on purpose. Depending on the array meant the effect fired
+   * on every render, set new state, and re-rendered, forever. Comparing
+   * the ids themselves means it fires when a bucket is genuinely added,
+   * removed or moved, and not otherwise.
+   */
+  const serverOrder = boardStages
+    .filter((s) => s.kind === "open")
+    .map((s) => s.id)
+    .join(",");
+
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- resync after a bucket is added, removed or reordered
-    setColumnOrder(
-      boardStages.filter((s) => s.kind === "open").map((s) => s.id),
-    );
-  }, [boardStages]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- adopt the server's order once it changes
+    setColumnOrder(serverOrder ? serverOrder.split(",") : []);
+  }, [serverOrder]);
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),

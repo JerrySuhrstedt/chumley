@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext } from "react";
+import { createContext, useContext, useMemo } from "react";
 import type { BoardStage } from "./stages";
 
 /**
@@ -31,7 +31,14 @@ export function useStages() {
   return useContext(StagesContext);
 }
 
-/** Just the board columns, left to right. */
+/**
+ * Just the board columns, left to right.
+ *
+ * Memoised because the filter would otherwise hand back a new array on
+ * every render, and anything using it as an effect dependency would fire
+ * forever. That is not hypothetical: it is exactly what the board did.
+ */
 export function useBoardStages() {
-  return useContext(StagesContext).filter((s) => s.kind !== "contact");
+  const all = useContext(StagesContext);
+  return useMemo(() => all.filter((s) => s.kind !== "contact"), [all]);
 }
