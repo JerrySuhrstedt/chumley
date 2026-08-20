@@ -1,3 +1,4 @@
+import { localToday } from "@/lib/today";
 import type { LeadStage } from "./actions";
 import type { Stage } from "@/db/schema";
 
@@ -71,7 +72,7 @@ export function nextActionStatus(lead: {
     };
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localToday();
 
   if (lead.nextActionDue < today) {
     return {

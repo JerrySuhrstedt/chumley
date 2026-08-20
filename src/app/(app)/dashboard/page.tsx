@@ -8,14 +8,13 @@ import { getCurrentOrg } from "@/lib/org";
 import { activityMeta, outcomeMeta } from "../_leads/activity-meta";
 import { CONTACT_STAGE } from "../_leads/stages";
 import { getStages } from "@/lib/stages";
+import {
+  DueCount,
+  LocalHeading,
+  OverdueBadge,
+} from "./local-heading";
 import { NextSteps } from "./next-steps";
 import { PipelineFunnel } from "./pipeline-funnel";
-
-function greeting(hour: number) {
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
-}
 
 const money = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
@@ -45,8 +44,11 @@ export default async function DashboardPage() {
     db.select().from(templates).where(eq(templates.orgId, current.org.id)),
   ]);
 
-  const now = new Date();
-  const today = now.toISOString().slice(0, 10);
+  // Deliberately no server-side "today". This process runs in UTC and has
+  // no idea what day it is where the reader is, so anything date-sensitive
+  // is decided in the browser.
+  const withNextStep = (l: { nextActionText: string | null }) =>
+    Boolean(l.nextActionText);
 
   const pipeline = allLeads.filter((l) => l.stage !== CONTACT_STAGE);
   const open = pipeline.filter((l) => l.stage !== "won" && l.stage !== "lost");
@@ -56,13 +58,9 @@ export default async function DashboardPage() {
     .filter((l) => l.stage === "won")
     .reduce((sum, l) => sum + Number(l.value ?? 0), 0);
 
-  const dueLeads = pipeline
-    .filter((l) => l.nextActionText && l.nextActionDue && l.nextActionDue <= today)
-    .sort((a, b) => (a.nextActionDue ?? "").localeCompare(b.nextActionDue ?? ""));
-
-  const overdueCount = dueLeads.filter(
-    (l) => (l.nextActionDue ?? "") < today
-  ).length;
+  const scheduled = pipeline.filter(
+    (l) => withNextStep(l) && l.nextActionDue
+  );
 
   const noNextStep = open.filter((l) => !l.nextActionText).length;
   const contactCount = allLeads.filter(
@@ -73,7 +71,7 @@ export default async function DashboardPage() {
     { label: "Deals working", value: open.length.toLocaleString() },
     { label: "Money in play", value: money(openValue) },
     { label: "Money won", value: money(closedValue) },
-    { label: "Due today", value: dueLeads.length.toLocaleString() },
+    { label: "Due today", value: <DueCount leads={scheduled} /> },
   ];
 
   // The team's own buckets, in their own order, so a renamed or added
@@ -100,18 +98,7 @@ export default async function DashboardPage() {
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
       <div className="mx-auto flex max-w-5xl flex-col gap-6">
-        <div>
-          <p className="text-sm text-slate-500">
-            {now.toLocaleDateString(undefined, {
-              weekday: "long",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
-          <h1 className="text-2xl font-semibold text-slate-900">
-            {greeting(now.getHours())}
-          </h1>
-        </div>
+        <LocalHeading />
 
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {stats.map((stat) => (
@@ -131,18 +118,10 @@ export default async function DashboardPage() {
           <div className="mb-2 flex items-baseline justify-between">
             <h2 className="font-semibold text-slate-900">
               What needs doing
-              {overdueCount > 0 && (
-                <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-                  {overdueCount} overdue
-                </span>
-              )}
+              <OverdueBadge leads={scheduled} />
             </h2>
           </div>
-          <NextSteps
-            leads={dueLeads}
-            templates={allTemplates}
-            today={today}
-          />
+          <NextSteps leads={scheduled} templates={allTemplates} />
         </section>
 
         {/* The funnel needs the room; the activity feed reads fine narrower. */}

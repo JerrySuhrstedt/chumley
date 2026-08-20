@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocalToday } from "./local-heading";
 import { useState } from "react";
 import { CalendarClock } from "lucide-react";
 import type { Activity, Lead, Template } from "@/db/schema";
@@ -13,16 +14,28 @@ type LeadWithActivities = Lead & { activities: Activity[] };
 export function NextSteps({
   leads,
   templates,
-  today,
 }: {
+  /** Everything with a next step. Which are due is decided here. */
   leads: LeadWithActivities[];
   templates: Template[];
-  today: string;
 }) {
+  const today = useLocalToday();
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selected = leads.find((l) => l.id === selectedId) ?? null;
 
-  if (leads.length === 0) {
+  // Nothing until the browser has told us its date. Filtering against the
+  // server's day would show the wrong rows for the first paint, which is
+  // worse than showing them a moment later.
+  const due = today
+    ? leads
+        .filter((l) => l.nextActionDue && l.nextActionDue <= today)
+        .sort((a, b) =>
+          (a.nextActionDue ?? "").localeCompare(b.nextActionDue ?? "")
+        )
+    : [];
+
+  const selected = due.find((l) => l.id === selectedId) ?? null;
+
+  if (due.length === 0) {
     return (
       <p className="rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
         Nothing due. Every lead with a next step is scheduled ahead.
@@ -34,8 +47,10 @@ export function NextSteps({
     <>
       <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
         <ul className="divide-y divide-slate-100">
-          {leads.map((lead) => {
-            const overdue = !!lead.nextActionDue && lead.nextActionDue < today;
+          {due.map((lead) => {
+            // due is empty until today is known, so this is never null here.
+            const overdue =
+              !!today && !!lead.nextActionDue && lead.nextActionDue < today;
 
             return (
               <li key={lead.id}>

@@ -1,7 +1,8 @@
+import { localToday } from "@/lib/today";
 import type { Lead } from "@/db/schema";
 
 export function Scorecard({ leads }: { leads: Lead[] }) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localToday();
 
   const activeDeals = leads.filter(
     (l) => l.stage !== "won" && l.stage !== "lost"
