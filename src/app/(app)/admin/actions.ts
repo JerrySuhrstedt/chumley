@@ -1,0 +1,151 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { eq, sql } from "drizzle-orm";
+import { db } from "@/db";
+import { organizations, subscriptions } from "@/db/schema";
+import { requireAdmin } from "@/lib/admin";
+import { getCurrentOrg } from "@/lib/org";
+import { paddle, isBillingConfigured } from "@/lib/paddle/server";
+
+/**
+ * Back-office controls that end an account.
+ *
+ * Both gate on requireAdmin first, before a single row is read. Deleting
+ * also demands the team's name typed back, which is not security, it is
+ * friction: the mistake this prevents is the one where the wrong row was
+ * clicked, and only a human can catch that.
+ */
+
+export type AdminActionResult = { error: string | null; message?: string };
+
+/** Cancel a team's plan at the end of the period they have paid for. */
+export async function adminCancelSubscription(
+  orgId: string
+): Promise<AdminActionResult> {
+  await requireAdmin();
+
+  const [sub] = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.orgId, orgId))
+    .limit(1);
+
+  if (!sub) return { error: "That team has no subscription." };
+  if (sub.scheduledChangeAction === "cancel") {
+    return { error: null, message: "Already scheduled to cancel." };
+  }
+  if (!isBillingConfigured()) {
+    return { error: "Billing is not configured in this environment." };
+  }
+
+  try {
+    const result = await paddle().subscriptions.cancel(sub.id, {
+      effectiveFrom: "next_billing_period",
+    });
+    revalidatePath("/admin");
+    return {
+      error: null,
+      message: result.scheduledChange?.effectiveAt
+        ? `Ends ${new Date(result.scheduledChange.effectiveAt).toLocaleDateString()}.`
+        : "Cancellation scheduled.",
+    };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Paddle refused that." };
+  }
+}
+
+/**
+ * Delete a team and everyone in it.
+ *
+ * Order matters. Paddle is stopped first, because deleting the rows here
+ * would leave a live subscription with no team to bill for and no way to
+ * find it again. Then the organisation goes, and the database cascades
+ * through leads, activities, memberships, invites, stages, subscriptions
+ * and templates.
+ *
+ * Problem reports deliberately survive, with their team set to null. They
+ * are evidence about the product, and the most useful ones come from
+ * people on their way out.
+ */
+export async function adminDeleteAccount(
+  orgId: string,
+  typedName: string
+): Promise<AdminActionResult> {
+  await requireAdmin();
+
+  const [org] = await db
+    .select()
+    .from(organizations)
+    .where(eq(organizations.id, orgId))
+    .limit(1);
+
+  if (!org) return { error: "That team is already gone." };
+
+  if (typedName.trim() !== org.name) {
+    return { error: `Type "${org.name}" exactly to confirm.` };
+  }
+
+  // Deleting the team you are signed in with would log you out of the
+  // tool you are using to do it.
+  const current = await getCurrentOrg();
+  if (current?.org.id === orgId) {
+    return { error: "That is your own team. Delete it from another account." };
+  }
+
+  // Stop the billing before removing the thing being billed for.
+  const [sub] = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.orgId, orgId))
+    .limit(1);
+
+  if (sub && isBillingConfigured() && sub.status !== "canceled") {
+    try {
+      await paddle().subscriptions.cancel(sub.id, {
+        effectiveFrom: "immediately",
+      });
+    } catch (e) {
+      return {
+        error: `Could not stop billing, so nothing was deleted: ${
+          e instanceof Error ? e.message : "Paddle refused"
+        }`,
+      };
+    }
+  }
+
+  // Who will have no team left afterwards. Read before the cascade takes
+  // the memberships away.
+  const orphaned = (await db.execute(sql`
+    SELECT m.user_id
+    FROM memberships m
+    WHERE m.org_id = ${orgId}
+      AND NOT EXISTS (
+        SELECT 1 FROM memberships other
+        WHERE other.user_id = m.user_id AND other.org_id <> ${orgId}
+      )
+  `)) as unknown as { user_id: string }[];
+
+  await db.delete(organizations).where(eq(organizations.id, orgId));
+
+  // Then the sign-ins themselves, so the address can be used again.
+  let removed = 0;
+  for (const row of orphaned) {
+    try {
+      await db.execute(
+        sql`DELETE FROM auth.users WHERE id = ${row.user_id}::uuid`
+      );
+      removed += 1;
+    } catch {
+      // The team is already gone; a stranded login is untidy, not unsafe.
+    }
+  }
+
+  revalidatePath("/admin");
+  return {
+    error: null,
+    message: `"${org.name}" deleted, along with ${removed} sign-in${
+      removed === 1 ? "" : "s"
+    }.`,
+  };
+}

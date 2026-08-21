@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CreditCard, ShieldCheck } from "lucide-react";
+import { AccountControls } from "./account-controls";
 import { Reports } from "./reports";
 import { requireAdmin } from "@/lib/admin";
 import {
@@ -139,6 +140,7 @@ export default async function AdminPage() {
                     "Actions",
                     "Joined",
                     "Last active",
+                    "",
                   ].map((h) => (
                     <th key={h} className="px-3 py-2 font-semibold whitespace-nowrap">
                       {h}
@@ -179,6 +181,9 @@ export default async function AdminPage() {
                       >
                         {ago(a.lastActivityAt)}
                       </span>
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      <AccountControls account={a} />
                     </td>
                   </tr>
                 ))}
