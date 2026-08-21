@@ -69,7 +69,10 @@ export default function HomePage() {
           instead of hiding the button. dvh, not vh: on a phone vh counts
           the address bar that is not there, which cuts the bottom off. */}
       <section className="relative flex min-h-[calc(100dvh-4rem)] items-center overflow-hidden border-b border-[var(--rule)] bg-gradient-to-b from-[var(--brand-tint)] to-white">
-        <div className="mx-auto grid w-full max-w-7xl gap-12 px-5 pt-14 pb-16 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-8 lg:px-8 lg:pt-16 lg:pb-16">
+        {/* max-w-6xl, matching the header and every section below it. At 7xl
+            the hero copy started 64px to the left of the logo above it, which
+            is close enough to look like a mistake rather than a choice. */}
+        <div className="mx-auto grid w-full max-w-6xl gap-12 px-5 pt-14 pb-16 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-8 lg:px-8 lg:pt-16 lg:pb-16">
           <div className="min-w-0">
             <span className="inline-flex items-center gap-2 rounded-full border border-[var(--brand)]/25 bg-white px-3.5 py-1.5 text-xs font-bold tracking-wide text-[var(--brand)] uppercase">
               Free while in early access
@@ -125,7 +128,7 @@ export default function HomePage() {
               taller than one screen. Anchored to the bottom right of a
               box that already hangs past the container, so it runs off
               both edges and the section clips it. */}
-          <div className="relative -mr-5 -mb-20 min-w-0 self-stretch lg:-mr-24 lg:mb-0 xl:-mr-44">
+          <div className="relative -mr-5 -mb-20 min-w-0 self-stretch lg:-mr-32 lg:mb-0 xl:-mr-60">
             <Image
               src="/hero-phone.png"
               alt="Sell1 open on a phone, a deal being moved into Won"
