@@ -1,12 +1,5 @@
 import type { Metadata } from "next";
-import {
-  Check,
-  Eye,
-  PlayCircle,
-  Rocket,
-  Star,
-  BellRing,
-} from "lucide-react";
+import { Check, Eye, PlayCircle, Rocket, Star, BellRing } from "lucide-react";
 import { BoardPreview } from "./_components/board-preview";
 import { CtaButton } from "./_components/cta";
 import { FaqList } from "./_components/faq-list";
@@ -80,26 +73,18 @@ export default function HomePage() {
             {/* Breaks are forced from sm up. Below that the line "a sales CRM
                 you'll" is wider than a phone, so mobile wraps naturally. */}
             <h1 className="mt-6 text-[2.6rem] leading-[1.04] font-extrabold tracking-tight text-[var(--ink)] sm:text-[3.1rem] xl:text-[4rem]">
-              Finally,{" "}
-              <br className="hidden sm:inline" />
-              a sales&nbsp;CRM you&apos;ll{" "}
-              <br className="hidden sm:inline" />
+              Finally, <br className="hidden sm:inline" />a sales&nbsp;CRM
+              you&apos;ll <br className="hidden sm:inline" />
               actually want to use.
             </h1>
 
             <p className="mt-6 max-w-[52ch] text-[1.35rem] leading-snug font-bold text-[var(--ink)] sm:text-2xl">
-              Sell1 is stupid simple... on purpose.
+              Sell1 is a stupid simple sales CRM.
             </p>
 
             <p className="mt-3 max-w-[52ch] text-[1.35rem] leading-snug font-semibold text-[var(--ink)] sm:text-2xl">
               From zero to organized sales leads in zero time. Nothing to set
               up, nothing to learn.
-            </p>
-
-            <p className="mt-3 max-w-[52ch] text-[1.35rem] leading-relaxed text-[var(--ink-soft)] sm:text-2xl">
-              Add a name and a phone number, drag a card when the deal moves,
-              and you are done. No setup, no training, no manual. If you can
-              use your phone, you can use this.
             </p>
 
             <ul className="mt-8 space-y-3.5">
@@ -187,7 +172,10 @@ export default function HomePage() {
       </section>
 
       {/* ----------------------------------------------------------- 3. BENEFITS */}
-      <section id="benefits" className="border-y border-[var(--rule)] bg-[var(--surface-alt)]">
+      <section
+        id="benefits"
+        className="border-y border-[var(--rule)] bg-[var(--surface-alt)]"
+      >
         <div className="mx-auto max-w-6xl px-5 py-20 lg:px-8 lg:py-28">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-extrabold tracking-tight text-balance text-[var(--ink)] sm:text-4xl">
@@ -339,9 +327,9 @@ export default function HomePage() {
             Nothing to set up. Nothing to learn.
           </h2>
           <p className="mx-auto mt-5 max-w-[46ch] text-lg text-white/70">
-            Sign up, name your team, and put your first deal on the board in
-            the next five minutes. If it takes longer than that, we did
-            something wrong.
+            Sign up, name your team, and put your first deal on the board in the
+            next five minutes. If it takes longer than that, we did something
+            wrong.
           </p>
           <div className="mt-10">
             <CtaButton size="xl" />
