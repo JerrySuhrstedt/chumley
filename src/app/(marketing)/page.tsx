@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Check, Eye, PlayCircle, Rocket, Star, BellRing } from "lucide-react";
+import Image from "next/image";
 import { BoardPreview } from "./_components/board-preview";
 import { CtaButton } from "./_components/cta";
 import { FaqList } from "./_components/faq-list";
@@ -63,8 +64,12 @@ export default function HomePage() {
   return (
     <>
       {/* ---------------------------------------------------------------- 1. HERO */}
-      <section className="relative overflow-hidden border-b border-[var(--rule)] bg-gradient-to-b from-[var(--brand-tint)] to-white">
-        <div className="mx-auto grid max-w-7xl gap-14 px-5 pt-16 pb-20 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-14 lg:px-8 lg:pt-24 lg:pb-28">
+      {/* One screen, minus the header above it. min-h rather than h, so a
+          short window or a long translation pushes the section taller
+          instead of hiding the button. dvh, not vh: on a phone vh counts
+          the address bar that is not there, which cuts the bottom off. */}
+      <section className="relative flex min-h-[calc(100dvh-4rem)] items-center overflow-hidden border-b border-[var(--rule)] bg-gradient-to-b from-[var(--brand-tint)] to-white">
+        <div className="mx-auto grid w-full max-w-7xl gap-12 px-5 pt-14 pb-16 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-8 lg:px-8 lg:pt-16 lg:pb-16">
           <div className="min-w-0">
             <span className="inline-flex items-center gap-2 rounded-full border border-[var(--brand)]/25 bg-white px-3.5 py-1.5 text-xs font-bold tracking-wide text-[var(--brand)] uppercase">
               Free while in early access
@@ -110,10 +115,28 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Bleeds toward the right edge so all five buckets fit without
-              shrinking the type beside it. */}
-          <div className="min-w-0 lg:-mr-16 lg:pl-4 xl:-mr-56">
-            <BoardPreview />
+          {/* The product in a hand, which is the claim the copy beside it
+              is making. It runs off the right edge and off the bottom, so
+              it reads as something held rather than a cropped asset
+              placed in a box. The section clips it, hence overflow-hidden
+              on the section itself. */}
+          {/* From lg up the phone is taken out of the flow, so it can be
+              bigger than the space it sits in without making the section
+              taller than one screen. Anchored to the bottom right of a
+              box that already hangs past the container, so it runs off
+              both edges and the section clips it. */}
+          <div className="relative -mr-5 -mb-20 min-w-0 self-stretch lg:-mr-24 lg:mb-0 xl:-mr-44">
+            <Image
+              src="/hero-phone.png"
+              alt="Sell1 open on a phone, a deal being moved into Won"
+              width={1666}
+              height={2399}
+              // Largest thing above the fold, so it is the image the page
+              // is judged on. priority skips lazy-loading and preloads it.
+              priority
+              sizes="(min-width: 1024px) 58vw, 24rem"
+              className="ml-auto h-auto w-[88%] max-w-none sm:w-[64%] lg:absolute lg:right-0 lg:-bottom-28 lg:h-[142%] lg:w-auto"
+            />
           </div>
         </div>
       </section>
@@ -174,7 +197,10 @@ export default function HomePage() {
       {/* ----------------------------------------------------------- 3. BENEFITS */}
       <section
         id="benefits"
-        className="border-y border-[var(--rule)] bg-[var(--surface-alt)]"
+        // overflow-hidden because the board preview now bleeds off the
+        // right edge in here. Without it the page grows a horizontal
+        // scrollbar, which is the usual cost of a negative margin.
+        className="overflow-hidden border-y border-[var(--rule)] bg-[var(--surface-alt)]"
       >
         <div className="mx-auto max-w-6xl px-5 py-20 lg:px-8 lg:py-28">
           <div className="mx-auto max-w-2xl text-center">
@@ -187,23 +213,36 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="mt-14 grid gap-6 md:grid-cols-3">
-            {BENEFITS.map((b) => (
-              <div
-                key={b.title}
-                className="rounded-2xl border border-[var(--rule)] bg-white p-7 shadow-[0_1px_2px_rgba(35,31,32,0.04)]"
-              >
-                <span className="flex size-12 items-center justify-center rounded-xl bg-[var(--brand-tint)]">
-                  <b.icon className="size-6 text-[var(--brand)]" />
-                </span>
-                <h3 className="mt-5 text-xl leading-snug font-bold text-[var(--ink)]">
-                  {b.title}
-                </h3>
-                <p className="mt-3 text-[15px] leading-relaxed text-[var(--ink-soft)]">
-                  {b.feature}
-                </p>
-              </div>
-            ))}
+          {/* Reasons down the left, the thing itself on the right. Each
+              claim is read with the board in view rather than above a
+              picture of it. */}
+          <div className="mt-14 grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-14">
+            <div className="flex flex-col gap-5">
+              {BENEFITS.map((b) => (
+                <div
+                  key={b.title}
+                  className="flex gap-5 rounded-2xl border border-[var(--rule)] bg-white p-6 shadow-[0_1px_2px_rgba(35,31,32,0.04)]"
+                >
+                  <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-[var(--brand-tint)]">
+                    <b.icon className="size-6 text-[var(--brand)]" />
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="text-xl leading-snug font-bold text-[var(--ink)]">
+                      {b.title}
+                    </h3>
+                    <p className="mt-2 text-[15px] leading-relaxed text-[var(--ink-soft)]">
+                      {b.feature}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Bleeds toward the right edge so all five buckets fit
+                without squeezing the cards beside it. */}
+            <div className="min-w-0 lg:-mr-16 xl:-mr-40">
+              <BoardPreview />
+            </div>
           </div>
         </div>
       </section>
