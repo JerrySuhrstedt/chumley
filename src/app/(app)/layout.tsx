@@ -6,6 +6,7 @@ import { getOnboardingState } from "@/lib/onboarding";
 import { isAdmin } from "@/lib/admin";
 import { OnboardingChecklist } from "./_onboarding/checklist";
 import { StagesProvider } from "./_leads/stages-context";
+import { PullToRefresh } from "./_shell/pull-to-refresh";
 import { getStages } from "@/lib/stages";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
@@ -46,7 +47,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
             email={current.email}
           />
           <main className="flex flex-1 flex-col overflow-hidden rounded-tl-2xl bg-[var(--board-bg)]">
-            {children}
+            <PullToRefresh>{children}</PullToRefresh>
           </main>
         </div>
 

@@ -1,6 +1,12 @@
 "use client";
 
-import { X } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { Lead } from "@/db/schema";
 import type { LeadTemperature } from "./actions";
 import { nextActionStatus } from "./stages";
@@ -60,6 +66,67 @@ function Chip({
 }
 
 /**
+ * The three temperatures behind one chip, for phones.
+ *
+ * Chosen shows as that temperature's own colour and name, so the row
+ * still answers "what am I filtered to" without being opened.
+ */
+function TempMenu({
+  temp,
+  onTemp,
+}: {
+  temp: LeadTemperature | null;
+  onTemp: (value: LeadTemperature | null) => void;
+}) {
+  const chosen = TEMPERATURES.find((t) => t.value === temp) ?? null;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        aria-label="Filter by temperature"
+        style={
+          chosen
+            ? { backgroundColor: chosen.bg, borderColor: chosen.bg }
+            : { borderColor: "rgba(255,255,255,0.45)" }
+        }
+        className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors sm:hidden ${
+          chosen ? "text-white shadow-sm" : "bg-white/15 text-white"
+        }`}
+      >
+        {chosen ? (
+          <chosen.icon className="size-3.5" strokeWidth={2.5} />
+        ) : null}
+        {chosen ? chosen.label : "Temp"}
+        <ChevronDown className="size-3.5 opacity-80" />
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="start" className="min-w-40">
+        {TEMPERATURES.map((t) => (
+          <DropdownMenuItem
+            key={t.value}
+            onClick={() => onTemp(temp === t.value ? null : t.value)}
+          >
+            <span
+              aria-hidden
+              className="mr-1 flex size-5 items-center justify-center rounded-full"
+              style={{ backgroundColor: t.bg }}
+            >
+              <t.icon className="size-3 text-white" strokeWidth={2.6} />
+            </span>
+            <span style={{ color: t.bg }} className="font-semibold">
+              {t.label}
+            </span>
+            {temp === t.value && (
+              <X className="ml-auto size-3.5 text-slate-400" />
+            )}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+/**
  * Two questions a rep actually asks: who is worth my time, and what needs
  * doing. One chip from each, combined.
  */
@@ -82,17 +149,24 @@ export function BoardFilters({
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      {TEMPERATURES.map((t) => (
-        <Chip
-          key={t.value}
-          active={temp === t.value}
-          color={t.bg}
-          onClick={() => onTemp(temp === t.value ? null : t.value)}
-        >
-          <t.icon className="size-3.5" strokeWidth={2.5} />
-          {t.label}
-        </Chip>
-      ))}
+      {/* Three chips on a phone pushed the board a whole row down. One
+          chip that opens the three costs a tap and gives the row back. A
+          desktop has the width, so it keeps them laid out. */}
+      <TempMenu temp={temp} onTemp={onTemp} />
+
+      <div className="hidden items-center gap-1.5 sm:flex">
+        {TEMPERATURES.map((t) => (
+          <Chip
+            key={t.value}
+            active={temp === t.value}
+            color={t.bg}
+            onClick={() => onTemp(temp === t.value ? null : t.value)}
+          >
+            <t.icon className="size-3.5" strokeWidth={2.5} />
+            {t.label}
+          </Chip>
+        ))}
+      </div>
 
       <span className="mx-1 hidden h-5 w-px bg-white/25 sm:block" />
 
