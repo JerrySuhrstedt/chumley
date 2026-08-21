@@ -9,7 +9,7 @@ import { PlatformMarquee } from "./_components/platform-marquee";
 export const metadata: Metadata = {
   title: "Sell1 | Finally, a sales CRM you'll actually want to use",
   description:
-    "Stupid simple on purpose. Add a name and a phone number, drag a card when the deal moves, done. No setup, no training, no manual. If you can use your phone, you can use Sell1.",
+    "Stupid simple sales CRM for independent sales reps and small sales teams. Nothing to set up, nothing to learn.",
 };
 
 const HERO_POINTS = [
@@ -86,13 +86,12 @@ export default function HomePage() {
               actually want to use.
             </h1>
 
+            {/* One subhead, not three. It names who this is for, which
+                is the question every other line was making the reader
+                answer for themselves. */}
             <p className="mt-6 max-w-[52ch] text-[1.35rem] leading-snug font-bold text-[var(--ink)] sm:text-2xl">
-              Sell1 is a stupid simple sales CRM.
-            </p>
-
-            <p className="mt-3 max-w-[52ch] text-[1.35rem] leading-snug font-semibold text-[var(--ink)] sm:text-2xl">
-              From zero to organized sales leads in zero time. Nothing to set
-              up, nothing to learn.
+              Stupid simple sales CRM for independent sales reps and small
+              sales teams. Nothing to set up, nothing to learn.
             </p>
 
             <ul className="mt-8 space-y-3.5">
