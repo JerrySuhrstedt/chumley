@@ -9,6 +9,7 @@ import { db } from "@/db";
  * would read as something being wrong.
  */
 export type AccountStatus =
+  | "off"
   | "free"
   | "trialing"
   | "active"
@@ -21,6 +22,8 @@ export type AdminAccount = {
   orgId: string;
   name: string;
   status: AccountStatus;
+  /** Switched off by an administrator. Outranks whatever billing says. */
+  deactivated: boolean;
   /** Set when a cancellation is scheduled but has not taken effect. */
   endsAt: Date | null;
   seats: number | null;
@@ -154,14 +157,16 @@ export async function getAdminAccounts(): Promise<AdminAccount[]> {
         ORDER BY s.created_at DESC LIMIT 1)                  AS sub_ends_at,
       (SELECT s.quantity FROM subscriptions s
         WHERE s.org_id = o.id
-        ORDER BY s.created_at DESC LIMIT 1)                  AS sub_seats
+        ORDER BY s.created_at DESC LIMIT 1)                  AS sub_seats,
+      o.deactivated_at                                       AS deactivated_at
     FROM organizations o
     ORDER BY o.created_at DESC
   `)) as unknown as Record<string, unknown>[];
 
   return rows.map((r) => ({
     orgId: String(r.org_id),
-    status: statusOf(r.sub_status, r.sub_change),
+    status: r.deactivated_at ? "off" : statusOf(r.sub_status, r.sub_change),
+    deactivated: Boolean(r.deactivated_at),
     endsAt: r.sub_ends_at ? new Date(String(r.sub_ends_at)) : null,
     seats: r.sub_seats === null || r.sub_seats === undefined
       ? null

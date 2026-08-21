@@ -12,6 +12,7 @@ import type { AccountStatus } from "@/lib/admin-data";
  * apart: one is still paying and still working, the other has stopped.
  */
 const LOOK: Record<AccountStatus, { label: string; className: string }> = {
+  off: { label: "Switched off", className: "bg-slate-800 text-white" },
   free: { label: "Free", className: "bg-slate-100 text-slate-600" },
   trialing: { label: "Trial", className: "bg-indigo-100 text-indigo-800" },
   active: { label: "Active", className: "bg-emerald-100 text-emerald-800" },
@@ -45,7 +46,10 @@ export function StatusPill({
       {status === "ending" && endsAt && (
         <span className="text-[11px] text-slate-500">till {day(endsAt)}</span>
       )}
-      {seats !== null && status !== "free" && status !== "canceled" && (
+      {seats !== null &&
+        status !== "free" &&
+        status !== "off" &&
+        status !== "canceled" && (
         <span className="text-[11px] text-slate-500">
           {seats} seat{seats === 1 ? "" : "s"}
         </span>

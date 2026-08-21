@@ -149,3 +149,44 @@ export async function adminDeleteAccount(
     }.`,
   };
 }
+
+/**
+ * Switch an account off, or back on, without touching their data.
+ *
+ * The step that was missing between cancelling a plan and deleting an
+ * account. Billing is deliberately left alone: stopping access and
+ * stopping the money are separate decisions, and someone suspended for
+ * abuse should not also get a refund by side effect.
+ */
+export async function adminSetActive(
+  orgId: string,
+  active: boolean
+): Promise<AdminActionResult> {
+  await requireAdmin();
+
+  const [org] = await db
+    .select()
+    .from(organizations)
+    .where(eq(organizations.id, orgId))
+    .limit(1);
+  if (!org) return { error: "That team is gone." };
+
+  const current = await getCurrentOrg();
+  if (!active && current?.org.id === orgId) {
+    return { error: "That is your own team. You would lock yourself out." };
+  }
+
+  await db
+    .update(organizations)
+    .set({ deactivatedAt: active ? null : new Date() })
+    .where(eq(organizations.id, orgId));
+
+  // The layout reads this on every request, so everything has to re-run.
+  revalidatePath("/", "layout");
+  return {
+    error: null,
+    message: active
+      ? `"${org.name}" can sign in again.`
+      : `"${org.name}" is switched off. Nothing was deleted.`,
+  };
+}

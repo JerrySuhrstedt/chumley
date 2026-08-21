@@ -7,6 +7,7 @@ import { isAdmin } from "@/lib/admin";
 import { OnboardingChecklist } from "./_onboarding/checklist";
 import { StagesProvider } from "./_leads/stages-context";
 import { PullToRefresh } from "./_shell/pull-to-refresh";
+import { Deactivated } from "./_shell/deactivated";
 import { getStages } from "@/lib/stages";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
@@ -14,6 +15,12 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
   if (!current) {
     redirect("/onboarding");
+  }
+
+  // Before anything else is read or drawn. A switched-off team sees one
+  // screen and no navigation, so there is nothing to find a way around.
+  if (current.org.deactivatedAt) {
+    return <Deactivated teamName={current.org.name} />;
   }
 
   const admin = await isAdmin();

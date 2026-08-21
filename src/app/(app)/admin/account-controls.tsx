@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { MoreHorizontal, Trash2, XCircle } from "lucide-react";
+import { MoreHorizontal, Power, Trash2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,7 +20,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import type { AdminAccount } from "@/lib/admin-data";
-import { adminCancelSubscription, adminDeleteAccount } from "./actions";
+import {
+  adminCancelSubscription,
+  adminDeleteAccount,
+  adminSetActive,
+} from "./actions";
 
 /**
  * Ending an account, from the back office.
@@ -60,6 +64,22 @@ export function AccountControls({ account }: { account: AdminAccount }) {
             <XCircle className="size-4" />
             Cancel their plan
           </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() =>
+              start(async () => {
+                const r = await adminSetActive(
+                  account.orgId,
+                  account.deactivated
+                );
+                if (r.error) toast.error(r.error);
+                else toast.success(r.message ?? "Done.");
+              })
+            }
+          >
+            <Power className="size-4" />
+            {account.deactivated ? "Switch back on" : "Switch off"}
+          </DropdownMenuItem>
+
           <DropdownMenuItem
             variant="destructive"
             onClick={() => {

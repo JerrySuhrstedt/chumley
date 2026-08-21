@@ -104,6 +104,16 @@ export const organizations = pgTable("organizations", {
    * customer rather than a second one.
    */
   paddleCustomerId: text("paddle_customer_id"),
+  /**
+   * Switched off by an administrator, without deleting anything.
+   *
+   * Distinct from a cancelled subscription, which is about money and
+   * still leaves the board readable. This is about access: the team is
+   * locked out entirely and their data sits untouched until it is undone
+   * or the account is deleted for good. It is the step that was missing
+   * between stopping the billing and destroying the account.
+   */
+  deactivatedAt: timestamp("deactivated_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

@@ -120,6 +120,13 @@
       "when": 1787260000000,
       "tag": "0016_report_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1787290000000,
+      "tag": "0017_deactivate_account",
+      "breakpoints": true
     }
   ]
 }
