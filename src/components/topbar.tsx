@@ -89,7 +89,7 @@ export function Topbar({
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label="Account menu"
-            className="shrink-0 rounded-full ring-2 ring-transparent transition-all hover:ring-white/40"
+            className="shrink-0 touch-manipulation rounded-full ring-2 ring-transparent transition-all hover:ring-white/40 active:ring-white/50"
           >
             {avatarUrl ? (
               // Arbitrary external host, so a plain img rather than next/image.
@@ -155,11 +155,22 @@ export function Topbar({
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label="Menu"
-            className="flex size-8 items-center justify-center rounded text-white transition-colors hover:bg-white/20 md:hidden"
+            // 44px, which is the smallest thing a finger reliably hits.
+            // At 32px this took several attempts, because the target was
+            // the icon rather than anything around it. touch-manipulation
+            // drops the browser's wait-and-see for a double tap, which is
+            // most of the delay that felt like a missed press.
+            className="flex size-11 touch-manipulation items-center justify-center rounded-lg text-white transition-colors active:bg-white/25 md:hidden"
           >
-            <Menu className="size-5" />
+            <Menu className="size-6" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent
+            align="end"
+            // Roomier than the desktop default. This is the only
+            // navigation a phone has, and it is being aimed at with a
+            // thumb rather than a cursor.
+            className="min-w-56 [&_[data-slot=dropdown-menu-item]]:py-3 [&_[data-slot=dropdown-menu-item]]:text-base"
+          >
             {MOBILE_NAV.map((item) => (
               <DropdownMenuItem
                 key={item.href}
@@ -170,7 +181,7 @@ export function Topbar({
             <DropdownMenuItem
               render={
                 <form action={signOut} className="w-full">
-                  <button type="submit" className="w-full text-left">
+                  <button type="submit" className="w-full py-1 text-left">
                     Sign out
                   </button>
                 </form>
