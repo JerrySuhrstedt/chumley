@@ -217,16 +217,31 @@ export function LeadsBoard({
     });
   }
 
-  /** Closing a deal is the one moment worth celebrating. */
-  function celebrateIfWon(leadId: string, stage: LeadStage) {
+  /**
+   * Closing a deal is the one moment worth celebrating.
+   *
+   * Keyed on the bucket's kind rather than the string "won", so a team
+   * that renames it still gets the moment, and so this cannot quietly
+   * stop working the day the key changes.
+   *
+   * When the device asks for reduced motion the confetti is skipped, and
+   * something is said instead. A won deal passing in silence is the
+   * complaint that started this, and iOS turns that preference on by
+   * itself in Low Power Mode.
+   */
+  function celebrate(leadId: string, stage: LeadStage) {
     const previous = localLeads.find((l) => l.id === leadId)?.stage;
-    if (stage === "won" && previous !== "won") {
-      fireConfetti();
+    const won = boardStages.find((s) => s.kind === "won")?.key;
+    if (!won || stage !== won || previous === won) return;
+
+    const name = localLeads.find((l) => l.id === leadId)?.name ?? "That one";
+    if (!fireConfetti()) {
+      toast.success(`${name} is won.`);
     }
   }
 
   function moveStage(leadId: string, stage: LeadStage) {
-    celebrateIfWon(leadId, stage);
+    celebrate(leadId, stage);
     const next = localLeads.map((l) => (l.id === leadId ? { ...l, stage } : l));
     setLocalLeads(next);
     persist(stage, next);
@@ -319,8 +334,11 @@ export function LeadsBoard({
 
     // dragOver may already have moved it, so compare against the stage it
     // started the drag in.
-    if (destStage === "won" && dragStartStage.current !== "won") {
-      fireConfetti();
+    const wonKey = boardStages.find((s) => s.kind === "won")?.key;
+    if (wonKey && destStage === wonKey && dragStartStage.current !== wonKey) {
+      if (!fireConfetti()) {
+        toast.success(`${dragged.name} is won.`);
+      }
     }
     let next = localLeads;
 
