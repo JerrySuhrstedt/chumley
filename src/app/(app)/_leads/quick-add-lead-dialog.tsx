@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -82,17 +83,25 @@ export function QuickAddLeadDialog({
         </DialogTrigger>
       ) : (
         <DialogTrigger
-          className={buttonVariants({
-            size: "lg",
-            className: `h-11 w-full text-base md:h-9 md:w-auto md:text-sm ${
-              // A ring on the real control rather than a pop-up over it.
-              // It points at the thing itself and disappears the moment the
-              // first deal exists, so it can never become furniture.
-              highlight
-                ? "ring-4 ring-white/70 animate-pulse motion-reduce:animate-none"
-                : ""
-            }`,
-          })}
+          // cn, not buttonVariants alone. cva concatenates, so the default
+          // bg-primary stayed in the class list alongside the override and
+          // won on source order. cn runs tailwind-merge, which drops the
+          // one it replaces.
+          className={cn(
+            buttonVariants({ size: "lg" }),
+            // Brand orange with a heavy black edge on a phone, where it
+            // sits alone on the blue board and the default near-black
+            // read as another piece of chrome. The desktop keeps the
+            // default: there it sits among other controls and does not
+            // need to shout.
+            "h-11 w-full border-2 border-[var(--board-ink)] bg-[var(--brand)] text-base text-white hover:bg-[var(--brand-dark)]",
+            "md:h-9 md:w-auto md:border md:border-transparent md:bg-primary md:text-sm md:text-primary-foreground md:hover:bg-primary/80",
+            // A ring on the real control rather than a pop-up over it. It
+            // points at the thing itself and disappears the moment the
+            // first deal exists, so it can never become furniture.
+            highlight &&
+              "ring-4 ring-white/70 animate-pulse motion-reduce:animate-none"
+          )}
         >
           <Plus className="size-5 md:size-4" />
           Add lead

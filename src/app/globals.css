@@ -127,6 +127,30 @@
   --label-none: #c1c7d0;
 }
 
+/*
+ * Darker buckets on a phone.
+ *
+ * A card and its column are both near-white, which is fine on a desktop
+ * where the column has an edge and neighbours to be seen against. On a
+ * phone one bucket fills the screen, so the only thing telling a card
+ * from its background is that ten percent. Same colours, ten percent
+ * down, so the white cards lift off them.
+ *
+ * A media query rather than a Tailwind variant: these are the tokens the
+ * board reads everywhere, and overriding them in one place beats finding
+ * every use.
+ */
+@media (max-width: 767px) {
+  :root {
+    --board-column: #d9dadc;
+    --board-column-hover: #cdcfd3;
+    --bucket-won: #c6d9cc;
+    --bucket-won-hover: #b7d2c0;
+    --bucket-lost: #e0cbcb;
+    --bucket-lost-hover: #dbbdbd;
+  }
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
