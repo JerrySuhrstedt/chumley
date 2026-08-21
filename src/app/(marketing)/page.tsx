@@ -118,30 +118,45 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* The product in a hand, which is the claim the copy beside it
-              is making. It runs off the right edge and off the bottom, so
-              it reads as something held rather than a cropped asset
-              placed in a box. The section clips it, hence overflow-hidden
-              on the section itself. */}
-          {/* From lg up the phone is taken out of the flow, so it can be
-              bigger than the space it sits in without making the section
-              taller than one screen. Anchored to the bottom right of a
-              box that already hangs past the container, so it runs off
-              both edges and the section clips it. */}
-          <div className="relative -mr-5 -mb-20 min-w-0 self-stretch lg:-mr-32 lg:mb-0 xl:-mr-60">
+          {/* Holds the column open on a wide screen so the copy keeps to
+              its half. The phone itself is positioned against the section
+              below, not in here. */}
+          <div className="min-w-0 lg:block" aria-hidden />
+
+          {/* Below lg the phone is in the flow, under the copy, pulled to
+              the right edge. */}
+          <div className="-mr-5 -mb-20 min-w-0 lg:hidden">
             <Image
               src="/hero-phone.png"
               alt="Sell1 open on a phone, a deal being moved into Won"
               width={1666}
               height={2399}
-              // Largest thing above the fold, so it is the image the page
-              // is judged on. priority skips lazy-loading and preloads it.
               priority
-              sizes="(min-width: 1024px) 58vw, 24rem"
-              className="ml-auto h-auto w-[88%] max-w-none sm:w-[64%] lg:absolute lg:right-0 lg:-bottom-28 lg:h-[142%] lg:w-auto"
+              sizes="88vw"
+              className="ml-auto h-auto w-[88%] max-w-none sm:w-[64%]"
             />
           </div>
         </div>
+
+        {/* From lg up it is anchored to the section rather than to a
+            column inside the centred container. The section spans the
+            window, so right-0 is the window's edge no matter how much
+            empty space the container leaves beside it. Fixed negative
+            margins could not do this: at 1920 the container centres with
+            about 384px either side, and no margin large enough to cross
+            that is also correct at 1280. */}
+        <Image
+          src="/hero-phone.png"
+          alt=""
+          aria-hidden
+          width={1666}
+          height={2399}
+          priority
+          sizes="55vw"
+          // Smaller at the breakpoint itself, where the copy column and the
+          // phone are closest to colliding, and larger once there is room.
+          className="pointer-events-none absolute -right-6 -bottom-10 hidden h-[92%] w-auto max-w-none lg:block xl:h-[108%] 2xl:h-[116%]"
+        />
       </section>
 
       {/* ------------------------------------------------ 2. PROBLEM / SOLUTION */}
