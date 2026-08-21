@@ -338,20 +338,26 @@ export function LeadsBoard({
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
           <Scorecard leads={localLeads} />
 
-          <div className="relative w-full min-w-0 md:max-w-xs md:flex-1">
-            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-[var(--board-ink-muted)]" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by name, company, or phone..."
-              className="h-10 w-full rounded-lg border-0 bg-white pr-3 pl-8 text-sm text-[var(--board-ink)] shadow-sm outline-none placeholder:text-[var(--board-ink-muted)] focus:ring-2 focus:ring-white/80 md:h-9"
-            />
-          </div>
+          {/* One row on a phone: the button takes a third, search the
+              rest. Stacked, these two ate most of the height above the
+              cards, which is the part of the screen a rep actually
+              works in. */}
+          <div className="flex items-center gap-2 md:contents">
+            <div className="w-1/3 shrink-0 md:order-last md:ml-auto md:w-auto">
+              <QuickAddLeadDialog
+                highlight={!localLeads.some((l) => !l.isSample)}
+              />
+            </div>
 
-          <div className="md:ml-auto md:shrink-0">
-            <QuickAddLeadDialog
-              highlight={!localLeads.some((l) => !l.isSample)}
-            />
+            <div className="relative min-w-0 flex-1 md:max-w-xs">
+              <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-[var(--board-ink-muted)]" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search name, company, phone..."
+                className="h-10 w-full rounded-lg border-0 bg-white pr-3 pl-8 text-sm text-[var(--board-ink)] shadow-sm outline-none placeholder:text-[var(--board-ink-muted)] focus:ring-2 focus:ring-white/80 md:h-9"
+              />
+            </div>
           </div>
         </div>
 
