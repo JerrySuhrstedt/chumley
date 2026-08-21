@@ -1,9 +1,29 @@
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
 
+/**
+ * What is actually true about a team's billing, rather than a label.
+ *
+ * "free" is not an absence of information: while Sell1 is in early access
+ * most teams have no subscription at all, and calling that "inactive"
+ * would read as something being wrong.
+ */
+export type AccountStatus =
+  | "free"
+  | "trialing"
+  | "active"
+  | "past_due"
+  | "paused"
+  | "ending"
+  | "canceled";
+
 export type AdminAccount = {
   orgId: string;
   name: string;
+  status: AccountStatus;
+  /** Set when a cancellation is scheduled but has not taken effect. */
+  endsAt: Date | null;
+  seats: number | null;
   ownerEmail: string | null;
   members: number;
   realLeads: number;
@@ -81,6 +101,25 @@ export async function getAdminMetrics(): Promise<AdminMetrics> {
   };
 }
 
+/**
+ * A pending cancellation outranks the status it is pending on. Paddle
+ * keeps a subscription "active" right up to the date, which is correct
+ * for access and useless for a column headed Status.
+ */
+function statusOf(raw: unknown, change: unknown): AccountStatus {
+  if (!raw) return "free";
+  if (change === "cancel") return "ending";
+  const known: AccountStatus[] = [
+    "trialing",
+    "active",
+    "past_due",
+    "paused",
+    "canceled",
+  ];
+  const value = String(raw) as AccountStatus;
+  return known.includes(value) ? value : "free";
+}
+
 export async function getAdminAccounts(): Promise<AdminAccount[]> {
   const rows = (await db.execute(sql`
     SELECT
@@ -103,13 +142,30 @@ export async function getAdminAccounts(): Promise<AdminAccount[]> {
       (SELECT count(*) FROM activities a
         WHERE a.org_id = o.id)::int                          AS activities,
       (SELECT max(a.created_at) FROM activities a
-        WHERE a.org_id = o.id)                               AS last_activity_at
+        WHERE a.org_id = o.id)                               AS last_activity_at,
+      (SELECT s.status FROM subscriptions s
+        WHERE s.org_id = o.id
+        ORDER BY s.created_at DESC LIMIT 1)                  AS sub_status,
+      (SELECT s.scheduled_change_action FROM subscriptions s
+        WHERE s.org_id = o.id
+        ORDER BY s.created_at DESC LIMIT 1)                  AS sub_change,
+      (SELECT s.scheduled_change_at FROM subscriptions s
+        WHERE s.org_id = o.id
+        ORDER BY s.created_at DESC LIMIT 1)                  AS sub_ends_at,
+      (SELECT s.quantity FROM subscriptions s
+        WHERE s.org_id = o.id
+        ORDER BY s.created_at DESC LIMIT 1)                  AS sub_seats
     FROM organizations o
     ORDER BY o.created_at DESC
   `)) as unknown as Record<string, unknown>[];
 
   return rows.map((r) => ({
     orgId: String(r.org_id),
+    status: statusOf(r.sub_status, r.sub_change),
+    endsAt: r.sub_ends_at ? new Date(String(r.sub_ends_at)) : null,
+    seats: r.sub_seats === null || r.sub_seats === undefined
+      ? null
+      : Number(r.sub_seats),
     name: String(r.name),
     ownerEmail: (r.owner_email as string) ?? null,
     members: Number(r.members),

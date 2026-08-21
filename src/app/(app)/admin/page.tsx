@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CreditCard, ShieldCheck } from "lucide-react";
 import { AccountControls } from "./account-controls";
+import { StatusPill } from "./status-pill";
 import { Reports } from "./reports";
 import { requireAdmin } from "@/lib/admin";
 import {
@@ -132,6 +133,7 @@ export default async function AdminPage() {
                 <tr>
                   {[
                     "Team",
+                    "Status",
                     "Owner",
                     "Members",
                     "Real deals",
@@ -152,6 +154,13 @@ export default async function AdminPage() {
                 {accounts.map((a) => (
                   <tr key={a.orgId} className="align-middle">
                     <td className="px-3 py-2 font-medium text-slate-900">{a.name}</td>
+                    <td className="px-3 py-2">
+                      <StatusPill
+                        status={a.status}
+                        endsAt={a.endsAt}
+                        seats={a.seats}
+                      />
+                    </td>
                     <td className="px-3 py-2 text-slate-600">{a.ownerEmail ?? "—"}</td>
                     <td className="px-3 py-2 text-slate-600">{a.members}</td>
                     <td className="px-3 py-2">
@@ -247,19 +256,24 @@ export default async function AdminPage() {
             <CreditCard className="mt-0.5 size-5 shrink-0 text-slate-400" />
             <div>
               <h2 className="text-sm font-semibold text-slate-900">
-                Billing, plans and coupons
+                Billing
               </h2>
               <p className="mt-1 max-w-[70ch] text-sm text-slate-600">
-                Nothing to show, because nothing charges yet. There is no
-                payment provider connected and no billing table in the
-                database, so plan, status, coupon and revenue would all be
-                columns of invented values.
+                Paddle is connected in{" "}
+                <strong className="font-semibold text-slate-900">
+                  sandbox
+                </strong>
+                . Nothing charges a real card, and the test number 4242 4242
+                4242 4242 is the only one that works. Status per team is in
+                the column above, read from the subscription mirrored back by
+                the webhook rather than asked of Paddle on every page load.
               </p>
               <p className="mt-2 max-w-[70ch] text-sm text-slate-600">
-                Once Paddle is wired and subscription state is mirrored into
-                the database, this section shows plan, status, renewal date,
-                coupon and lifetime value per account, and the columns above
-                gain a filter for paid against free.
+                Going live means three things: flip PADDLE_ENV and
+                NEXT_PUBLIC_PADDLE_ENV to production, run the catalog seed
+                against live to get real price ids, and get sell1.app
+                approved by Paddle. The test-card notice on the pricing page
+                disappears by itself the moment that first variable changes.
               </p>
             </div>
           </div>
