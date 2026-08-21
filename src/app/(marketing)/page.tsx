@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 const HERO_POINTS = [
-  "Nothing to set up, nothing to learn",
+  "Zero to tracking leads in 2 minutes",
   "Add a lead in about ten seconds",
   "Works on your phone, between phone calls",
 ];
