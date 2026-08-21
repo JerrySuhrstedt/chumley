@@ -91,7 +91,14 @@ export default function HomePage() {
                 answer for themselves. */}
             <p className="mt-6 max-w-[52ch] text-[1.35rem] leading-snug font-bold text-[var(--ink)] sm:text-2xl">
               Stupid simple sales CRM for independent sales reps and small
-              sales teams. Nothing to set up, nothing to learn.
+              sales teams.
+            </p>
+
+            {/* Its own line with air above it, rather than a break inside
+                the sentence before. The two are doing different jobs: one
+                says who it is for, the other says what it costs you. */}
+            <p className="mt-4 max-w-[52ch] text-[1.35rem] leading-snug font-bold text-[var(--ink)] sm:text-2xl">
+              Nothing to set up, nothing to learn.
             </p>
 
             <ul className="mt-8 space-y-3.5">
