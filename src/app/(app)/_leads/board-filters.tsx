@@ -127,6 +127,66 @@ function TempMenu({
 }
 
 /**
+ * The four next-step states behind one chip, for phones.
+ *
+ * Called "Next step" rather than "Timing" because one of the four is not
+ * a time: a deal with nothing planned is the most important thing in the
+ * list, and a heading about when would not cover it.
+ */
+function DueMenu({
+  due,
+  onDue,
+}: {
+  due: DueFilter | null;
+  onDue: (value: DueFilter | null) => void;
+}) {
+  const chosen = DUE_FILTERS.find((d) => d.value === due) ?? null;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        aria-label="Filter by next step"
+        style={
+          chosen
+            ? { backgroundColor: chosen.color, borderColor: chosen.color }
+            : { borderColor: "rgba(255,255,255,0.45)" }
+        }
+        className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors sm:hidden ${
+          chosen
+            ? // "Due today" is yellow, and white on yellow cannot be read.
+              chosen.value === "today"
+              ? "text-[var(--board-ink)] shadow-sm"
+              : "text-white shadow-sm"
+            : "bg-white/15 text-white"
+        }`}
+      >
+        {chosen ? chosen.label : "Next step"}
+        <ChevronDown className="size-3.5 opacity-80" />
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="start" className="min-w-44">
+        {DUE_FILTERS.map((d) => (
+          <DropdownMenuItem
+            key={d.value}
+            onClick={() => onDue(due === d.value ? null : d.value)}
+          >
+            <span
+              aria-hidden
+              className="mr-1 size-3 shrink-0 rounded-full"
+              style={{ backgroundColor: d.color }}
+            />
+            <span className="font-medium">{d.label}</span>
+            {due === d.value && (
+              <X className="ml-auto size-3.5 text-slate-400" />
+            )}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+/**
  * Two questions a rep actually asks: who is worth my time, and what needs
  * doing. One chip from each, combined.
  */
@@ -168,18 +228,22 @@ export function BoardFilters({
         ))}
       </div>
 
+      <DueMenu due={due} onDue={onDue} />
+
       <span className="mx-1 hidden h-5 w-px bg-white/25 sm:block" />
 
-      {DUE_FILTERS.map((d) => (
-        <Chip
-          key={d.value}
-          active={due === d.value}
-          color={d.color}
-          onClick={() => onDue(due === d.value ? null : d.value)}
-        >
-          {d.label}
-        </Chip>
-      ))}
+      <div className="hidden items-center gap-1.5 sm:flex">
+        {DUE_FILTERS.map((d) => (
+          <Chip
+            key={d.value}
+            active={due === d.value}
+            color={d.color}
+            onClick={() => onDue(due === d.value ? null : d.value)}
+          >
+            {d.label}
+          </Chip>
+        ))}
+      </div>
 
       {filtering && (
         <button

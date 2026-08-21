@@ -345,10 +345,13 @@ export function LeadsBoard({
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="flex flex-col gap-3 px-4 pt-4 pb-2 md:px-6">
+      {/* Tighter on a phone. Condensing the filters to two chips took a
+          row out of this stack, and the point of that was to give the
+          height to the cards rather than keep it as air. */}
+      <div className="flex flex-col gap-2 px-4 pt-3 pb-1.5 md:gap-3 md:px-6 md:pt-4 md:pb-2">
         {/* Numbers, then search, then the add button, all on one line so
             the board starts higher up the screen. */}
-        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
           <Scorecard leads={localLeads} />
 
           {/* One row on a phone: the button takes a third, search the
@@ -387,7 +390,7 @@ export function LeadsBoard({
           total={localLeads.length}
         />
 
-        <div className="flex gap-1.5 overflow-x-auto md:hidden">
+        <div className="-mb-0.5 flex gap-1.5 overflow-x-auto md:hidden">
           {boardStages.map((stage) => (
             <button
               key={stage.key}
@@ -417,7 +420,7 @@ export function LeadsBoard({
       >
         {/* Vertical padding keeps the drop-target glow from being clipped
             by this scroll container. */}
-        <div className="flex flex-1 items-start gap-3 overflow-x-auto overflow-y-hidden px-4 pt-1.5 pb-5 md:px-6">
+        <div className="flex flex-1 items-start gap-3 overflow-x-auto overflow-y-hidden px-4 pt-1 pb-4 md:px-6 md:pt-1.5 md:pb-5">
           <SortableContext
             items={columnOrder}
             strategy={horizontalListSortingStrategy}
