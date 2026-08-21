@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { stages } from "@/db/schema";
-import { getCurrentOrg } from "@/lib/org";
+import { getWritableOrg } from "@/lib/gate";
 import {
   MAX_OPEN_STAGES,
   emptyStageInto,
@@ -54,8 +54,8 @@ function keyFor(label: string, taken: Set<string>) {
 }
 
 export async function addStage(label: string) {
-  const current = await getCurrentOrg();
-  if (!current) return { error: "No organization." };
+  const { current, error: refused } = await getWritableOrg();
+  if (!current) return { error: refused };
 
   const name = label.trim();
   if (!name) return { error: "Give the bucket a name." };
@@ -84,8 +84,8 @@ export async function addStage(label: string) {
 }
 
 export async function renameStage(id: string, label: string) {
-  const current = await getCurrentOrg();
-  if (!current) return { error: "No organization." };
+  const { current, error: refused } = await getWritableOrg();
+  if (!current) return { error: refused };
 
   const name = label.trim();
   if (!name) return { error: "A bucket needs a name." };
@@ -108,8 +108,8 @@ export async function renameStage(id: string, label: string) {
  * of step with what the person just dragged.
  */
 export async function reorderStages(orderedIds: string[]) {
-  const current = await getCurrentOrg();
-  if (!current) return { error: "No organization." };
+  const { current, error: refused } = await getWritableOrg();
+  if (!current) return { error: refused };
 
   const all = await getStages(current.org.id);
   const open = new Set(all.filter((s) => s.kind === "open").map((s) => s.id));
@@ -142,8 +142,8 @@ export async function reorderStages(orderedIds: string[]) {
  * somewhere else afterwards is worse than being asked.
  */
 export async function deleteStage(id: string, destinationKey: string) {
-  const current = await getCurrentOrg();
-  if (!current) return { error: "No organization." };
+  const { current, error: refused } = await getWritableOrg();
+  if (!current) return { error: refused };
 
   const all = await getStages(current.org.id);
   const target = all.find((s) => s.id === id);

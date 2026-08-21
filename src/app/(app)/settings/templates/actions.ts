@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { templates, templateChannelEnum } from "@/db/schema";
-import { getCurrentOrg } from "@/lib/org";
+import { getWritableOrg } from "@/lib/gate";
 
 export type FormState = { error: string | null };
 type Channel = (typeof templateChannelEnum.enumValues)[number];
@@ -27,8 +27,8 @@ export async function createTemplate(
     return { error: "Give it a name and a message." };
   }
 
-  const current = await getCurrentOrg();
-  if (!current) return { error: "No team found." };
+  const { current, error: refused } = await getWritableOrg();
+  if (!current) return { error: refused };
 
   await db.insert(templates).values({
     orgId: current.org.id,
@@ -55,8 +55,8 @@ export async function updateTemplate(
     return { error: "Give it a name and a message." };
   }
 
-  const current = await getCurrentOrg();
-  if (!current) return { error: "No team found." };
+  const { current, error: refused } = await getWritableOrg();
+  if (!current) return { error: refused };
 
   await db
     .update(templates)
@@ -74,7 +74,7 @@ export async function updateTemplate(
 }
 
 export async function deleteTemplate(id: string) {
-  const current = await getCurrentOrg();
+  const { current } = await getWritableOrg();
   if (!current) return;
 
   await db

@@ -10,6 +10,7 @@ import {
   leads,
 } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
+import { getWritableOrg, requireWritableOrg } from "@/lib/gate";
 import { normalizePhone } from "@/lib/phone";
 import { defaultStageKey, resolveStageKey } from "@/lib/stages";
 
@@ -48,22 +49,36 @@ async function stageLabel(orgId: string, stage: LeadStage) {
   return found?.label ?? STAGE_LABELS[stage] ?? stage;
 }
 
+/**
+ * The team, and permission to change its data.
+ *
+ * Every write below goes through the gate rather than through
+ * getCurrentOrg, so a team whose plan has ended keeps its board and can
+ * no longer edit it. Reads are untouched: searchLeads still calls
+ * getCurrentOrg directly.
+ *
+ * Two shapes, because the actions have two. Anything returning a
+ * FormState uses getWritableOrg and hands the reason back to the form
+ * that will display it. The ones returning nothing throw instead, and
+ * the board catches that and reloads rather than leaving a card sitting
+ * somewhere it was never saved.
+ */
 async function requireOrg() {
-  const current = await getCurrentOrg();
-  if (!current) throw new Error("No organization for the current user.");
-  return current;
+  return requireWritableOrg();
 }
 
 export async function createLead(
   _prevState: FormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<FormState> {
   const name = toNullable(formData.get("name"));
   if (!name) {
     return { error: "Name is required." };
   }
 
-  const { org } = await requireOrg();
+  const { current, error: refused } = await getWritableOrg();
+  if (!current) return { error: refused };
+  const { org } = current;
 
   await db.insert(leads).values({
     orgId: org.id,
@@ -84,14 +99,16 @@ export async function createLead(
 export async function updateLead(
   id: string,
   _prevState: FormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<FormState> {
   const name = toNullable(formData.get("name"));
   if (!name) {
     return { error: "Name is required." };
   }
 
-  const { org } = await requireOrg();
+  const { current, error: refused } = await getWritableOrg();
+  if (!current) return { error: refused };
+  const { org } = current;
 
   await db
     .update(leads)
@@ -144,7 +161,7 @@ export async function reorderStage(stage: LeadStage, orderedIds: string[]) {
   // transaction would hold it open for the length of a round trip per row.
   const { getStages } = await import("@/lib/stages");
   const names = Object.fromEntries(
-    (await getStages(org.id)).map((s) => [s.key, s.label])
+    (await getStages(org.id)).map((s) => [s.key, s.label]),
   );
 
   await db.transaction(async (tx) => {
@@ -267,9 +284,9 @@ export async function searchLeads(query: string): Promise<SearchHit[]> {
           ilike(leads.name, like),
           ilike(leads.companyName, like),
           ilike(leads.email, like),
-          ilike(leads.phone, like)
-        )
-      )
+          ilike(leads.phone, like),
+        ),
+      ),
     )
     .orderBy(leads.name)
     .limit(8);
@@ -278,9 +295,7 @@ export async function searchLeads(query: string): Promise<SearchHit[]> {
 export async function deleteLead(id: string) {
   const { org } = await requireOrg();
 
-  await db
-    .delete(leads)
-    .where(and(eq(leads.id, id), eq(leads.orgId, org.id)));
+  await db.delete(leads).where(and(eq(leads.id, id), eq(leads.orgId, org.id)));
 
   revalidatePath("/pipeline");
 }
@@ -292,7 +307,7 @@ export type ActivityOutcome = (typeof activityOutcomeEnum.enumValues)[number];
 export async function logActivity(
   leadId: string,
   _prevState: FormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<FormState> {
   const type = (toNullable(formData.get("type")) as ActivityType) ?? "note";
   const outcome = toNullable(formData.get("outcome")) as ActivityOutcome | null;
@@ -303,7 +318,9 @@ export async function logActivity(
     return { error: "Add a note before saving." };
   }
 
-  const { org, userId } = await requireOrg();
+  const { current, error: refused } = await getWritableOrg();
+  if (!current) return { error: refused };
+  const { org, userId } = current;
   const keepsOutcome = type === "call" || type === "meeting";
 
   // Voicemails are a cadence counter — number them so a rep can see where
@@ -317,8 +334,8 @@ export async function logActivity(
         and(
           eq(activities.orgId, org.id),
           eq(activities.leadId, leadId),
-          eq(activities.outcome, "voicemail")
-        )
+          eq(activities.outcome, "voicemail"),
+        ),
       );
     note = `Left VM #${previous.length + 1}`;
   }
@@ -340,10 +357,12 @@ export async function logActivity(
 export async function updateActivityNote(
   activityId: string,
   _prevState: FormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<FormState> {
   const body = toNullable(formData.get("body")) ?? "";
-  const { org } = await requireOrg();
+  const { current, error: refused } = await getWritableOrg();
+  if (!current) return { error: refused };
+  const { org } = current;
 
   await db
     .update(activities)
@@ -369,14 +388,16 @@ export async function deleteActivity(activityId: string) {
 export async function addLeadNote(
   leadId: string,
   _prevState: FormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<FormState> {
   const body = toNullable(formData.get("body"));
   if (!body) {
     return { error: "Note can't be empty." };
   }
 
-  const { org } = await requireOrg();
+  const { current, error: refused } = await getWritableOrg();
+  if (!current) return { error: refused };
+  const { org } = current;
 
   await db.insert(activities).values({ orgId: org.id, leadId, body });
   revalidatePath("/pipeline");
@@ -386,14 +407,16 @@ export async function addLeadNote(
 export async function setNextAction(
   leadId: string,
   _prevState: FormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<FormState> {
   const text = toNullable(formData.get("nextActionText"));
   if (!text) {
     return { error: "What's next can't be empty." };
   }
 
-  const { org } = await requireOrg();
+  const { current, error: refused } = await getWritableOrg();
+  if (!current) return { error: refused };
+  const { org } = current;
 
   await db
     .update(leads)
@@ -411,14 +434,16 @@ export async function setNextAction(
 export async function completeNextAction(
   leadId: string,
   _prevState: FormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<FormState> {
   const newText = toNullable(formData.get("nextActionText"));
   if (!newText) {
     return { error: "Enter the next action before closing this one out." };
   }
 
-  const { org } = await requireOrg();
+  const { current, error: refused } = await getWritableOrg();
+  if (!current) return { error: refused };
+  const { org } = current;
 
   const lead = await db.query.leads.findFirst({
     where: and(eq(leads.id, leadId), eq(leads.orgId, org.id)),
@@ -458,7 +483,7 @@ export async function completeNextAction(
 export async function logSentMessage(
   leadId: string,
   channel: "text" | "email",
-  body: string
+  body: string,
 ) {
   const { org, userId } = await requireOrg();
 
@@ -484,7 +509,7 @@ export type LeadTemperature = "hot" | "warm" | "cold";
  */
 export async function setTemperature(
   leadId: string,
-  value: LeadTemperature | null
+  value: LeadTemperature | null,
 ) {
   const { org } = await requireOrg();
 

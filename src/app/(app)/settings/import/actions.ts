@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { leads } from "@/db/schema";
-import { getCurrentOrg } from "@/lib/org";
+import { getWritableOrg } from "@/lib/gate";
 import { normalizePhone } from "@/lib/phone";
 import { defaultStageKey, getStages } from "@/lib/stages";
 
@@ -37,9 +37,9 @@ export async function importLeads(
   rows: ImportRow[],
   skipDuplicateEmails: boolean
 ): Promise<ImportResult> {
-  const current = await getCurrentOrg();
+  const { current, error: refused } = await getWritableOrg();
   if (!current) {
-    return { inserted: 0, skippedDuplicate: 0, error: "No organization." };
+    return { inserted: 0, skippedDuplicate: 0, error: refused };
   }
 
   const clean = rows.filter((row) => row.name.trim().length > 0);

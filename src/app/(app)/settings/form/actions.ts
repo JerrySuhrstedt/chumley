@@ -4,10 +4,10 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { organizations } from "@/db/schema";
-import { getCurrentOrg } from "@/lib/org";
+import { getWritableOrg } from "@/lib/gate";
 
 export async function saveFormHeading(formData: FormData) {
-  const current = await getCurrentOrg();
+  const { current } = await getWritableOrg();
   if (!current) return;
 
   // Plain text only. Anything else and this stops being the simple form.

@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { READ_ONLY_MESSAGE } from "@/lib/gate-messages";
 import { fireConfetti } from "@/lib/confetti";
 import {
   closestCenter,
@@ -84,6 +86,7 @@ export function LeadsBoard({
   const [due, setDue] = useState<DueFilter | null>(null);
   const dragStartStage = useRef<LeadStage | null>(null);
   const [, startTransition] = useTransition();
+  const router = useRouter();
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- resync optimistic drag state once the server revalidates
@@ -210,10 +213,27 @@ export function LeadsBoard({
     return key ? (boardStages.find((st) => st.key === key)?.id ?? null) : null;
   }
 
+  /**
+   * Save a column's order, and undo the drag if the save is refused.
+   *
+   * The board moves the card first and writes second, which is what makes
+   * it feel instant and also what makes a rejected write dangerous: the
+   * card sits in its new column looking saved. A team whose plan has
+   * ended is exactly the case, so a failure says so and reloads from the
+   * server rather than leaving the screen telling a story the database
+   * does not agree with.
+   */
   function persist(stage: LeadStage, source: Lead[]) {
     const orderedIds = source.filter((l) => l.stage === stage).map((l) => l.id);
     startTransition(async () => {
-      await reorderStage(stage, orderedIds);
+      try {
+        await reorderStage(stage, orderedIds);
+      } catch {
+        // Next redacts the thrown message in production, so the reason is
+        // stated here rather than read off the error.
+        toast.error(READ_ONLY_MESSAGE);
+        router.refresh();
+      }
     });
   }
 
