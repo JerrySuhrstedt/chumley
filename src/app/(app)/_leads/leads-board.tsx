@@ -38,7 +38,7 @@ import { LeadDetailDialog } from "./lead-detail-dialog";
 import { QuickAddLeadDialog } from "./quick-add-lead-dialog";
 import { SampleBanner } from "./sample-banner";
 import { Scorecard } from "./scorecard";
-import { nextStage } from "./stages";
+import { nextStage, prevStage } from "./stages";
 import { useBoardStages } from "./stages-context";
 import { AddStageButton } from "./add-stage";
 import { reorderStages } from "./stage-actions";
@@ -156,6 +156,19 @@ export function LeadsBoard({
    * Both are one tap from being undone, because a thumb makes mistakes a
    * mouse does not.
    */
+  /** Left swipe, where there is a bucket behind to step into. */
+  function swipeBack(leadId: string) {
+    const lead = localLeads.find((l) => l.id === leadId);
+    if (!lead) return;
+    const previous = prevStage(lead.stage, boardStages);
+    if (!previous) return;
+    const from = lead.stage;
+    moveStage(leadId, previous);
+    toast(`${lead.name} moved back to ${labelOf(previous)}`, {
+      action: { label: "Undo", onClick: () => moveStage(leadId, from) },
+    });
+  }
+
   function swipeForward(leadId: string) {
     const lead = localLeads.find((l) => l.id === leadId);
     if (!lead) return;
@@ -429,6 +442,7 @@ export function LeadsBoard({
                   onCardClick={openRecord}
                   onMove={moveStage}
                   onSwipeForward={swipeForward}
+                  onSwipeBack={swipeBack}
                   onSwipeArchive={swipeArchive}
                   onContact={handleContact}
                 />

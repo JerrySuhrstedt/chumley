@@ -1,14 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Archive, ArrowRight } from "lucide-react";
+import { Archive, ArrowLeft, ArrowRight } from "lucide-react";
 import type { LeadStage } from "./actions";
 
 /** How far a thumb has to travel before it counts as a decision. */
 const THRESHOLD = 90;
 
 /**
- * Swipe a card on a phone: right to move it forward a bucket, left to take
+ * Swipe a card on a phone: right to move it forward a bucket, left to step
  * it off the board.
  *
  * Left is deliberately not "Lost". Marking a deal lost is a claim about the
@@ -21,13 +21,22 @@ const THRESHOLD = 90;
  */
 export function SwipeableCard({
   forward,
+  back,
   onForward,
+  onBack,
   onArchive,
   children,
 }: {
   /** The bucket a right swipe advances to, or null at the end of the line. */
   forward: LeadStage | null;
+  /**
+   * The bucket a left swipe returns to. Null only in the first bucket,
+   * where there is nothing behind it and coming off the board is what
+   * swiping back actually means.
+   */
+  back: LeadStage | null;
   onForward: () => void;
+  onBack: () => void;
   onArchive: () => void;
   children: React.ReactNode;
 }) {
@@ -66,7 +75,11 @@ export function SwipeableCard({
       if (dx > THRESHOLD && forward) {
         onForward();
       } else if (dx < -THRESHOLD) {
-        onArchive();
+        // A bucket behind means step back into it. Only the first bucket
+        // has nothing behind it, and there coming off the board is what
+        // swiping back honestly means.
+        if (back) onBack();
+        else onArchive();
       }
     }
     setSettling(true);
@@ -86,13 +99,20 @@ export function SwipeableCard({
           className={`absolute inset-0 flex items-center rounded-lg px-4 text-sm font-semibold text-white ${
             revealing === "forward"
               ? "justify-start bg-[var(--label-upcoming)]"
-              : "justify-end bg-[var(--board-ink-muted)]"
+              : back
+                ? "justify-end bg-[var(--label-overdue)]"
+                : "justify-end bg-[var(--board-ink-muted)]"
           } ${past ? "opacity-100" : "opacity-70"}`}
         >
           {revealing === "forward" ? (
             <span className="flex items-center gap-1.5">
               <ArrowRight className="size-4" />
               Move forward
+            </span>
+          ) : back ? (
+            <span className="flex items-center gap-1.5">
+              <ArrowLeft className="size-4" />
+              Move back
             </span>
           ) : (
             <span className="flex items-center gap-1.5">

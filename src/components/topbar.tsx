@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { signOut } from "@/app/(app)/actions";
 import { GlobalSearch } from "@/components/global-search";
+import { Sell1Logo } from "@/components/sell1-logo";
 
 // Where you can go, not what you can change. Settings lives in the
 // profile menu, which sits beside this one on a phone.
@@ -39,10 +40,21 @@ export function Topbar({
     // Transparent so the sidebar's colour carries across the top as one
     // continuous piece of chrome.
     <header className="flex h-16 shrink-0 items-center justify-between px-4 md:px-6">
-      <div className="flex min-w-0 flex-1 items-center gap-4">
+      <div className="flex min-w-0 flex-1 items-center gap-3 md:gap-4">
+        {/* The sidebar carries the logo on a desktop, and there is no
+            sidebar on a phone, so without this the app has no mark on it
+            anywhere. */}
         <Link
           href="/pipeline"
-          className="-mx-2 shrink-0 rounded px-2 py-1 text-lg font-bold tracking-tight text-white transition-colors hover:bg-white/15 md:text-xl"
+          aria-label="Sell1 home"
+          className="shrink-0 rounded md:hidden"
+        >
+          <Sell1Logo variant="light" className="h-6 w-auto" />
+        </Link>
+
+        <Link
+          href="/pipeline"
+          className="-mx-2 min-w-0 truncate rounded px-2 py-1 text-lg font-bold tracking-tight text-white transition-colors hover:bg-white/15 md:shrink-0 md:text-xl"
         >
           {orgName}
         </Link>

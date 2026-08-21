@@ -20,7 +20,7 @@ import type { LeadStage } from "./actions";
 import { BucketHint } from "./bucket-hint";
 import { BucketName } from "./bucket-name";
 import { DeleteStageDialog } from "./delete-stage-dialog";
-import { nextStage, type BoardStage } from "./stages";
+import { nextStage, prevStage, type BoardStage } from "./stages";
 import { useBoardStages } from "./stages-context";
 import { LeadCard } from "./lead-card";
 import { SwipeableCard } from "./swipeable-card";
@@ -44,6 +44,7 @@ export function LeadColumn({
   onCardClick,
   onMove,
   onSwipeForward,
+  onSwipeBack,
   onSwipeArchive,
   onContact,
 }: {
@@ -57,6 +58,7 @@ export function LeadColumn({
   onCardClick: (leadId: string) => void;
   onMove: (leadId: string, stage: LeadStage) => void;
   onSwipeForward: (leadId: string) => void;
+  onSwipeBack: (leadId: string) => void;
   onSwipeArchive: (leadId: string) => void;
   onContact: (leadId: string, type: "call" | "text" | "email") => void;
 }) {
@@ -193,7 +195,9 @@ export function LeadColumn({
             <SwipeableCard
               key={lead.id}
               forward={nextStage(lead.stage, boardStages)}
+              back={prevStage(lead.stage, boardStages)}
               onForward={() => onSwipeForward(lead.id)}
+              onBack={() => onSwipeBack(lead.id)}
               onArchive={() => onSwipeArchive(lead.id)}
             >
               <LeadCard

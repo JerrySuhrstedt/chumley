@@ -38,8 +38,37 @@ export function nextStage(
 ): LeadStage | null {
   const open = stages.filter((s) => s.kind === "open");
   const index = open.findIndex((s) => s.key === stage);
-  if (index === -1) return open[0]?.key ?? null;
-  return open[index + 1]?.key ?? stages.find((s) => s.kind === "won")?.key ?? null;
+
+  // Won and lost have nothing ahead of them. Returning the first bucket
+  // here, which is what an unfound index used to do, sent a closed deal
+  // back to the top of the pipeline on a right swipe.
+  if (index === -1) return null;
+
+  return (
+    open[index + 1]?.key ?? stages.find((s) => s.kind === "won")?.key ?? null
+  );
+}
+
+/**
+ * The bucket to the left, for a left swipe.
+ *
+ * Null only at the leftmost working bucket, where there is nothing behind
+ * it and coming off the board is the honest meaning of swiping back.
+ * Won and lost return the last working bucket rather than each other:
+ * un-closing a deal puts it back in the pipeline, it does not turn a loss
+ * into a win.
+ */
+export function prevStage(
+  stage: LeadStage,
+  stages: BoardStage[]
+): LeadStage | null {
+  const open = stages.filter((s) => s.kind === "open");
+  const current = stages.find((s) => s.key === stage);
+  if (!current) return null;
+  if (current.kind !== "open") return open.at(-1)?.key ?? null;
+
+  const index = open.findIndex((s) => s.key === stage);
+  return index <= 0 ? null : open[index - 1].key;
 }
 
 export type NextActionStatus = {
