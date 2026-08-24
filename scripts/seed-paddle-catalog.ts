@@ -4,7 +4,7 @@ import { Environment, Paddle } from "@paddle/paddle-node-sdk";
 config({ path: ".env.local" });
 
 /**
- * Creates the Chumley catalog in Paddle sandbox.
+ * Creates the Chumley catalog in Paddle.
  *
  * Two products, six prices. Paddle carries one unit price per price object
  * and has no notion of a volume ladder, so each break on the pricing page
@@ -16,9 +16,16 @@ config({ path: ".env.local" });
  *
  * Safe to look at before running. It only creates; it never edits or
  * deletes, so a second run makes duplicates rather than damage.
+ *
+ * Sandbox unless you pass --production, and the flag is deliberately not
+ * PADDLE_ENV: a stray environment variable should never be enough to create
+ * a live catalog by itself. The API key has to match the target, because
+ * sandbox and production keys are not interchangeable.
  */
+const LIVE = process.argv.includes("--production");
+
 const paddle = new Paddle(process.env.PADDLE_API_KEY!, {
-  environment: Environment.sandbox,
+  environment: LIVE ? Environment.production : Environment.sandbox,
 });
 
 const TRIAL = { interval: "day" as const, frequency: 14 };
@@ -46,6 +53,28 @@ async function seed() {
   if (!process.env.PADDLE_API_KEY) {
     throw new Error("PADDLE_API_KEY is not set in .env.local");
   }
+
+  const key = process.env.PADDLE_API_KEY;
+
+  // The key itself says which environment it belongs to. Catching a mismatch
+  // here is worth it, because the failure it prevents is a live catalog full
+  // of duplicates, or a sandbox key quietly making nothing at all.
+  if (LIVE && key.startsWith("pdl_sdbx_")) {
+    throw new Error(
+      "--production was passed but PADDLE_API_KEY is a sandbox key (pdl_sdbx_...). Put the live key in .env.local first."
+    );
+  }
+  if (!LIVE && !key.startsWith("pdl_sdbx_")) {
+    throw new Error(
+      "PADDLE_API_KEY does not look like a sandbox key. Pass --production if you really mean to create the live catalog."
+    );
+  }
+
+  console.log(
+    LIVE
+      ? "\n*** PRODUCTION. This creates the real catalog customers will be charged against. ***\n"
+      : "\nSandbox.\n"
+  );
 
   console.log("Creating Solo...");
   const solo = await paddle.products.create({
@@ -77,7 +106,9 @@ async function seed() {
     };
   }
 
-  console.log("\n\nPaste this into src/lib/paddle/catalog.ts:\n");
+  console.log(
+    `\n\nPaste this into src/lib/paddle/catalog.ts (${LIVE ? "PRODUCTION" : "sandbox"} ids):\n`
+  );
   console.log(
     JSON.stringify(
       {

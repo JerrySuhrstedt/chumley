@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { paddle } from "@/lib/paddle/server";
+import { checkPaddleIp } from "@/lib/paddle/ips";
 import { syncPaddleEvent } from "@/lib/paddle/sync";
 
 /**
@@ -13,8 +14,19 @@ import { syncPaddleEvent } from "@/lib/paddle/sync";
  * A 200 is returned for anything that verified, including events we do not
  * act on. Paddle retries non-2xx responses, and retrying an event that was
  * received correctly and simply ignored achieves nothing but noise.
+ *
+ * There is an address check in front of the signature check, using the list
+ * Paddle publishes. It is a cheap way to drop scanner traffic before doing
+ * crypto on it, and it is deliberately advisory: if the list cannot be
+ * reached we fall through to the signature, which is the real control.
  */
 export async function POST(request: Request) {
+  const { verdict, ip } = await checkPaddleIp(request.headers);
+  if (verdict === "rejected") {
+    console.error("paddle webhook from unexpected address", ip);
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const secret = process.env.PADDLE_WEBHOOK_SECRET;
   if (!secret) {
     // Fail closed. An unverifiable endpoint should refuse, not guess.
