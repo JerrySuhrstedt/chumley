@@ -1,7 +1,8 @@
 import { and, count, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { memberships, subscriptions } from "@/db/schema";
+import { memberships, organizations, subscriptions } from "@/db/schema";
 import type { Subscription } from "@/db/schema";
+import { TRIAL_DAYS } from "@/app/(marketing)/pricing/plans";
 
 export type BillingState = {
   subscription: Subscription | null;
@@ -16,6 +17,13 @@ export type BillingState = {
   /** Set when a cancel or pause is pending but has not taken effect. */
   endingAt: Date | null;
   trialEndsAt: Date | null;
+  /**
+   * True when the access they have comes from the free trial rather than
+   * from a subscription. The banner needs to tell those two apart: "your
+   * trial ends Friday" and "your plan ends Friday" are different messages
+   * to a person who has not paid us anything yet.
+   */
+  inTrial: boolean;
   /** No payment provider configured at all, so nothing is being charged. */
   billingLive: boolean;
 };
@@ -49,10 +57,10 @@ export async function getBillingState(orgId: string): Promise<BillingState> {
 
   // Until billing is switched on, nothing is gated and nothing is capped.
   // A half-built paywall that locks people out of a free product is the
-  // worst of both.
-  if (!billingLive || !sub) {
+  // worst of both. This is the self-hosted and local-development case.
+  if (!billingLive) {
     return {
-      subscription: sub ?? null,
+      subscription: null,
       active: true,
       seats: seatsUsed,
       seatsUsed,
@@ -60,6 +68,49 @@ export async function getBillingState(orgId: string): Promise<BillingState> {
       readOnly: false,
       endingAt: null,
       trialEndsAt: null,
+      inTrial: false,
+      billingLive,
+    };
+  }
+
+  /**
+   * Billing is on and they have never subscribed, so they are on the free
+   * trial, and the trial has to actually end.
+   *
+   * It runs from the day the team was created, not from any Paddle record,
+   * because the whole point of the offer is that no card is needed to start
+   * one. Before this existed the same branch returned unlimited access
+   * forever, which meant the pricing page promised fourteen days and the
+   * code gave away the product.
+   */
+  if (!sub) {
+    const [org] = await db
+      .select({ createdAt: organizations.createdAt })
+      .from(organizations)
+      .where(eq(organizations.id, orgId))
+      .limit(1);
+
+    const started = org?.createdAt ?? new Date();
+    const trialEndsAt = new Date(
+      started.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000
+    );
+    const inTrial = Date.now() < trialEndsAt.getTime();
+
+    return {
+      subscription: null,
+      active: inTrial,
+      seats: seatsUsed,
+      seatsUsed,
+      // The trial is the whole product, seats included. Capping it would
+      // stop a manager evaluating it with the team who would actually use
+      // it, which is the only evaluation that answers anything.
+      seatsLeft: inTrial ? Number.POSITIVE_INFINITY : 0,
+      readOnly: !inTrial,
+      endingAt: null,
+      // Kept once expired too, so the banner can say when it ran out
+      // rather than just that it did.
+      trialEndsAt,
+      inTrial,
       billingLive,
     };
   }
@@ -77,6 +128,7 @@ export async function getBillingState(orgId: string): Promise<BillingState> {
     readOnly: !active,
     endingAt: sub.scheduledChangeAt,
     trialEndsAt: sub.trialEndsAt,
+    inTrial: sub.status === "trialing",
     billingLive,
   };
 }

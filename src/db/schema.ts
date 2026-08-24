@@ -1,6 +1,7 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  uniqueIndex,
   pgTable,
   pgEnum,
   uuid,
@@ -322,35 +323,57 @@ export const activities = pgTable("activities", {
  * Scoped to the organization rather than the user, because the team is what
  * gets billed. A manager paying for six reps is one subscription, not six.
  */
-export const subscriptions = pgTable("subscriptions", {
-  /** Paddle's subscription id, sub_01h... */
-  id: text("id").primaryKey(),
-  orgId: uuid("org_id")
-    .notNull()
-    .references(() => organizations.id, { onDelete: "cascade" }),
-  customerId: text("customer_id").notNull(),
-  /** active | trialing | past_due | paused | canceled */
-  status: text("status").notNull(),
-  priceId: text("price_id").notNull(),
-  productId: text("product_id"),
-  /** Seats paid for. This is what the invite flow checks against. */
-  quantity: integer("quantity").notNull().default(1),
-  /**
-   * Set when a cancel or pause is pending. Status stays active until the
-   * date arrives, so this is the difference between "they cancelled" and
-   * "their access has ended".
-   */
-  scheduledChangeAt: timestamp("scheduled_change_at", { withTimezone: true }),
-  scheduledChangeAction: text("scheduled_change_action"),
-  currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
-  trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const subscriptions = pgTable(
+  "subscriptions",
+  {
+    /** Paddle's subscription id, sub_01h... */
+    id: text("id").primaryKey(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    customerId: text("customer_id").notNull(),
+    /** active | trialing | past_due | paused | canceled */
+    status: text("status").notNull(),
+    priceId: text("price_id").notNull(),
+    productId: text("product_id"),
+    /** Seats paid for. This is what the invite flow checks against. */
+    quantity: integer("quantity").notNull().default(1),
+    /**
+     * Set when a cancel or pause is pending. Status stays active until the
+     * date arrives, so this is the difference between "they cancelled" and
+     * "their access has ended".
+     */
+    scheduledChangeAt: timestamp("scheduled_change_at", { withTimezone: true }),
+    scheduledChangeAction: text("scheduled_change_action"),
+    currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+    trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    /**
+     * One live subscription per team, enforced by the database.
+     *
+     * Cancelled rows are excluded, because a team that leaves and comes
+     * back legitimately has an old cancelled row and a new active one.
+     * What must never exist is two that are both billing, which is how a
+     * team ends up paying twice and how a lookup starts returning whichever
+     * row Postgres feels like.
+     *
+     * Applied straight to the database on 08-24-2026 rather than through a
+     * generated migration, because drizzle-kit generate stops on an
+     * unrelated enum prompt that needs a terminal. If a later generate emits
+     * a CREATE for this index, the index already exists.
+     */
+    uniqueIndex("subscriptions_org_live_idx")
+      .on(table.orgId)
+      .where(sql`status <> 'canceled'`),
+  ]
+);
 
 export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
   org: one(organizations, {

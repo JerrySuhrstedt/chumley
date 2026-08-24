@@ -63,7 +63,11 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           <main className="flex flex-1 flex-col overflow-hidden rounded-tl-2xl bg-[var(--board-bg)]">
             {billing.readOnly && (
               <ReadOnlyBanner
-                endedAt={billing.subscription?.currentPeriodEnd ?? null}
+                reason={billing.subscription ? "plan" : "trial"}
+                endedAt={
+                  billing.subscription?.currentPeriodEnd ??
+                  billing.trialEndsAt
+                }
               />
             )}
             <PullToRefresh>{children}</PullToRefresh>

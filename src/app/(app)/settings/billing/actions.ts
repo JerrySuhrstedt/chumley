@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { subscriptions } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
@@ -35,10 +35,15 @@ async function load() {
     return { error: "Only the team owner can change the plan." as const };
   }
 
+  // Newest first, matching getBillingState. Without the ordering, a team
+  // that cancelled and came back has two rows and Postgres is free to hand
+  // back either, so the page could show the live subscription while this
+  // cancelled the dead one.
   const [sub] = await db
     .select()
     .from(subscriptions)
     .where(eq(subscriptions.orgId, current.org.id))
+    .orderBy(desc(subscriptions.createdAt))
     .limit(1);
 
   if (!sub) return { error: "There is no subscription to change." as const };

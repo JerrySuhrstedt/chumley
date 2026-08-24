@@ -4,6 +4,7 @@ import {
   DEACTIVATED_MESSAGE,
   NO_ORG_MESSAGE,
   READ_ONLY_MESSAGE,
+  TRIAL_ENDED_MESSAGE,
 } from "@/lib/gate-messages";
 
 /**
@@ -52,7 +53,14 @@ export async function getWritableOrg(): Promise<Allowed | Refused> {
   }
 
   const billing = await getBillingState(current.org.id);
-  if (billing.readOnly) return { current: null, error: READ_ONLY_MESSAGE };
+  if (billing.readOnly) {
+    // A team that never subscribed is out of trial, not out of plan.
+    const never = billing.subscription === null;
+    return {
+      current: null,
+      error: never ? TRIAL_ENDED_MESSAGE : READ_ONLY_MESSAGE,
+    };
+  }
 
   return { current, error: null };
 }
@@ -84,7 +92,10 @@ export async function seatCheck(
     return {
       ok: false,
       cap: null,
-      error: "That team's plan has ended, so it cannot take anyone new.",
+      error:
+        billing.subscription === null
+          ? "That team's free trial has ended, so it cannot take anyone new."
+          : "That team's plan has ended, so it cannot take anyone new.",
     };
   }
 

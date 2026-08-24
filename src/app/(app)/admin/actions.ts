@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { eq, sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { organizations, subscriptions } from "@/db/schema";
 import { requireAdmin } from "@/lib/admin";
@@ -25,10 +25,13 @@ export async function adminCancelSubscription(
 ): Promise<AdminActionResult> {
   await requireAdmin();
 
+  // Newest first. A team with a cancelled row and a live one must not have
+  // the cancelled one acted on.
   const [sub] = await db
     .select()
     .from(subscriptions)
     .where(eq(subscriptions.orgId, orgId))
+    .orderBy(desc(subscriptions.createdAt))
     .limit(1);
 
   if (!sub) return { error: "That team has no subscription." };
@@ -94,13 +97,19 @@ export async function adminDeleteAccount(
   }
 
   // Stop the billing before removing the thing being billed for.
-  const [sub] = await db
+  //
+  // Every subscription, not just one. Deleting the org cascades the rows
+  // away, so a second subscription missed here becomes a live Paddle
+  // subscription with nothing left in our database pointing at it, billing
+  // a real customer every month with no way to find it.
+  const subs = await db
     .select()
     .from(subscriptions)
     .where(eq(subscriptions.orgId, orgId))
-    .limit(1);
+    .orderBy(desc(subscriptions.createdAt));
 
-  if (sub && isBillingConfigured() && sub.status !== "canceled") {
+  for (const sub of subs) {
+    if (!isBillingConfigured() || sub.status === "canceled") continue;
     try {
       await paddle().subscriptions.cancel(sub.id, {
         effectiveFrom: "immediately",
