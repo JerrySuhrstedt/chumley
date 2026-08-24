@@ -133,10 +133,10 @@ export default function HomePage() {
               the right edge. */}
           <div className="-mr-5 -mb-20 min-w-0 lg:hidden">
             <Image
-              src="/hero-phone.png"
+              src="/chumley-hero-phone.png"
               alt="Chumley open on a phone, a deal being moved into Won"
-              width={1666}
-              height={2399}
+              width={1111}
+              height={1600}
               priority
               sizes="88vw"
               className="ml-auto h-auto w-[88%] max-w-none sm:w-[64%]"
@@ -152,11 +152,11 @@ export default function HomePage() {
             about 384px either side, and no margin large enough to cross
             that is also correct at 1280. */}
         <Image
-          src="/hero-phone.png"
+          src="/chumley-hero-phone.png"
           alt=""
           aria-hidden
-          width={1666}
-          height={2399}
+          width={1111}
+          height={1600}
           priority
           sizes="55vw"
           // Smaller at the breakpoint itself, where the copy column and the
