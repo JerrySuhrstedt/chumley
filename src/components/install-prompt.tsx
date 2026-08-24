@@ -60,9 +60,9 @@ export function InstallPrompt() {
       </button>
 
       <div className="flex items-start gap-3">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white">
-          <ChumleyMark className="size-5" />
-        </span>
+        {/* The artwork is the button. It carries its own orange field, so a
+            white plate behind it just inset the tile and boxed it in. */}
+        <ChumleyMark className="size-11 shrink-0 rounded-xl" />
 
         <div className="min-w-0 pr-6">
           <p className="text-sm font-semibold">Put Chumley on your home screen</p>

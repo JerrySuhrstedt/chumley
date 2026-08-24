@@ -61,10 +61,16 @@ export function AppSidebar({
           collapsed ? "justify-center" : "px-4"
         )}
       >
-        <Link href="/pipeline" title="Chumley" className="min-w-0">
-          {/* The mark, not the lockup: the rail is narrow even when it
-              is open, and the wordmark would crowd the nav beneath it. */}
-          <ChumleyMark className="size-8" />
+        <Link
+          href="/pipeline"
+          title="Chumley"
+          className="size-16 shrink-0 overflow-hidden rounded-2xl"
+        >
+          {/* The mark, not the lockup: the rail is narrow even when it is
+              open, and the wordmark would crowd the nav beneath it. The tile
+              fills the row's full height, so the artwork bleeds to every
+              edge rather than floating in the middle of the chrome. */}
+          <ChumleyMark className="size-16" />
         </Link>
       </div>
 

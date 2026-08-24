@@ -47,9 +47,9 @@ export function Topbar({
         <Link
           href="/pipeline"
           aria-label="Chumley home"
-          className="shrink-0 rounded md:hidden"
+          className="size-16 shrink-0 overflow-hidden rounded-2xl md:hidden"
         >
-          <ChumleyMark className="size-8" />
+          <ChumleyMark className="size-16" />
         </Link>
 
         <Link
