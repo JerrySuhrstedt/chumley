@@ -1,4 +1,7 @@
+import { config } from "dotenv";
 import { Environment, Paddle } from "@paddle/paddle-node-sdk";
+
+config({ path: ".env.local" });
 
 /** Read-only. Lists whatever already exists in the live catalog. */
 const key = process.env.PADDLE_API_KEY ?? "";

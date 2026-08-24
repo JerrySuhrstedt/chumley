@@ -1,34 +1,40 @@
 import { TEAM_TIERS, tierFor } from "@/app/(marketing)/pricing/plans";
 
 /**
- * Paddle sandbox price IDs, created by scripts/seed-paddle-catalog.ts.
+ * Paddle PRODUCTION price IDs, created by scripts/seed-paddle-catalog.ts
+ * on 08-24-2026 against the live account.
  *
- * Sandbox and production have entirely separate catalogs, so none of these
- * exist live. Going live means running the seed against production and
- * replacing this block, which is why it sits in one file rather than
- * scattered through the checkout.
+ * These are real. A checkout opened against them bills a real card once the
+ * account is verified and the domain approved.
+ *
+ * Sandbox and production have entirely separate catalogs and none of these
+ * ids exist in sandbox, which is why local development keeps PADDLE_ENV on
+ * sandbox and simply never reaches this file's checkout path.
  *
  * Paddle holds one unit price per price object and has no concept of a
  * volume ladder, so every break on the pricing page is its own price and
  * the checkout picks whichever matches the seat count.
+ *
+ * Prices are immutable once used. Correcting one means creating a NEW price
+ * and pointing this block at it, never editing or deleting the old one.
  */
 export const PRICES = {
   solo: {
-    monthly: "pri_01m0dtmkv0ph4s7f6jf0sqaegr",
-    yearly: "pri_01m0dtmm0b9djmdy90961y40md",
+    monthly: "pri_01m0tw7rjy8mvwym6nkkw8p8p4",
+    yearly: "pri_01m0tw7rrgtvwkvhqh4sdvdj4c",
   },
   team: {
     "3to4": {
-      monthly: "pri_01m0dtmmaqxwbvyfa37p199vc6",
-      yearly: "pri_01m0dtmmfajkmrrrgwjc09bw93",
+      monthly: "pri_01m0tw7s3fpawjxg09b4j085f4",
+      yearly: "pri_01m0tw7s8qrdewdetxt491a8b1",
     },
     "5to9": {
-      monthly: "pri_01m0dtmmm1svwmdtbnpbz58gmm",
-      yearly: "pri_01m0dtmmqjx3pcp09qwqhra1m1",
+      monthly: "pri_01m0tw7se1qccp7vmk2gj28z87",
+      yearly: "pri_01m0tw7skhzyb69b344v050enr",
     },
     "10plus": {
-      monthly: "pri_01m0dtmmw4q4ykepw86wzmn00s",
-      yearly: "pri_01m0dtmn6f7a9kv344qa9bf33t",
+      monthly: "pri_01m0tw7srz7wankz4htsrgcpg8",
+      yearly: "pri_01m0tw7sy8hzj5c38afsdg7xyw",
     },
   },
 } as const;
