@@ -59,9 +59,14 @@ async function seed() {
   // The key itself says which environment it belongs to. Catching a mismatch
   // here is worth it, because the failure it prevents is a live catalog full
   // of duplicates, or a sandbox key quietly making nothing at all.
-  if (LIVE && key.startsWith("pdl_sdbx_")) {
+  // Positive check, not just "is it the wrong one". A clipboard holding
+  // something that is not a key at all used to sail past a sandbox-prefix
+  // test and only fail at the API, several calls in.
+  if (LIVE && !key.startsWith("pdl_live_")) {
     throw new Error(
-      "--production was passed but PADDLE_API_KEY is a sandbox key (pdl_sdbx_...). Put the live key in .env.local first."
+      key.startsWith("pdl_sdbx_")
+        ? "--production was passed but PADDLE_API_KEY is a SANDBOX key (pdl_sdbx_...). Use the live key from vendors.paddle.com."
+        : `--production needs a live key beginning pdl_live_. Got something starting "${key.slice(0, 9)}", which is not a Paddle API key at all. If you used pbpaste, your clipboard holds something else.`
     );
   }
   if (!LIVE && !key.startsWith("pdl_sdbx_")) {
