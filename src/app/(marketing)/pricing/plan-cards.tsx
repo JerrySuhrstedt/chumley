@@ -71,9 +71,10 @@ function StartFree({ featured }: { featured?: boolean }) {
 }
 
 /**
- * The button says "Start free", not "Buy". Nothing charges yet, so a price
- * in front of a checkout that does not exist would be a lie. In front of a
- * signup it is a question, and the answer is worth more than the money.
+ * The button says "Start free", not "Buy", because the trial is real: 14 days
+ * of the whole product without a card. Sending a first-time visitor straight
+ * into a checkout asks for the decision before they have the information to
+ * make it, and the trial is what supplies that information.
  */
 export function PlanCards() {
   const [yearly, setYearly] = useState(false);

@@ -5,6 +5,7 @@ import { BoardPreview } from "./_components/board-preview";
 import { CtaButton } from "./_components/cta";
 import { FaqList } from "./_components/faq-list";
 import { PlatformMarquee } from "./_components/platform-marquee";
+import { TRIAL_DAYS } from "./pricing/plans";
 
 export const metadata: Metadata = {
   title: "Chumley | Finally, a sales CRM you'll actually want to use",
@@ -75,7 +76,7 @@ export default function HomePage() {
         <div className="mx-auto grid w-full max-w-6xl gap-12 px-5 pt-14 pb-16 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-8 lg:px-8 lg:pt-16 lg:pb-16">
           <div className="min-w-0">
             <span className="inline-flex items-center gap-2 rounded-full border border-[var(--brand)]/25 bg-white px-3.5 py-1.5 text-xs font-bold tracking-wide text-[var(--brand)] uppercase">
-              Free while in early access
+              {TRIAL_DAYS} days free · No credit card
             </span>
 
             {/* Breaks are forced from sm up. Below that the line "a sales CRM
@@ -398,7 +399,7 @@ export default function HomePage() {
             <CtaButton size="xl" />
           </div>
           <p className="mt-5 text-sm text-white/50">
-            Free while in early access. No credit card.
+            {TRIAL_DAYS} days free. No credit card. Cancel any time.
           </p>
         </div>
       </section>

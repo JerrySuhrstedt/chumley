@@ -57,8 +57,8 @@ export default async function BillingSettingsPage() {
                   Nothing is being charged
                 </p>
                 <p className="mt-1 text-sm text-slate-600">
-                  Chumley is free while in early access. Your team is not
-                  limited, nothing expires, and no card is on file.
+                  Billing is not switched on for this workspace, so your team
+                  is not limited, nothing expires, and no card is on file.
                 </p>
               </div>
             </CardContent>
@@ -68,11 +68,37 @@ export default async function BillingSettingsPage() {
         {billing.billingLive && !sub && <TestModeNotice />}
 
         {billing.billingLive && !sub && current.email && (
-          <Checkout
-            orgId={current.org.id}
-            email={current.email}
-            membersNow={billing.seatsUsed}
-          />
+          <>
+            <Checkout
+              orgId={current.org.id}
+              email={current.email}
+              membersNow={billing.seatsUsed}
+            />
+
+            {/* What they are agreeing to, next to the button that agrees to
+                it. A buyer who has to go looking for the refund terms after
+                paying is a buyer who calls their bank instead. */}
+            <p className="px-1 text-xs leading-relaxed text-slate-500">
+              Subscriptions renew automatically until you cancel, which you
+              can do from this page at any time. Prices are in US dollars and
+              exclude any sales tax or VAT, which is added at checkout. Our
+              order process is conducted by Paddle.com Market Ltd, the
+              merchant of record, so your statement will show PADDLE.NET. By
+              subscribing you agree to our{" "}
+              <Link href="/terms" className="underline hover:text-slate-700">
+                Terms of Service
+              </Link>
+              ,{" "}
+              <Link href="/refunds" className="underline hover:text-slate-700">
+                Refund Policy
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" className="underline hover:text-slate-700">
+                Privacy Policy
+              </Link>
+              .
+            </p>
+          </>
         )}
 
         <Card>
@@ -111,8 +137,8 @@ export default async function BillingSettingsPage() {
               </>
             ) : (
               <p className="text-sm text-slate-600">
-                Invite as many people as you like while we are in early
-                access.
+                Invite as many people as you like. Seats are not capped while
+                billing is switched off.
               </p>
             )}
           </CardContent>

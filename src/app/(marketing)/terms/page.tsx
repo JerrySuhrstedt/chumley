@@ -4,14 +4,23 @@ import {
   Bullets,
   COMPANY,
   ContactBlock,
+  DataTable,
   LegalPage,
+  MERCHANT,
   Section,
 } from "../_components/legal";
+import {
+  SOLO,
+  TEAM_MIN,
+  TEAM_TIERS,
+  TRIAL_DAYS,
+  tierLabel,
+} from "../pricing/plans";
 
 export const metadata: Metadata = {
   title: "Terms of Service | Chumley",
   description:
-    "The agreement between SumoLab LLC and users of the Chumley sales pipeline service.",
+    "The agreement between SumoLab LLC and users of the Chumley sales pipeline service, including plans, billing, renewal, and cancellation.",
 };
 
 export default function TermsPage() {
@@ -41,26 +50,132 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <Section heading="2. Early access and free service">
+      <Section heading="2. Plans and pricing">
         <p>
-          <strong>
-            The Service is currently offered free of charge as an early access
-            release.
-          </strong>{" "}
-          Early access means the Service is under active development. Features
-          may change, be added, or be withdrawn; the Service may contain defects
-          or behave unexpectedly; and it is provided without any service level
-          commitment, uptime guarantee, or formal support obligation.
+          The Service is a paid subscription. Every plan includes the entire
+          product. We do not withhold features to sell an upgrade, so the only
+          thing that changes between plans is how many people are using it.
         </p>
         <p>
-          We may introduce paid plans in the future. We will give existing
-          account holders at least 30 days&apos; advance notice by email before
-          any charge applies to them, and no charge will ever be made without
-          your express consent.
+          Prices are stated in United States dollars and are exclusive of sales
+          tax, VAT, GST, and similar taxes, which are calculated and added at
+          checkout based on your location. Current list prices are:
+        </p>
+        <DataTable
+          head={["Plan", "People", "Per person, monthly", "Per person, yearly"]}
+          rows={[
+            [
+              SOLO.name,
+              "1",
+              `$${SOLO.monthly}`,
+              `$${SOLO.yearly}`,
+            ],
+            ...TEAM_TIERS.map((t) => [
+              "Sales team",
+              `${tierLabel(t)}`,
+              `$${t.monthly}`,
+              `$${t.yearly}`,
+            ]),
+          ]}
+        />
+        <p>
+          The team plan requires a minimum of {TEAM_MIN} people. Yearly plans
+          are billed once for the full year in advance. The prices shown on our{" "}
+          <Link href="/pricing">pricing page</Link> at the time you subscribe
+          are the prices that apply to you.
+        </p>
+        <p>
+          <strong>Free trial.</strong> New accounts get {TRIAL_DAYS} days of
+          full access at no charge. We do not require a payment method to start
+          a trial. If you do not subscribe before the trial ends, your account
+          moves to the read-only state described in section 6 rather than being
+          deleted.
         </p>
       </Section>
 
-      <Section heading="3. Your data and ownership">
+      <Section heading="3. Billing, renewal, and seats">
+        <p>
+          <strong>Automatic renewal.</strong> Subscriptions renew automatically
+          at the end of each billing period, monthly or yearly according to the
+          plan you chose, at the then-current price for your plan, until you
+          cancel. By subscribing you authorize recurring charges to your
+          payment method. You may cancel at any time as described in section 5.
+        </p>
+        <p>
+          <strong>Seats.</strong> Your subscription is priced by the number of
+          people in your workspace. Adding a person adds a seat and the charge
+          is prorated for the remainder of the current period. Removing a
+          person frees the seat at the next renewal. If adding people moves you
+          across a volume break, we move your whole subscription onto the lower
+          per-person price automatically. You cannot invite more people than
+          you have paid seats for.
+        </p>
+        <p>
+          <strong>Price changes.</strong> We may change our prices. We will give
+          you at least 30 days&apos; notice by email before a changed price
+          applies to your subscription, and the change will only ever take
+          effect at a renewal, never mid-period. If you do not accept the new
+          price, cancel before that renewal.
+        </p>
+        <p>
+          <strong>Failed payments.</strong> If a charge fails, we keep your
+          account fully working while the payment is retried, and we will email
+          you to ask you to update your payment method. If it is still unpaid
+          after the retry period ends, your subscription is canceled and the
+          account moves to read-only under section 6.
+        </p>
+        <p>
+          <strong>Taxes.</strong> You are responsible for any taxes on your
+          purchase other than taxes on our income. Where sales tax, VAT, or GST
+          applies, it is added at checkout and shown on your invoice.
+        </p>
+      </Section>
+
+      <Section heading="4. Who you are buying from">
+        <p>
+          <strong>Our order process is conducted by {MERCHANT.short}.</strong>{" "}
+          {MERCHANT.name} is the merchant of record for all orders of the
+          Service. {MERCHANT.short} handles payment processing, collects the
+          tax due in your jurisdiction, and issues your invoice and receipts.
+        </p>
+        <p>
+          This means your purchase is also subject to{" "}
+          <a href={MERCHANT.href} target="_blank" rel="noopener noreferrer">
+            {MERCHANT.short}&apos;s buyer terms
+          </a>
+          , and that{" "}
+          <strong>
+            your card or bank statement will show {MERCHANT.statement}
+          </strong>{" "}
+          rather than {COMPANY.legalName} or {COMPANY.product}. If you see that
+          charge and do not recognize it, please email us before disputing it
+          and we will sort it out.
+        </p>
+      </Section>
+
+      <Section heading="5. Cancellation and refunds">
+        <p>
+          <strong>You can cancel at any time</strong> from Settings, then
+          Billing, inside the app. There is no contract term, no minimum
+          period, and no need to email anybody or speak to anyone to do it.
+        </p>
+        <p>
+          Cancellation takes effect at the end of the billing period you have
+          already paid for. You keep full access until that date, and you are
+          not charged again.
+        </p>
+        <p>
+          <strong>
+            We offer a 30-day money-back guarantee on your first payment.
+          </strong>{" "}
+          The full terms, including how to request a refund and how refunds on
+          renewals and yearly plans are handled, are set out in our{" "}
+          <Link href="/refunds">Refund Policy</Link>, which forms part of these
+          Terms.
+        </p>
+      </Section>
+
+      <Section heading="6. Your data, and what happens if you stop paying">
         <p>
           <strong>You own your data.</strong> As between you and SumoLab, you
           retain all rights to the records, contacts, notes, and other content
@@ -74,8 +189,17 @@ export default function TermsPage() {
           with law. This license ends when you delete the data or close your
           account. We do not use Customer Data to train machine learning models,
           and we do not sell it or disclose it to third parties except as
-          described in our{" "}
-          <Link href="/privacy">Privacy Policy</Link>.
+          described in our <Link href="/privacy">Privacy Policy</Link>.
+        </p>
+        <p>
+          <strong>
+            If your subscription lapses, we do not lock you out of your own
+            records.
+          </strong>{" "}
+          Your workspace becomes read-only: you and your team can still sign in,
+          read everything, and export all of it, but you cannot add or change
+          records until you subscribe again. Nothing is deleted because of
+          non-payment. Holding your own contacts hostage is not a business model.
         </p>
         <p>
           We own the Service itself, including its software, design, and
@@ -85,7 +209,7 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <Section heading="4. Your responsibilities for contact information">
+      <Section heading="7. Your responsibilities for contact information">
         <p>
           This section matters more than most, because the Service stores
           information about other people.
@@ -108,7 +232,7 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <Section heading="5. Acceptable use">
+      <Section heading="8. Acceptable use">
         <p>You agree not to, and not to permit anyone else to:</p>
         <Bullets
           items={[
@@ -118,13 +242,13 @@ export default function TermsPage() {
             "Attempt to gain unauthorized access to the Service, other accounts, or the systems or networks connected to it.",
             "Reverse engineer, decompile, or attempt to derive the source code of the Service, except to the extent that restriction is prohibited by law.",
             "Resell, sublicense, or provide the Service to third parties as a standalone offering.",
-            "Circumvent usage limits, or use automated means to access the Service in a way that imposes an unreasonable load on our infrastructure.",
+            "Circumvent usage limits or seat counts, or use automated means to access the Service in a way that imposes an unreasonable load on our infrastructure.",
             "Use the Service to build a competing product, or to benchmark it for publication without our prior written consent.",
           ]}
         />
       </Section>
 
-      <Section heading="6. Third-party services">
+      <Section heading="9. Third-party services">
         <p>
           The Service may connect with third-party services you choose to use,
           including Google and LinkedIn sign-in and any automation platform you
@@ -135,36 +259,38 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <Section heading="7. Availability, modification, and suspension">
+      <Section heading="10. Availability, modification, and suspension">
         <p>
           We aim to keep the Service available but do not guarantee
           uninterrupted access. We may modify, suspend, or discontinue any part
           of the Service at any time. Where we discontinue the Service entirely,
-          we will provide at least 30 days&apos; notice and a reasonable
-          opportunity to export your data.
+          we will provide at least 30 days&apos; notice, a reasonable
+          opportunity to export your data, and a prorated refund of any period
+          you have paid for but will not receive.
         </p>
         <p>
           We may suspend or terminate your access immediately if we reasonably
           believe you have violated these Terms, if your use poses a security
           risk or a risk of liability to us or others, or if required by law.
+          Where we terminate your account for a violation of these Terms, no
+          refund is due.
         </p>
       </Section>
 
-      <Section heading="8. Termination">
+      <Section heading="11. Termination">
         <p>
-          You may stop using the Service and close your account at any time by
-          contacting us at{" "}
-          <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>. On
-          termination, your right to use the Service ends immediately and we
-          will delete your Customer Data in accordance with the retention
-          practices described in our{" "}
-          <Link href="/privacy">Privacy Policy</Link>. Export anything you want
-          to keep before closing your account. Sections 3, 4, 9, 10, 11, 12, and
-          13 survive termination.
+          You may cancel your subscription at any time from Settings, then
+          Billing, and you may close your account entirely by contacting us at{" "}
+          <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>. On closing
+          your account, your right to use the Service ends and we will delete
+          your Customer Data in accordance with the retention practices
+          described in our <Link href="/privacy">Privacy Policy</Link>. Export
+          anything you want to keep first. Sections 6, 7, 12, 13, 14, 15, and 16
+          survive termination.
         </p>
       </Section>
 
-      <Section heading="9. Disclaimer of warranties">
+      <Section heading="12. Disclaimer of warranties">
         <p>
           <strong>
             THE SERVICE IS PROVIDED &ldquo;AS IS&rdquo; AND &ldquo;AS
@@ -180,7 +306,7 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <Section heading="10. Limitation of liability">
+      <Section heading="13. Limitation of liability">
         <p>
           <strong>
             TO THE MAXIMUM EXTENT PERMITTED BY LAW, SUMOLAB WILL NOT BE LIABLE
@@ -198,14 +324,12 @@ export default function TermsPage() {
             PAID US IN THE TWELVE MONTHS PRECEDING THE CLAIM, OR ONE HUNDRED
             U.S. DOLLARS ($100).
           </strong>{" "}
-          Because the Service is currently provided free of charge, you
-          acknowledge that this cap may be one hundred dollars. Some
-          jurisdictions do not allow certain limitations, so parts of this
+          Some jurisdictions do not allow certain limitations, so parts of this
           section may not apply to you.
         </p>
       </Section>
 
-      <Section heading="11. Indemnification">
+      <Section heading="14. Indemnification">
         <p>
           You agree to defend, indemnify, and hold harmless SumoLab and its
           officers, members, and agents from any claims, damages, liabilities,
@@ -216,7 +340,7 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <Section heading="12. Governing law and disputes">
+      <Section heading="15. Governing law and disputes">
         <p>
           These Terms are governed by the laws of the State of {COMPANY.state},
           United States, without regard to its conflict of laws rules. You and
@@ -233,10 +357,11 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <Section heading="13. General">
+      <Section heading="16. General">
         <p>
           These Terms, together with our{" "}
-          <Link href="/privacy">Privacy Policy</Link>, are the entire agreement
+          <Link href="/privacy">Privacy Policy</Link> and our{" "}
+          <Link href="/refunds">Refund Policy</Link>, are the entire agreement
           between you and SumoLab regarding the Service. If any provision is
           held unenforceable, the rest remains in effect. Our failure to enforce
           a provision is not a waiver of it. You may not assign these Terms
@@ -252,7 +377,7 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <Section heading="14. Contact us">
+      <Section heading="17. Contact us">
         <p>Questions about these Terms can be sent to:</p>
         <ContactBlock />
       </Section>

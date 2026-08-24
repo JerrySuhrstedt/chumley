@@ -72,6 +72,7 @@ export async function updateSession(request: NextRequest) {
     pathname === "/pricing" ||
     pathname === "/privacy" ||
     pathname === "/terms" ||
+    pathname === "/refunds" ||
     // The embeddable website form is public by definition.
     pathname.startsWith("/f/") ||
     pathname.startsWith("/auth/") ||

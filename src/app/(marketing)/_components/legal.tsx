@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 /** Last substantive revision. Update when the text changes, not on deploy. */
-export const LEGAL_EFFECTIVE_DATE = "August 18, 2026";
+export const LEGAL_EFFECTIVE_DATE = "August 24, 2026";
 
 export const COMPANY = {
   legalName: "SumoLab LLC",
@@ -9,7 +9,29 @@ export const COMPANY = {
   email: "info@sumolab.co",
   phone: "(480) 826-9400",
   phoneHref: "+14808269400",
+  street: "2600 E Springfield Pl",
+  city: "Chandler",
   state: "Arizona",
+  stateCode: "AZ",
+  postal: "85286",
+  country: "United States",
+} as const;
+
+/**
+ * Who the customer is actually buying from.
+ *
+ * Paddle is the merchant of record, not us, and that has consequences the
+ * buyer is entitled to know before they pay: the contract of sale is with
+ * Paddle, Paddle handles the tax, and Paddle is the name that shows up on
+ * the card statement rather than ours. A charge nobody recognises is the
+ * single most common cause of a chargeback, so this text earns its place
+ * on the pricing page as much as in the terms.
+ */
+export const MERCHANT = {
+  name: "Paddle.com Market Ltd",
+  short: "Paddle",
+  statement: "PADDLE.NET",
+  href: "https://www.paddle.com/legal/terms",
 } as const;
 
 export function LegalPage({
@@ -106,12 +128,17 @@ export function DataTable({
   );
 }
 
+/** The full registered address. Card networks and Paddle both want it. */
 export function ContactBlock() {
   return (
     <address className="rounded-xl border border-[var(--rule)] bg-[var(--surface-alt)] p-5 not-italic">
       <p className="font-semibold text-[var(--ink)]">{COMPANY.legalName}</p>
       <p className="mt-1 text-[15px] text-[var(--ink-soft)]">
-        {COMPANY.state}, United States
+        {COMPANY.street}
+        <br />
+        {COMPANY.city}, {COMPANY.stateCode} {COMPANY.postal}
+        <br />
+        {COMPANY.country}
       </p>
       <p className="mt-2 text-[15px]">
         <a
@@ -130,5 +157,32 @@ export function ContactBlock() {
         </a>
       </p>
     </address>
+  );
+}
+
+/**
+ * The merchant-of-record notice, in one place so the pricing page, the
+ * terms and the refund policy cannot drift apart on the detail that
+ * decides whether a customer recognises the charge.
+ */
+export function MerchantNotice({ className = "" }: { className?: string }) {
+  return (
+    <div
+      className={`rounded-xl border border-[var(--rule)] bg-[var(--surface-alt)] p-5 text-left ${className}`}
+    >
+      <p className="text-sm leading-relaxed text-[var(--ink-soft)]">
+        <strong className="font-semibold text-[var(--ink)]">
+          Our order process is run by {MERCHANT.short}.
+        </strong>{" "}
+        {MERCHANT.name} is the merchant of record for every purchase of{" "}
+        {COMPANY.product}. {MERCHANT.short} handles the payment, collects any
+        sales tax or VAT due in your country, and issues your invoice.{" "}
+        <strong className="font-semibold text-[var(--ink)]">
+          Your card statement will read {MERCHANT.statement}
+        </strong>{" "}
+        rather than {COMPANY.legalName}, so it is worth knowing that before it
+        arrives.
+      </p>
+    </div>
   );
 }

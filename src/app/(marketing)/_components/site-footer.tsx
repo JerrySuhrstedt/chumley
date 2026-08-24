@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChumleyLogo } from "@/components/chumley-logo";
+import { COMPANY, MERCHANT } from "./legal";
 
 const PRODUCT = [
   { href: "#how-it-works", label: "How it works" },
@@ -9,7 +10,7 @@ const PRODUCT = [
   { href: "#faqs", label: "FAQs" },
 ];
 
-const COMPANY = [
+const COMPANY_LINKS = [
   { href: "/login", label: "Log in" },
   { href: "/login?mode=signup", label: "Create an account" },
   { href: "mailto:info@sumolab.co", label: "Contact" },
@@ -18,6 +19,7 @@ const COMPANY = [
 const LEGAL = [
   { href: "/privacy", label: "Privacy Policy" },
   { href: "/terms", label: "Terms of Service" },
+  { href: "/refunds", label: "Refund Policy" },
 ];
 
 export function SiteFooter() {
@@ -31,18 +33,32 @@ export function SiteFooter() {
               Nothing to set up, nothing to learn. The sales CRM built for
               people who would rather be selling than typing.
             </p>
-            <a
-              href="mailto:info@sumolab.co"
-              className="mt-4 block text-[15px] text-white/70 transition-colors hover:text-[var(--brand)]"
-            >
-              info@sumolab.co
-            </a>
-            <a
-              href="tel:+14808269400"
-              className="block text-[15px] text-white/70 transition-colors hover:text-[var(--brand)]"
-            >
-              (480) 826-9400
-            </a>
+
+            {/* The registered address. Card networks want a buyer to be able
+                to find who charged them without having to email first. */}
+            <address className="mt-5 text-[15px] leading-relaxed text-white/70 not-italic">
+              <span className="font-semibold text-white/90">
+                {COMPANY.legalName}
+              </span>
+              <br />
+              {COMPANY.street}
+              <br />
+              {COMPANY.city}, {COMPANY.stateCode} {COMPANY.postal}, USA
+              <br />
+              <a
+                href={`mailto:${COMPANY.email}`}
+                className="transition-colors hover:text-[var(--brand)]"
+              >
+                {COMPANY.email}
+              </a>
+              <br />
+              <a
+                href={`tel:${COMPANY.phoneHref}`}
+                className="transition-colors hover:text-[var(--brand)]"
+              >
+                {COMPANY.phone}
+              </a>
+            </address>
           </div>
 
           <div className="flex gap-14 sm:gap-20">
@@ -69,7 +85,7 @@ export function SiteFooter() {
                 Company
               </h3>
               <ul className="mt-4 space-y-3">
-                {COMPANY.map((l) => (
+                {COMPANY_LINKS.map((l) => (
                   <li key={l.href}>
                     <Link
                       href={l.href}
@@ -105,8 +121,15 @@ export function SiteFooter() {
 
       <div className="border-t border-white/10">
         <div className="mx-auto max-w-6xl px-5 py-5 lg:px-8">
+          {/* Required disclosure: Paddle, not us, is the seller of record. */}
           <p className="text-center text-sm text-white/50">
-            © {new Date().getFullYear()} SumoLab LLC | All rights reserved
+            Our order process is conducted by our online reseller{" "}
+            {MERCHANT.name}, the merchant of record for all our orders. Your
+            statement will show {MERCHANT.statement}.
+          </p>
+          <p className="mt-2 text-center text-sm text-white/50">
+            © {new Date().getFullYear()} {COMPANY.legalName} | All rights
+            reserved
           </p>
         </div>
       </div>

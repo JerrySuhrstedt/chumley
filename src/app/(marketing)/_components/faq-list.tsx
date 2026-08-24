@@ -26,7 +26,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "What does it cost?",
-    a: "Nothing right now. Chumley is in early access and free while we work with our first teams. Paid plans are coming, and if you sign up during early access you will get plenty of notice and a say in what the pricing looks like. No credit card to start.",
+    a: "Nineteen dollars a month for one person. From fifteen dollars each for a team, and less again at five people and at ten. Everything is included on both, so there is no upgrade holding the good part hostage. You get 14 days free first and we do not ask for a card to start.",
   },
 ];
 
