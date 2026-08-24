@@ -49,7 +49,7 @@ export function Topbar({
           aria-label="Chumley home"
           className="shrink-0 rounded md:hidden"
         >
-          <ChumleyMark className="size-8" />
+          <ChumleyMark className="size-8 rounded-lg" />
         </Link>
 
         <Link
