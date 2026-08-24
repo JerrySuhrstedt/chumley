@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ReportButton } from "@/app/(app)/_report/report-button";
-import { ChumleyMark } from "@/components/chumley-mark";
+import { ChumleyDisc } from "@/components/chumley-disc";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -64,13 +64,13 @@ export function AppSidebar({
         <Link
           href="/pipeline"
           title="Chumley"
-          className="size-16 shrink-0 overflow-hidden rounded-2xl"
+          className="shrink-0"
         >
           {/* The mark, not the lockup: the rail is narrow even when it is
               open, and the wordmark would crowd the nav beneath it. The tile
               fills the row's full height, so the artwork bleeds to every
               edge rather than floating in the middle of the chrome. */}
-          <ChumleyMark className="size-16" />
+          <ChumleyDisc className="size-11" />
         </Link>
       </div>
 

@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { signOut } from "@/app/(app)/actions";
 import { GlobalSearch } from "@/components/global-search";
-import { ChumleyMark } from "@/components/chumley-mark";
+import { ChumleyDisc } from "@/components/chumley-disc";
 
 // Where you can go, not what you can change. Settings lives in the
 // profile menu, which sits beside this one on a phone.
@@ -47,9 +47,9 @@ export function Topbar({
         <Link
           href="/pipeline"
           aria-label="Chumley home"
-          className="size-16 shrink-0 overflow-hidden rounded-2xl md:hidden"
+          className="shrink-0 md:hidden"
         >
-          <ChumleyMark className="size-16" />
+          <ChumleyDisc className="size-11" />
         </Link>
 
         <Link

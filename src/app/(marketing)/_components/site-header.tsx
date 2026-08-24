@@ -26,7 +26,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-[var(--rule)] bg-white/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5 lg:px-8">
         <Link href="/" aria-label="Chumley home" className="shrink-0">
-          <ChumleyLogo className="h-7 w-auto" />
+          <ChumleyLogo className="h-10 w-auto" />
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">
