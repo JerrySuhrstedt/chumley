@@ -10,20 +10,30 @@
  * the route is what makes a forged event impossible; an address check only
  * turns away noise before we spend a signature verification on it. That
  * ordering matters for the failure case below.
+ *
+ * Sandbox and live send from entirely different addresses and publish them
+ * at different URLs, with no overlap whatsoever. Reading the live list while
+ * running on sandbox would reject every webhook we actually receive, so the
+ * source is chosen from PADDLE_ENV exactly like the SDK client is.
  */
 
-const SOURCE = "https://api.paddle.com/ips";
+const LIVE_SOURCE = "https://api.paddle.com/ips";
+const SANDBOX_SOURCE = "https://sandbox-api.paddle.com/ips";
 const TTL_MS = 60 * 60 * 1000; // An hour. The list changes rarely.
 
-let cache: { at: number; cidrs: string[] } | null = null;
+function source(): string {
+  return process.env.PADDLE_ENV === "production" ? LIVE_SOURCE : SANDBOX_SOURCE;
+}
+
+let cache: { at: number; src: string; cidrs: string[] } | null = null;
 let inFlight: Promise<string[]> | null = null;
 
-async function load(): Promise<string[]> {
-  const res = await fetch(SOURCE, {
+async function load(src: string): Promise<string[]> {
+  const res = await fetch(src, {
     headers: { accept: "application/json" },
     signal: AbortSignal.timeout(3000),
   });
-  if (!res.ok) throw new Error(`paddle ips: HTTP ${res.status}`);
+  if (!res.ok) throw new Error(`paddle ips (${src}): HTTP ${res.status}`);
   const body = (await res.json()) as { data?: { ipv4_cidrs?: string[] } };
   const cidrs = body.data?.ipv4_cidrs;
   if (!Array.isArray(cidrs) || cidrs.length === 0) {
@@ -33,12 +43,17 @@ async function load(): Promise<string[]> {
 }
 
 async function cidrs(): Promise<string[] | null> {
-  if (cache && Date.now() - cache.at < TTL_MS) return cache.cidrs;
+  const src = source();
+  // The cache is keyed on the source too, so an environment change cannot
+  // be served a list belonging to the other account.
+  if (cache && cache.src === src && Date.now() - cache.at < TTL_MS) {
+    return cache.cidrs;
+  }
   // One fetch at a time. A burst of webhooks should not become a burst of
   // outbound requests to Paddle.
-  inFlight ??= load()
+  inFlight ??= load(src)
     .then((list) => {
-      cache = { at: Date.now(), cidrs: list };
+      cache = { at: Date.now(), src, cidrs: list };
       return list;
     })
     .finally(() => {
@@ -49,8 +64,9 @@ async function cidrs(): Promise<string[] | null> {
     return await inFlight;
   } catch (error) {
     console.error("paddle ip list unavailable", error);
-    // Serve a stale list rather than nothing, if we ever had one.
-    return cache?.cidrs ?? null;
+    // Serve a stale list rather than nothing, but only if it came from the
+    // environment we are actually running against.
+    return cache?.src === src ? cache.cidrs : null;
   }
 }
 
