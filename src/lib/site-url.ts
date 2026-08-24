@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 
 /**
- * The origin this request arrived on, e.g. https://sell1.app.
+ * The origin this request arrived on, e.g. https://chumley.app.
  *
  * The "origin" header looks like the obvious source and is not: browsers
  * only send it on cross-origin requests and POSTs, so a plain page visit
@@ -11,7 +11,7 @@ import { headers } from "next/headers";
 export async function getOrigin(): Promise<string> {
   const h = await headers();
 
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "sell1.app";
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "chumley.app";
   const proto =
     h.get("x-forwarded-proto") ??
     (host.startsWith("localhost") || host.startsWith("127.0.0.1")

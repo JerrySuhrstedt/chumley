@@ -16,12 +16,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sell1",
+  title: "Chumley",
   description: "Your sales pipeline, minus the clutter.",
   // iOS ignores the web manifest's display mode and reads these instead.
   appleWebApp: {
     capable: true,
-    title: "Sell1",
+    title: "Chumley",
     // Dark chrome behind the notch, matching the app's own header.
     statusBarStyle: "black-translucent",
   },
@@ -52,7 +52,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__sell1Install=e;window.dispatchEvent(new Event('sell1:installable'))});window.addEventListener('appinstalled',function(){window.__sell1Install=null;window.dispatchEvent(new Event('sell1:installed'))});`,
+            __html: `window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__chumleyInstall=e;window.dispatchEvent(new Event('chumley:installable'))});window.addEventListener('appinstalled',function(){window.__chumleyInstall=null;window.dispatchEvent(new Event('chumley:installed'))});`,
           }}
         />
       </head>

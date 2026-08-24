@@ -26,7 +26,7 @@ export function InstallCard() {
 
         <div className="min-w-0 flex-1">
           <p className="font-medium text-slate-900">
-            {installed ? "Sell1 is on your home screen" : "Add to your home screen"}
+            {installed ? "Chumley is on your home screen" : "Add to your home screen"}
           </p>
 
           {installed ? (
@@ -57,7 +57,7 @@ export function InstallCard() {
                 // install at all. Better to say so than to show a button
                 // that cannot do anything.
                 <p className="mt-2 text-sm text-slate-500">
-                  Open Sell1 on your phone to add it to your home screen. On a
+                  Open Chumley on your phone to add it to your home screen. On a
                   desktop, look for the install icon at the right-hand end of
                   the address bar.
                 </p>

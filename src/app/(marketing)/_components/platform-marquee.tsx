@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 /**
- * Where Sell1 runs.
+ * Where Chumley runs.
  *
  * Deliberately device shapes and plain product names rather than the
  * companies' own logos. Apple, Google and Microsoft all restrict use of

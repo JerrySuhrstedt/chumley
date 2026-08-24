@@ -3,7 +3,7 @@ import type { AccountStatus } from "@/lib/admin-data";
 /**
  * What is happening with a team's money, in one word.
  *
- * "Free" rather than "inactive" or "none": while Sell1 is in early access
+ * "Free" rather than "inactive" or "none": while Chumley is in early access
  * that is the normal state, not a fault, and a red badge on five of seven
  * rows would train the eye to ignore the column.
  *

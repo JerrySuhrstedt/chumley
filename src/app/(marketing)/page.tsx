@@ -7,7 +7,7 @@ import { FaqList } from "./_components/faq-list";
 import { PlatformMarquee } from "./_components/platform-marquee";
 
 export const metadata: Metadata = {
-  title: "Sell1 | Finally, a sales CRM you'll actually want to use",
+  title: "Chumley | Finally, a sales CRM you'll actually want to use",
   description:
     "Stupid simple sales CRM for independent sales reps and small sales teams. Nothing to set up, nothing to learn.",
 };
@@ -134,7 +134,7 @@ export default function HomePage() {
           <div className="-mr-5 -mb-20 min-w-0 lg:hidden">
             <Image
               src="/hero-phone.png"
-              alt="Sell1 open on a phone, a deal being moved into Won"
+              alt="Chumley open on a phone, a deal being moved into Won"
               width={1666}
               height={2399}
               priority
@@ -204,7 +204,7 @@ export default function HomePage() {
             </p>
 
             <p className="mt-5 max-w-[68ch] text-[17px] leading-relaxed font-semibold text-[var(--ink)]">
-              Sell1 is one screen. Your deals are cards. Move a card when the
+              Chumley is one screen. Your deals are cards. Move a card when the
               deal moves. Tap a card to call, text, or email. There are no
               required fields, no records to create first, and no settings to
               figure out. Most people are running it about two minutes after
@@ -326,7 +326,7 @@ export default function HomePage() {
             <strong className="font-semibold text-[var(--ink)]">
               Placeholder, on purpose.
             </strong>{" "}
-            Sell1 has no customers yet, so there are no real testimonials to
+            Chumley has no customers yet, so there are no real testimonials to
             print. Invented ones would be a fake review. Replace these three
             after your first users, and add a review-site line underneath.
           </p>

@@ -5,7 +5,7 @@ import { PlanCards } from "./plan-cards";
 import { TestModeNotice } from "@/components/test-mode-notice";
 
 export const metadata: Metadata = {
-  title: "Pricing | Sell1",
+  title: "Pricing | Chumley",
   description:
     "$19 for one person, from $15 each for a sales team, and less again as the team grows. Everything included. Free while in early access.",
 };
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 const FAQS: { q: string; a: string }[] = [
   {
     q: "What does it cost right now?",
-    a: "Nothing. Sell1 is free while we work with our first teams, and anyone who joins during early access keeps that price for a full year after we start charging. You will get plenty of notice, and no card is taken today.",
+    a: "Nothing. Chumley is free while we work with our first teams, and anyone who joins during early access keeps that price for a full year after we start charging. You will get plenty of notice, and no card is taken today.",
   },
   {
     q: "What is the difference between the two?",

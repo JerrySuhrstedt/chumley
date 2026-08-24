@@ -1,4 +1,8 @@
+<!-- PLACEHOLDER. Sell1's icon was the numeral "1" and means nothing now.
+     A "C" monogram holds the slot until real Chumley artwork exists. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" fill="#231f20"/>
-  <polygon fill="#f16522" points="238.8 512 238.8 193.3 234.5 193.3 73.5 295.1 73.5 162.5 247.8 51.7 387.5 51.7 387.5 512"/>
+  <text x="256" y="368" text-anchor="middle"
+        font-family="system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif"
+        font-size="384" font-weight="800" fill="#f16522">C</text>
 </svg>

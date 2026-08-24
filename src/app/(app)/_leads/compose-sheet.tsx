@@ -26,7 +26,7 @@ const SMS_SEGMENT = 160;
 /**
  * Write the message before handing it to the phone or the mail client.
  *
- * Sell1 never sends anything. This composes the text and then opens
+ * Chumley never sends anything. This composes the text and then opens
  * sms: or mailto:, so the message goes out from the user's own number
  * and their own email address, with their own signature attached by
  * their own mail client.

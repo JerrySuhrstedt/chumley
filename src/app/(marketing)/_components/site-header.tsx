@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
-import { Sell1Logo } from "@/components/sell1-logo";
+import { ChumleyLogo } from "@/components/chumley-logo";
 import { CTA_LABEL } from "./cta";
 
 const NAV = [
@@ -25,8 +25,8 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--rule)] bg-white/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5 lg:px-8">
-        <Link href="/" aria-label="Sell1 home" className="shrink-0">
-          <Sell1Logo className="h-7 w-auto" />
+        <Link href="/" aria-label="Chumley home" className="shrink-0">
+          <ChumleyLogo className="h-7 w-auto" />
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">

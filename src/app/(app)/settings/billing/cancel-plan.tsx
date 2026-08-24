@@ -115,7 +115,7 @@ export function CancelPlan({
                     return;
                   }
                   setConfirming(false);
-                  toast.success(`Cancelled. You have Sell1 until ${when(r.endsAt)}.`);
+                  toast.success(`Cancelled. You have Chumley until ${when(r.endsAt)}.`);
                 })
               }
             >

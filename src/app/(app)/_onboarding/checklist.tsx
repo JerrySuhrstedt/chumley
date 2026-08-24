@@ -5,8 +5,8 @@ import { Check, ChevronDown, PartyPopper, X } from "lucide-react";
 import type { OnboardingState } from "@/lib/onboarding";
 import { NameStep } from "./name-step";
 
-const HIDDEN = "sell1:onboarding-hidden";
-const NAME_ASKED = "sell1:name-asked";
+const HIDDEN = "chumley:onboarding-hidden";
+const NAME_ASKED = "chumley:name-asked";
 
 /**
  * A persistent checklist rather than a tour.

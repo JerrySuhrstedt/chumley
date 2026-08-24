@@ -9,16 +9,16 @@ import {
 } from "../_components/legal";
 
 export const metadata: Metadata = {
-  title: "Terms of Service | Sell1",
+  title: "Terms of Service | Chumley",
   description:
-    "The agreement between SumoLab LLC and users of the Sell1 sales pipeline service.",
+    "The agreement between SumoLab LLC and users of the Chumley sales pipeline service.",
 };
 
 export default function TermsPage() {
   return (
     <LegalPage
       title="Terms of Service"
-      intro={`These Terms of Service ("Terms") form a binding agreement between you and ${COMPANY.legalName} ("SumoLab," "we," "us," or "our") governing your access to and use of ${COMPANY.product}, our sales pipeline software, together with the sell1.app website and any related services (collectively, the "Service"). By creating an account, accessing, or using the Service, you agree to these Terms. If you do not agree, do not use the Service.`}
+      intro={`These Terms of Service ("Terms") form a binding agreement between you and ${COMPANY.legalName} ("SumoLab," "we," "us," or "our") governing your access to and use of ${COMPANY.product}, our sales pipeline software, together with the chumley.app website and any related services (collectively, the "Service"). By creating an account, accessing, or using the Service, you agree to these Terms. If you do not agree, do not use the Service.`}
     >
       <Section heading="1. Eligibility and your account">
         <p>

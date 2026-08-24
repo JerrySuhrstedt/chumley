@@ -10,7 +10,7 @@ export type InstallEvent = Event & {
 
 declare global {
   interface Window {
-    __sell1Install?: InstallEvent | null;
+    __chumleyInstall?: InstallEvent | null;
   }
 }
 
@@ -86,7 +86,7 @@ export function useInstall(): InstallState {
   useEffect(() => {
     const settle = () =>
       setState({
-        event: window.__sell1Install ?? null,
+        event: window.__chumleyInstall ?? null,
         ios: isIos(),
         browser: iosBrowser(),
         installed: isStandalone(),
@@ -94,11 +94,11 @@ export function useInstall(): InstallState {
       });
 
     settle();
-    window.addEventListener("sell1:installable", settle);
-    window.addEventListener("sell1:installed", settle);
+    window.addEventListener("chumley:installable", settle);
+    window.addEventListener("chumley:installed", settle);
     return () => {
-      window.removeEventListener("sell1:installable", settle);
-      window.removeEventListener("sell1:installed", settle);
+      window.removeEventListener("chumley:installable", settle);
+      window.removeEventListener("chumley:installed", settle);
     };
   }, []);
 
@@ -109,6 +109,6 @@ export function useInstall(): InstallState {
 export async function runInstall(event: InstallEvent) {
   await event.prompt();
   const choice = await event.userChoice;
-  if (choice.outcome === "accepted") window.__sell1Install = null;
+  if (choice.outcome === "accepted") window.__chumleyInstall = null;
   return choice.outcome;
 }

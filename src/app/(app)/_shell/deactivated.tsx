@@ -1,5 +1,5 @@
 import { LifeBuoy, Lock } from "lucide-react";
-import { Sell1Logo } from "@/components/sell1-logo";
+import { ChumleyLogo } from "@/components/chumley-logo";
 
 /**
  * What a switched-off team sees.
@@ -11,7 +11,7 @@ import { Sell1Logo } from "@/components/sell1-logo";
 export function Deactivated({ teamName }: { teamName: string }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--surface-alt)] p-6 text-center">
-      <Sell1Logo className="h-7 w-auto" />
+      <ChumleyLogo className="h-7 w-auto" />
 
       <span className="mt-10 flex size-12 items-center justify-center rounded-full bg-slate-200">
         <Lock className="size-5 text-slate-600" />
@@ -29,7 +29,7 @@ export function Deactivated({ teamName }: { teamName: string }) {
       </p>
 
       <a
-        href="mailto:info@sumolab.co?subject=Sell1%20account%20switched%20off"
+        href="mailto:info@sumolab.co?subject=Chumley%20account%20switched%20off"
         className="mt-7 inline-flex items-center gap-2 rounded-lg bg-[var(--brand)] px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-[var(--brand-dark)]"
       >
         <LifeBuoy className="size-4" />

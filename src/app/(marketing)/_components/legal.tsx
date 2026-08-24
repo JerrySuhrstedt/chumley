@@ -5,7 +5,7 @@ export const LEGAL_EFFECTIVE_DATE = "August 18, 2026";
 
 export const COMPANY = {
   legalName: "SumoLab LLC",
-  product: "Sell1",
+  product: "Chumley",
   email: "info@sumolab.co",
   phone: "(480) 826-9400",
   phoneHref: "+14808269400",

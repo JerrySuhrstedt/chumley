@@ -57,7 +57,7 @@ export default async function BillingSettingsPage() {
                   Nothing is being charged
                 </p>
                 <p className="mt-1 text-sm text-slate-600">
-                  Sell1 is free while in early access. Your team is not
+                  Chumley is free while in early access. Your team is not
                   limited, nothing expires, and no card is on file.
                 </p>
               </div>

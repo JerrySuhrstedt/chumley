@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
-import { Sell1Logo } from "@/components/sell1-logo";
+import { ChumleyLogo } from "@/components/chumley-logo";
 import { IosSteps } from "@/components/install-steps";
 import { runInstall, useInstall } from "@/components/use-install";
 
-const DISMISSED = "sell1:install-dismissed";
+const DISMISSED = "chumley:install-dismissed";
 /**
  * How long "not now" lasts.
  *
@@ -18,7 +18,7 @@ const DISMISSED = "sell1:install-dismissed";
 const QUIET_DAYS = 14;
 
 /**
- * Offers to put Sell1 on the home screen, once.
+ * Offers to put Chumley on the home screen, once.
  *
  * Chromium hands over a real prompt we can fire from a button. Safari has
  * never implemented that API, so on an iPhone the only thing any website
@@ -61,11 +61,11 @@ export function InstallPrompt() {
 
       <div className="flex items-start gap-3">
         <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white">
-          <Sell1Logo className="h-4 w-auto" />
+          <ChumleyLogo className="h-4 w-auto" />
         </span>
 
         <div className="min-w-0 pr-6">
-          <p className="text-sm font-semibold">Put Sell1 on your home screen</p>
+          <p className="text-sm font-semibold">Put Chumley on your home screen</p>
 
           {event ? (
             <>

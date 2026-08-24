@@ -4,7 +4,7 @@ import { db } from "@/db";
 /**
  * What is actually true about a team's billing, rather than a label.
  *
- * "free" is not an absence of information: while Sell1 is in early access
+ * "free" is not an absence of information: while Chumley is in early access
  * most teams have no subscription at all, and calling that "inactive"
  * would read as something being wrong.
  */

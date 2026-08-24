@@ -19,7 +19,7 @@ config({ path: ".env.local" });
  */
 
 const ENV_PATH = ".env.local";
-const WEBHOOK_URL = "https://sell1.app/api/webhooks/paddle";
+const WEBHOOK_URL = "https://chumley.app/api/webhooks/paddle";
 
 const EVENTS = [
   "subscription.created",
@@ -61,11 +61,11 @@ async function main() {
   for await (const t of paddle.clientTokens.list()) existingTokens.push(t);
 
   const live = existingTokens.find(
-    (t) => t.status === "active" && t.name === "Sell1 web"
+    (t) => t.status === "active" && t.name === "Chumley web"
   );
   const token = live ?? (await paddle.clientTokens.create({
-    name: "Sell1 web",
-    description: "Opens the checkout overlay on sell1.app",
+    name: "Chumley web",
+    description: "Opens the checkout overlay on chumley.app",
   }));
 
   setEnv("NEXT_PUBLIC_PADDLE_CLIENT_TOKEN", token.token);
@@ -88,7 +88,7 @@ async function main() {
     console.log("  or paste the saved secret into PADDLE_WEBHOOK_SECRET.");
   } else {
     const dest = await paddle.notificationSettings.create({
-      description: "Sell1 production",
+      description: "Chumley production",
       destination: WEBHOOK_URL,
       type: "url",
       subscribedEvents: [...EVENTS],

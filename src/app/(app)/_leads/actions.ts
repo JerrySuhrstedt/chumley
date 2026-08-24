@@ -474,7 +474,7 @@ export async function completeNextAction(
  * Records a text or email at the moment it is handed to the phone or the
  * mail client.
  *
- * That hand-off is the last thing Sell1 can observe: the message is sent
+ * That hand-off is the last thing Chumley can observe: the message is sent
  * from the user's own number or address, so there is no delivery receipt
  * coming back. Logging on hand-off is therefore a record of what was
  * written and when, not proof it left. A rep who changes their mind can

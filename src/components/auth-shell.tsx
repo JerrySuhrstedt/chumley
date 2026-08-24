@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Sell1Logo } from "@/components/sell1-logo";
+import { ChumleyLogo } from "@/components/chumley-logo";
 
 /** Shared input styling for the auth screens. */
 export const authInput =
@@ -17,8 +17,8 @@ export const authLink =
 /** The real mark, linked back to the marketing page. */
 export function Wordmark() {
   return (
-    <Link href="/" aria-label="Sell1 home" className="inline-block">
-      <Sell1Logo className="h-9 w-auto" />
+    <Link href="/" aria-label="Chumley home" className="inline-block">
+      <ChumleyLogo className="h-9 w-auto" />
     </Link>
   );
 }
@@ -36,7 +36,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
       </main>
 
       <footer className="px-4 py-6 text-center text-xs text-slate-500">
-        © {new Date().getFullYear()} Sell1
+        © {new Date().getFullYear()} Chumley
       </footer>
     </div>
   );

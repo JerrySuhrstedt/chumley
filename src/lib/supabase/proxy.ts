@@ -2,8 +2,14 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /** The live brand. Anything arriving on an old host is sent here. */
-const CANONICAL_HOST = "sell1.app";
-const LEGACY_HOSTS = new Set(["uncrm.app", "www.uncrm.app", "stupid-simple-crm.vercel.app"]);
+const CANONICAL_HOST = "chumley.app";
+const LEGACY_HOSTS = new Set([
+  "sell1.app",
+  "www.sell1.app",
+  "uncrm.app",
+  "www.uncrm.app",
+  "stupid-simple-crm.vercel.app",
+]);
 
 export async function updateSession(request: NextRequest) {
   const host = request.headers.get("host")?.toLowerCase() ?? "";

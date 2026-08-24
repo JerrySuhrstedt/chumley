@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Sell1 Sales CRM",
+    name: "Chumley CRM",
     // What fits under the icon on a home screen. Anything longer is cut.
-    short_name: "Sell1",
+    short_name: "Chumley",
     description:
       "The sales CRM you will actually use. Nothing to set up, nothing to learn.",
     // Installed, it opens on the board rather than the marketing page.

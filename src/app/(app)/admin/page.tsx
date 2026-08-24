@@ -12,7 +12,7 @@ import {
 } from "@/lib/admin-data";
 
 export const metadata: Metadata = {
-  title: "Back office | Sell1",
+  title: "Back office | Chumley",
   robots: { index: false, follow: false },
 };
 
@@ -81,7 +81,7 @@ export default async function AdminPage() {
           <div>
             <h1 className="text-xl font-semibold text-slate-900">Back office</h1>
             <p className="text-sm text-slate-500">
-              Every account on Sell1. Visible only to listed administrators.
+              Every account on Chumley. Visible only to listed administrators.
             </p>
           </div>
         </div>
@@ -271,7 +271,7 @@ export default async function AdminPage() {
               <p className="mt-2 max-w-[70ch] text-sm text-slate-600">
                 Going live means three things: flip PADDLE_ENV and
                 NEXT_PUBLIC_PADDLE_ENV to production, run the catalog seed
-                against live to get real price ids, and get sell1.app
+                against live to get real price ids, and get chumley.app
                 approved by Paddle. The test-card notice on the pricing page
                 disappears by itself the moment that first variable changes.
               </p>

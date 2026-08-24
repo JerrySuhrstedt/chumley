@@ -4,7 +4,7 @@ import { Environment, Paddle } from "@paddle/paddle-node-sdk";
 config({ path: ".env.local" });
 
 /**
- * Creates the Sell1 catalog in Paddle sandbox.
+ * Creates the Chumley catalog in Paddle sandbox.
  *
  * Two products, six prices. Paddle carries one unit price per price object
  * and has no notion of a volume ladder, so each break on the pricing page
@@ -49,18 +49,18 @@ async function seed() {
 
   console.log("Creating Solo...");
   const solo = await paddle.products.create({
-    name: "Sell1 for one person",
+    name: "Chumley for one person",
     taxCategory: "saas",
-    description: "The whole of Sell1, for a single salesperson.",
+    description: "The whole of Chumley, for a single salesperson.",
   });
   const soloMonthly = await price(solo.id, "Solo monthly", "1900", MONTH);
   const soloYearly = await price(solo.id, "Solo yearly", "19000", YEAR);
 
   console.log("\nCreating Team...");
   const team = await paddle.products.create({
-    name: "Sell1 for a sales team",
+    name: "Chumley for a sales team",
     taxCategory: "saas",
-    description: "The whole of Sell1, priced per person, for a team.",
+    description: "The whole of Chumley, priced per person, for a team.",
   });
 
   const tiers = [

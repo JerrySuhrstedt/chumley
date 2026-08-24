@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ReportButton } from "@/app/(app)/_report/report-button";
-import { Sell1Logo } from "@/components/sell1-logo";
+import { ChumleyLogo } from "@/components/chumley-logo";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -61,12 +61,12 @@ export function AppSidebar({
           collapsed ? "justify-center" : "px-4"
         )}
       >
-        <Link href="/pipeline" title="Sell1" className="min-w-0">
+        <Link href="/pipeline" title="Chumley" className="min-w-0">
           {collapsed ? (
             // Just the numeral when there is no room for the wordmark.
             <span className="text-xl font-bold text-[var(--brand)]">1</span>
           ) : (
-            <Sell1Logo variant="light" className="h-6 w-auto" />
+            <ChumleyLogo variant="light" className="h-6 w-auto" />
           )}
         </Link>
       </div>

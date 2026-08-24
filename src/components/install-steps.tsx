@@ -4,7 +4,7 @@ import { Share } from "lucide-react";
 import type { IosBrowser } from "@/components/use-install";
 
 /**
- * How to add Sell1 to the home screen on an iPhone.
+ * How to add Chumley to the home screen on an iPhone.
  *
  * Every iOS browser ends in the same place, the system share sheet, with
  * "Add to Home Screen" some way down it. The only thing that differs is

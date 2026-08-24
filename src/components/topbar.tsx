@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { signOut } from "@/app/(app)/actions";
 import { GlobalSearch } from "@/components/global-search";
-import { Sell1Logo } from "@/components/sell1-logo";
+import { ChumleyLogo } from "@/components/chumley-logo";
 
 // Where you can go, not what you can change. Settings lives in the
 // profile menu, which sits beside this one on a phone.
@@ -46,10 +46,10 @@ export function Topbar({
             anywhere. */}
         <Link
           href="/pipeline"
-          aria-label="Sell1 home"
+          aria-label="Chumley home"
           className="shrink-0 rounded md:hidden"
         >
-          <Sell1Logo variant="light" className="h-6 w-auto" />
+          <ChumleyLogo variant="light" className="h-6 w-auto" />
         </Link>
 
         <Link
