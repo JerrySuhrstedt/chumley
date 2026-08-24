@@ -97,7 +97,7 @@ export default async function BillingSettingsPage() {
               <>
                 <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                   <div
-                    className="h-full rounded-full bg-[var(--board-bg)]"
+                    className="h-full rounded-full bg-[var(--brand)]"
                     style={{
                       width: `${Math.min(100, (billing.seatsUsed / Math.max(1, billing.seats)) * 100)}%`,
                     }}

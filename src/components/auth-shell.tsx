@@ -4,15 +4,15 @@ import { ChumleyLogo } from "@/components/chumley-logo";
 
 /** Shared input styling for the auth screens. */
 export const authInput =
-  "h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-[15px] text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-[var(--board-bg)] focus:ring-3 focus:ring-[var(--board-bg)]/20";
+  "h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-[15px] text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-[var(--brand)] focus:ring-3 focus:ring-[var(--brand)]/20";
 
 export const authLabel = "text-sm font-semibold text-slate-700";
 
 export const authButton =
-  "h-11 w-full rounded-md bg-[var(--board-bg)] text-[15px] font-semibold text-white transition-colors hover:bg-[var(--board-topbar)] disabled:bg-slate-200 disabled:text-slate-400";
+  "h-11 w-full rounded-md bg-[var(--brand)] text-[15px] font-semibold text-white transition-colors hover:bg-[var(--brand-dark)] disabled:bg-slate-200 disabled:text-slate-400";
 
 export const authLink =
-  "font-semibold text-[var(--board-bg)] hover:underline";
+  "font-semibold text-[var(--brand)] hover:underline";
 
 /** The real mark, linked back to the marketing page. */
 export function Wordmark() {

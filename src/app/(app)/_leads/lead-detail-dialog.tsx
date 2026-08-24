@@ -97,7 +97,7 @@ export function LeadDetailDialog({
                 {lead.email && (
                   <a
                     href={`mailto:${lead.email}`}
-                    className="flex items-center gap-1.5 text-[var(--board-bg)] hover:underline"
+                    className="flex items-center gap-1.5 text-[var(--brand)] hover:underline"
                   >
                     <Mail className="size-3.5" />
                     {lead.email}
@@ -191,7 +191,7 @@ export function LeadDetailDialog({
                     <button
                       type="button"
                       onClick={() => setEditing(true)}
-                      className="text-sm font-medium text-[var(--board-bg)] hover:underline"
+                      className="text-sm font-medium text-[var(--brand)] hover:underline"
                     >
                       Edit
                     </button>

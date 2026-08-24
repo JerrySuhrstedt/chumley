@@ -44,7 +44,7 @@ export function InstallCard() {
                 <button
                   type="button"
                   onClick={() => runInstall(event)}
-                  className="mt-3 rounded-lg bg-[var(--board-bg)] px-4 py-2 text-sm font-bold text-white"
+                  className="mt-3 rounded-lg bg-[var(--brand)] px-4 py-2 text-sm font-bold text-white"
                 >
                   Add it
                 </button>

@@ -82,13 +82,22 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 
-  /* Board theme — swap these once branding is settled. */
-  --board-bg: #0079bf;
-  --board-topbar: #026aa7;
-  --board-column: #f1f2f4;
-  --board-column-hover: #e4e6ea;
-  --board-ink: #172b4d;
-  --board-ink-muted: #5e6c84;
+  /* Board theme.
+     The canvas is a warm neutral, not a colour. Three quiet steps down from
+     white: canvas, then column, then the card sitting on top of both. The
+     contrast between them is what makes a card read as an object, so the
+     work is done by value rather than by hue, and the one loud colour stays
+     free for the thing that actually matters on the screen.
+
+     --board-bg used to be the accent as well as the canvas, which is why
+     every link and button in the app was Trello blue. Those all point at
+     --brand now. This token is the canvas and nothing else. */
+  --board-bg: #e8e4e1;
+  --board-topbar: #231f20;
+  --board-column: #f4f2f0;
+  --board-column-hover: #ebe7e4;
+  --board-ink: #231f20;
+  --board-ink-muted: #7d7776;
 
   /* Outcome buckets. Tinted, not saturated, so white cards and dark label
      text still read clearly on top. */
@@ -101,11 +110,12 @@
   --drop-glow: #f2d600;
   --drop-glow-soft: rgba(242, 214, 0, 0.55);
 
-  /* Left navigation */
-  --nav-bg: #16293d;
-  --nav-hover: #21384f;
-  --nav-active: #0079bf;
-  --nav-ink: #b8c4d0;
+  /* Left navigation, and the chrome the whole app sits on. Ink rather than
+     navy, so the accent is the only colour in the frame. */
+  --nav-bg: #231f20;
+  --nav-hover: #35302e;
+  --nav-active: #f16522;
+  --nav-ink: #b3aca9;
   --nav-ink-active: #ffffff;
 
   /* Chumley brand, taken from the logo */
@@ -142,8 +152,8 @@
  */
 @media (max-width: 767px) {
   :root {
-    --board-column: #d9dadc;
-    --board-column-hover: #cdcfd3;
+    --board-column: #ddd8d4;
+    --board-column-hover: #d3cdc9;
     --bucket-won: #c6d9cc;
     --bucket-won-hover: #b7d2c0;
     --bucket-lost: #e0cbcb;

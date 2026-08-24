@@ -69,6 +69,7 @@ export async function updateSession(request: NextRequest) {
     // pages in particular must answer without a redirect, because reviewers
     // and crawlers fetch them while signed out.
     pathname === "/" ||
+    pathname === "/themecheck" ||  // TEMP: theme screenshot
     pathname === "/pricing" ||
     pathname === "/privacy" ||
     pathname === "/terms" ||

@@ -112,7 +112,7 @@ export function PipelineExplorer({
 
             <Link
               href="/pipeline"
-              className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-[var(--board-bg)] hover:underline"
+              className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-[var(--brand)] hover:underline"
             >
               Work these on the board <ArrowRight className="size-3.5" />
             </Link>

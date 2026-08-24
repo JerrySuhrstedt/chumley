@@ -34,7 +34,7 @@ export default async function OnboardingPage() {
         <form action={signOut}>
           <button
             type="submit"
-            className="mt-0.5 text-xs font-medium text-[var(--board-bg)] hover:underline"
+            className="mt-0.5 text-xs font-medium text-[var(--brand)] hover:underline"
           >
             Not the right account? Sign out
           </button>

@@ -92,7 +92,7 @@ export function Reports({ reports }: { reports: AdminReport[] }) {
             {r.email && (
               <a
                 href={`mailto:${r.email}?subject=${encodeURIComponent("About the problem you reported in Chumley")}`}
-                className="inline-flex items-center gap-1 font-medium text-[var(--board-bg)] hover:underline"
+                className="inline-flex items-center gap-1 font-medium text-[var(--brand)] hover:underline"
               >
                 <Mail className="size-3" />
                 {r.email}

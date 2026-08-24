@@ -54,7 +54,7 @@ export function AddStageButton({ openCount }: { openCount: number }) {
           maxLength={24}
           placeholder="Name this bucket"
           aria-label="Name the new bucket"
-          className="w-full rounded-lg border border-[var(--board-bg)] bg-white px-2.5 py-2 text-sm font-semibold text-[var(--board-ink)] outline-none focus:ring-3 focus:ring-[var(--board-bg)]/30"
+          className="w-full rounded-lg border border-[var(--brand)] bg-white px-2.5 py-2 text-sm font-semibold text-[var(--board-ink)] outline-none focus:ring-3 focus:ring-[var(--brand)]/30"
         />
         <p className="px-1 pt-1.5 text-xs text-[var(--board-ink-muted)]">
           Press Enter to add it. {MAX_OPEN_STAGES - openCount} left.

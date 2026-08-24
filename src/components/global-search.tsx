@@ -140,7 +140,7 @@ export function GlobalSearch() {
                         i === active ? "bg-slate-100" : "hover:bg-slate-50"
                       }`}
                     >
-                      <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--board-bg)] text-xs font-semibold text-white">
+                      <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--brand)] text-xs font-semibold text-white">
                         {domain ? (
                           // eslint-disable-next-line @next/next/no-img-element -- remote logos
                           <img

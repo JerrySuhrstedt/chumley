@@ -71,7 +71,7 @@ export function NameStep({
               defaultValue={defaultFirst}
               autoFocus
               autoComplete="given-name"
-              className="h-14 w-full rounded-xl border border-slate-300 px-4 text-xl text-slate-900 outline-none focus:border-[var(--board-bg)] focus:ring-4 focus:ring-[var(--board-bg)]/15"
+              className="h-14 w-full rounded-xl border border-slate-300 px-4 text-xl text-slate-900 outline-none focus:border-[var(--brand)] focus:ring-4 focus:ring-[var(--brand)]/15"
             />
           </div>
 
@@ -87,7 +87,7 @@ export function NameStep({
               name="lastName"
               defaultValue={defaultLast}
               autoComplete="family-name"
-              className="h-14 w-full rounded-xl border border-slate-300 px-4 text-xl text-slate-900 outline-none focus:border-[var(--board-bg)] focus:ring-4 focus:ring-[var(--board-bg)]/15"
+              className="h-14 w-full rounded-xl border border-slate-300 px-4 text-xl text-slate-900 outline-none focus:border-[var(--brand)] focus:ring-4 focus:ring-[var(--brand)]/15"
             />
           </div>
 

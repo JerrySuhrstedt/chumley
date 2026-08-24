@@ -56,7 +56,7 @@ export function HeadshotPicker({
             className="size-16 shrink-0 rounded-full object-cover ring-1 ring-slate-200"
           />
         ) : (
-          <span className="flex size-16 shrink-0 items-center justify-center rounded-full bg-[var(--board-bg)] text-xl font-semibold text-white">
+          <span className="flex size-16 shrink-0 items-center justify-center rounded-full bg-[var(--brand)] text-xl font-semibold text-white">
             {initial}
           </span>
         )}
@@ -77,7 +77,7 @@ export function HeadshotPicker({
             aria-pressed={choice === p.provider}
             className={`relative flex flex-col items-center gap-1.5 rounded-lg border p-2 transition-colors ${
               choice === p.provider
-                ? "border-[var(--board-bg)] bg-slate-50"
+                ? "border-[var(--brand)] bg-slate-50"
                 : "border-slate-200 hover:bg-slate-50"
             }`}
           >
@@ -85,7 +85,7 @@ export function HeadshotPicker({
             <img src={p.url} alt="" className="size-12 rounded-full object-cover" />
             <span className="text-xs font-medium text-slate-700">{p.label}</span>
             {choice === p.provider && (
-              <span className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-[var(--board-bg)]">
+              <span className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-[var(--brand)]">
                 <Check className="size-3 text-white" strokeWidth={3} />
               </span>
             )}
@@ -98,7 +98,7 @@ export function HeadshotPicker({
           aria-pressed={choice === "custom"}
           className={`flex flex-col items-center justify-center gap-1.5 rounded-lg border px-4 py-2 text-xs font-medium transition-colors ${
             choice === "custom"
-              ? "border-[var(--board-bg)] bg-slate-50 text-slate-900"
+              ? "border-[var(--brand)] bg-slate-50 text-slate-900"
               : "border-slate-200 text-slate-600 hover:bg-slate-50"
           }`}
         >
@@ -114,7 +114,7 @@ export function HeadshotPicker({
           aria-pressed={choice === "none"}
           className={`flex flex-col items-center justify-center gap-1.5 rounded-lg border px-4 py-2 text-xs font-medium transition-colors ${
             choice === "none"
-              ? "border-[var(--board-bg)] bg-slate-50 text-slate-900"
+              ? "border-[var(--brand)] bg-slate-50 text-slate-900"
               : "border-slate-200 text-slate-600 hover:bg-slate-50"
           }`}
         >

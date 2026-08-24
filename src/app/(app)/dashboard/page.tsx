@@ -138,7 +138,7 @@ export default async function DashboardPage() {
               <h2 className="font-semibold text-slate-900">Pipeline</h2>
               <Link
                 href="/pipeline"
-                className="flex items-center gap-1 text-sm font-medium text-[var(--board-bg)] hover:underline"
+                className="flex items-center gap-1 text-sm font-medium text-[var(--brand)] hover:underline"
               >
                 Open the board <ArrowRight className="size-3.5" />
               </Link>
