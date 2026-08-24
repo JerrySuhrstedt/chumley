@@ -3,8 +3,8 @@
  *
  * This is the mark for anywhere the full lockup would eat horizontal room it
  * has not earned, chiefly the app top bar and the sidebar rail. It is square,
- * so size it with `size-*` rather than `h-* w-auto`, and round it at the call
- * site so it reads as an app icon rather than a stray orange block.
+ * so size it with `size-*` rather than `h-* w-auto`. Do not round it: the tile
+ * bleeds orange to all four edges by design.
  *
  * Straight from chumley-app-icon.svg. The only change is that Illustrator's
  * .st0/.st1 classes became inline fills, since class names that generic would

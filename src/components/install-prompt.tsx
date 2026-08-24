@@ -61,7 +61,7 @@ export function InstallPrompt() {
 
       <div className="flex items-start gap-3">
         <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white">
-          <ChumleyMark className="size-5 rounded-md" />
+          <ChumleyMark className="size-5" />
         </span>
 
         <div className="min-w-0 pr-6">

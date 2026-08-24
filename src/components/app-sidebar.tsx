@@ -64,7 +64,7 @@ export function AppSidebar({
         <Link href="/pipeline" title="Chumley" className="min-w-0">
           {/* The mark, not the lockup: the rail is narrow even when it
               is open, and the wordmark would crowd the nav beneath it. */}
-          <ChumleyMark className="size-8 rounded-lg" />
+          <ChumleyMark className="size-8" />
         </Link>
       </div>
 
