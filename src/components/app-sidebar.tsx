@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ReportButton } from "@/app/(app)/_report/report-button";
-import { ChumleyLogo } from "@/components/chumley-logo";
+import { ChumleyMark } from "@/components/chumley-mark";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -62,12 +62,9 @@ export function AppSidebar({
         )}
       >
         <Link href="/pipeline" title="Chumley" className="min-w-0">
-          {collapsed ? (
-            // Just the numeral when there is no room for the wordmark.
-            <span className="text-xl font-bold text-[var(--brand)]">1</span>
-          ) : (
-            <ChumleyLogo variant="light" className="h-6 w-auto" />
-          )}
+          {/* The mark, not the lockup: the rail is narrow even when it
+              is open, and the wordmark would crowd the nav beneath it. */}
+          <ChumleyMark className="size-8" />
         </Link>
       </div>
 

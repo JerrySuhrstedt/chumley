@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { signOut } from "@/app/(app)/actions";
 import { GlobalSearch } from "@/components/global-search";
-import { ChumleyLogo } from "@/components/chumley-logo";
+import { ChumleyMark } from "@/components/chumley-mark";
 
 // Where you can go, not what you can change. Settings lives in the
 // profile menu, which sits beside this one on a phone.
@@ -49,7 +49,7 @@ export function Topbar({
           aria-label="Chumley home"
           className="shrink-0 rounded md:hidden"
         >
-          <ChumleyLogo variant="light" className="h-6 w-auto" />
+          <ChumleyMark className="size-8" />
         </Link>
 
         <Link
