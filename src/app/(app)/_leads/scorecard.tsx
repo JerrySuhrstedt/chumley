@@ -27,12 +27,12 @@ export function Scorecard({ leads }: { leads: Lead[] }) {
       {stats.map((stat) => (
         <div
           key={stat.label}
-          className="flex-1 rounded-lg bg-white/15 px-3 py-2 backdrop-blur-sm sm:flex-none sm:px-4"
+          className="flex-1 rounded-lg bg-black/[0.05] px-3 py-2 sm:flex-none sm:px-4"
         >
-          <p className="text-lg font-semibold text-white sm:text-xl">
+          <p className="text-lg font-semibold text-[var(--board-ink)] sm:text-xl">
             {stat.value}
           </p>
-          <p className="text-xs whitespace-nowrap text-white/80">
+          <p className="text-xs whitespace-nowrap text-[var(--board-ink-muted)]">
             {stat.label}
           </p>
         </div>

@@ -52,12 +52,12 @@ function Chip({
       style={
         active
           ? { backgroundColor: color, borderColor: color }
-          : { borderColor: "rgba(255,255,255,0.45)" }
+          : { borderColor: "rgba(35,31,32,0.28)" }
       }
       className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
         active
           ? "text-white shadow-sm"
-          : "bg-white/15 text-white hover:bg-white/25"
+          : "bg-black/[0.06] text-[var(--board-ink)] hover:bg-black/[0.11]"
       }`}
     >
       {children}
@@ -87,10 +87,10 @@ function TempMenu({
         style={
           chosen
             ? { backgroundColor: chosen.bg, borderColor: chosen.bg }
-            : { borderColor: "rgba(255,255,255,0.45)" }
+            : { borderColor: "rgba(35,31,32,0.28)" }
         }
         className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors sm:hidden ${
-          chosen ? "text-white shadow-sm" : "bg-white/15 text-white"
+          chosen ? "text-white shadow-sm" : "bg-black/[0.06] text-[var(--board-ink)]"
         }`}
       >
         {chosen ? (
@@ -149,7 +149,7 @@ function DueMenu({
         style={
           chosen
             ? { backgroundColor: chosen.color, borderColor: chosen.color }
-            : { borderColor: "rgba(255,255,255,0.45)" }
+            : { borderColor: "rgba(35,31,32,0.28)" }
         }
         className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors sm:hidden ${
           chosen
@@ -157,7 +157,7 @@ function DueMenu({
               chosen.value === "today"
               ? "text-[var(--board-ink)] shadow-sm"
               : "text-white shadow-sm"
-            : "bg-white/15 text-white"
+            : "bg-black/[0.06] text-[var(--board-ink)]"
         }`}
       >
         {chosen ? chosen.label : "Next step"}
@@ -230,7 +230,7 @@ export function BoardFilters({
 
       <DueMenu due={due} onDue={onDue} />
 
-      <span className="mx-1 hidden h-5 w-px bg-white/25 sm:block" />
+      <span className="mx-1 hidden h-5 w-px bg-black/15 sm:block" />
 
       <div className="hidden items-center gap-1.5 sm:flex">
         {DUE_FILTERS.map((d) => (
@@ -252,7 +252,7 @@ export function BoardFilters({
             onTemp(null);
             onDue(null);
           }}
-          className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium text-white/80 transition-colors hover:bg-white/15 hover:text-white"
+          className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium text-[var(--board-ink-muted)] transition-colors hover:bg-black/[0.06] hover:text-[var(--board-ink)]"
         >
           <X className="size-3.5" />
           Clear ({showing} of {total})

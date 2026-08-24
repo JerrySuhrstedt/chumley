@@ -127,10 +127,10 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
         >
           <span className="flex size-9 items-center justify-center rounded-full bg-white shadow-md">
             {refreshing ? (
-              <Loader2 className="size-4 animate-spin text-[var(--board-bg)]" />
+              <Loader2 className="size-4 animate-spin text-[var(--brand)]" />
             ) : (
               <ArrowDown
-                className={`size-4 text-[var(--board-bg)] transition-transform ${
+                className={`size-4 text-[var(--brand)] transition-transform ${
                   ready ? "rotate-180" : ""
                 }`}
               />

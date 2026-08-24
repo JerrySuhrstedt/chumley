@@ -41,7 +41,7 @@ export function EmptyBoard() {
         <div className="mt-8 border-t border-slate-200 pt-5">
           <Link
             href="/settings/import"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--board-bg)] hover:underline"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--brand)] hover:underline"
           >
             <Upload className="size-4" />
             Already have a list? Bring it in from a spreadsheet

@@ -89,7 +89,7 @@ export default async function WebsiteFormPage() {
               href={formUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 self-start text-sm font-medium text-[var(--board-bg)] hover:underline"
+              className="inline-flex items-center gap-1.5 self-start text-sm font-medium text-[var(--brand)] hover:underline"
             >
               See what it looks like
               <ExternalLink className="size-3.5" />

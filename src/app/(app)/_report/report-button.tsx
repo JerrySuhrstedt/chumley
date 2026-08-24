@@ -135,9 +135,9 @@ export function ReportButton({
                       type="button"
                       aria-pressed={active}
                       onClick={() => setKind(k.value)}
-                      className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors focus-visible:ring-3 focus-visible:ring-[var(--board-bg)]/30 focus-visible:outline-none ${
+                      className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors focus-visible:ring-3 focus-visible:ring-[var(--brand)]/30 focus-visible:outline-none ${
                         active
-                          ? "border-[var(--board-bg)] bg-[var(--board-bg)] text-white"
+                          ? "border-[var(--brand)] bg-[var(--brand)] text-white"
                           : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
                       }`}
                     >

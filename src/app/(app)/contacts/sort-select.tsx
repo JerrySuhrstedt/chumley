@@ -52,7 +52,7 @@ export function SortSelect({
           onChange={(e) =>
             go(e.target.value as SortKey, defaultDir(e.target.value as SortKey))
           }
-          className="h-10 w-full appearance-none rounded-md border border-slate-300 bg-white pr-8 pl-8 text-sm text-slate-900 outline-none focus:border-[var(--board-bg)] focus:ring-3 focus:ring-[var(--board-bg)]/20 sm:w-44"
+          className="h-10 w-full appearance-none rounded-md border border-slate-300 bg-white pr-8 pl-8 text-sm text-slate-900 outline-none focus:border-[var(--brand)] focus:ring-3 focus:ring-[var(--brand)]/20 sm:w-44"
         >
           {SORTS.map((s) => (
             <option key={s.key} value={s.key}>

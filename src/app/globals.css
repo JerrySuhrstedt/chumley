@@ -83,12 +83,12 @@
   --sidebar-ring: oklch(0.708 0 0);
 
   /* Board theme — swap these once branding is settled. */
-  --board-bg: #0079bf;
+  --board-bg: #f0f0f0;
   --board-topbar: #026aa7;
-  --board-column: #f1f2f4;
-  --board-column-hover: #e4e6ea;
-  --board-ink: #172b4d;
-  --board-ink-muted: #5e6c84;
+  --board-column: #e4e4e4;
+  --board-column-hover: #dbdbdb;
+  --board-ink: #231f20;
+  --board-ink-muted: #6b6461;
 
   /* Outcome buckets. Tinted, not saturated, so white cards and dark label
      text still read clearly on top. */
@@ -102,10 +102,10 @@
   --drop-glow-soft: rgba(242, 214, 0, 0.55);
 
   /* Left navigation */
-  --nav-bg: #16293d;
-  --nav-hover: #21384f;
-  --nav-active: #0079bf;
-  --nav-ink: #b8c4d0;
+  --nav-bg: #333333;
+  --nav-hover: #454545;
+  --nav-active: #f16522;
+  --nav-ink: #ffffff;
   --nav-ink-active: #ffffff;
 
   /* Chumley brand, taken from the logo */
@@ -142,8 +142,8 @@
  */
 @media (max-width: 767px) {
   :root {
-    --board-column: #d9dadc;
-    --board-column-hover: #cdcfd3;
+    --board-column: #dcdcdc;
+    --board-column-hover: #d2d2d2;
     --bucket-won: #c6d9cc;
     --bucket-won-hover: #b7d2c0;
     --bucket-lost: #e0cbcb;

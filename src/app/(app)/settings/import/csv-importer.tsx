@@ -385,7 +385,7 @@ export function CsvImporter() {
     <div className="rounded-lg border border-slate-200 bg-white p-6">
       <label
         htmlFor="csv"
-        className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-300 p-10 text-center transition-colors hover:border-[var(--board-bg)] hover:bg-slate-50"
+        className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-300 p-10 text-center transition-colors hover:border-[var(--brand)] hover:bg-slate-50"
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();

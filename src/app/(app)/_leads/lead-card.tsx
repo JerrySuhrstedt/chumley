@@ -100,7 +100,7 @@ export function LeadCardView({
           </div>
 
           {money && (
-            <span className="shrink-0 text-lg leading-tight font-semibold text-[var(--board-bg)]">
+            <span className="shrink-0 text-lg leading-tight font-semibold text-[var(--brand)]">
               {money}
             </span>
           )}

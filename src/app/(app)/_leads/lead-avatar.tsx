@@ -50,7 +50,7 @@ export function LeadAvatar({
         "flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold select-none",
         showImage && !headshot
           ? "border border-slate-200 bg-white p-1.5"
-          : "bg-[var(--board-bg)] text-white",
+          : "bg-[var(--brand)] text-white",
         className
       )}
     >

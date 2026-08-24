@@ -202,7 +202,7 @@ export function PipelineFunnel({
                     type="button"
                     aria-pressed={selected === stage.value}
                     onClick={() => onSelect(stage.value)}
-                    className={`-mx-2 flex w-[calc(100%+1rem)] items-start gap-2 rounded-md px-2 py-1 text-left transition-colors focus-visible:ring-3 focus-visible:ring-[var(--board-bg)]/25 focus-visible:outline-none ${
+                    className={`-mx-2 flex w-[calc(100%+1rem)] items-start gap-2 rounded-md px-2 py-1 text-left transition-colors focus-visible:ring-3 focus-visible:ring-[var(--brand)]/25 focus-visible:outline-none ${
                       selected === stage.value
                         ? "bg-slate-100"
                         : "hover:bg-slate-50"
@@ -246,7 +246,7 @@ export function PipelineFunnel({
                 type="button"
                 aria-pressed={selected === lost.value}
                 onClick={() => onSelect(lost.value)}
-                className={`-mx-2 flex w-[calc(100%+1rem)] items-start gap-2 rounded-md px-2 py-1 text-left transition-colors focus-visible:ring-3 focus-visible:ring-[var(--board-bg)]/25 focus-visible:outline-none ${
+                className={`-mx-2 flex w-[calc(100%+1rem)] items-start gap-2 rounded-md px-2 py-1 text-left transition-colors focus-visible:ring-3 focus-visible:ring-[var(--brand)]/25 focus-visible:outline-none ${
                   selected === lost.value ? "bg-slate-100" : "hover:bg-slate-50"
                 }`}
               >

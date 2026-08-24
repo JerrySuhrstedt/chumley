@@ -89,13 +89,12 @@ export function QuickAddLeadDialog({
           // one it replaces.
           className={cn(
             buttonVariants({ size: "lg" }),
-            // Brand orange with a heavy black edge on a phone, where it
-            // sits alone on the blue board and the default near-black
-            // read as another piece of chrome. The desktop keeps the
-            // default: there it sits among other controls and does not
-            // need to shout.
-            "h-11 w-full border-2 border-[var(--board-ink)] bg-[var(--brand)] text-base text-white hover:bg-[var(--brand-dark)]",
-            "md:h-9 md:w-auto md:border md:border-transparent md:bg-primary md:text-sm md:text-primary-foreground md:hover:bg-primary/80",
+            // Brand orange with a heavy ink edge, at every width. This is
+            // the one thing on the board a rep is here to do, so it gets
+            // the loud colour and nothing else does. The stroke is what
+            // keeps it from dissolving into the grey canvas behind it.
+            "h-11 w-full border-[3px] border-[var(--ink)] bg-[var(--brand)] text-base text-white hover:bg-[var(--brand-dark)]",
+            "md:h-9 md:w-auto md:text-sm",
             // A ring on the real control rather than a pop-up over it. It
             // points at the thing itself and disappears the moment the
             // first deal exists, so it can never become furniture.

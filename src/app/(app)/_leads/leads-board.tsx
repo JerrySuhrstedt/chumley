@@ -436,8 +436,8 @@ export function LeadsBoard({
               className={cn(
                 "shrink-0 rounded-full px-3 py-2 text-xs font-medium transition-colors",
                 mobileStage === stage.key
-                  ? "bg-white text-[var(--board-ink)]"
-                  : "bg-white/25 text-white hover:bg-white/35",
+                  ? "bg-[var(--board-ink)] text-white"
+                  : "bg-black/[0.07] text-[var(--board-ink)] hover:bg-black/[0.12]",
               )}
             >
               {stage.label} (

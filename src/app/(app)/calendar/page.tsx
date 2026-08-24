@@ -114,7 +114,7 @@ export default async function CalendarPage({
                     className={cn(
                       "mb-1 flex size-6 items-center justify-center rounded-full text-xs",
                       isToday
-                        ? "bg-[var(--board-bg)] font-semibold text-white"
+                        ? "bg-[var(--brand)] font-semibold text-white"
                         : inMonth
                           ? "text-slate-700"
                           : "text-slate-400"

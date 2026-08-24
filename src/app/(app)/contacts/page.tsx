@@ -92,7 +92,7 @@ export default async function ContactsPage({
               name="q"
               defaultValue={query}
               placeholder="Search name, company, phone..."
-              className="h-10 w-full rounded-md border border-slate-300 bg-white pr-3 pl-8 text-sm outline-none focus:border-[var(--board-bg)] focus:ring-3 focus:ring-[var(--board-bg)]/20"
+              className="h-10 w-full rounded-md border border-slate-300 bg-white pr-3 pl-8 text-sm outline-none focus:border-[var(--brand)] focus:ring-3 focus:ring-[var(--brand)]/20"
             />
           </form>
           <SortSelect value={sortKey} dir={sortDir} />
@@ -121,7 +121,7 @@ export default async function ContactsPage({
                 href={href}
                 className={
                   filter === tab.key
-                    ? "rounded-full bg-[var(--board-bg)] px-3 py-1.5 text-xs font-medium text-white"
+                    ? "rounded-full bg-[var(--brand)] px-3 py-1.5 text-xs font-medium text-white"
                     : "rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"
                 }
               >

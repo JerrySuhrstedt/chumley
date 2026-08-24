@@ -58,7 +58,7 @@ export function ActivityLogger({
             className={cn(
               "flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors",
               type === item.value
-                ? "border-[var(--board-bg)] bg-[var(--board-bg)] text-white"
+                ? "border-[var(--brand)] bg-[var(--brand)] text-white"
                 : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
             )}
           >
@@ -83,7 +83,7 @@ export function ActivityLogger({
                 className={cn(
                   "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
                   outcome === item.value
-                    ? item.className + " ring-2 ring-[var(--board-bg)]"
+                    ? item.className + " ring-2 ring-[var(--brand)]"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 )}
               >
