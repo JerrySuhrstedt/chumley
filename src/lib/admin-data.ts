@@ -10,6 +10,7 @@ import { db } from "@/db";
  */
 export type AccountStatus =
   | "off"
+  | "comped"
   | "free"
   | "trialing"
   | "active"
@@ -24,6 +25,11 @@ export type AdminAccount = {
   status: AccountStatus;
   /** Switched off by an administrator. Outranks whatever billing says. */
   deactivated: boolean;
+  /** On a free account granted by an administrator. */
+  comped: boolean;
+  /** When the comp runs out. Null while comped means indefinitely. */
+  compedUntil: Date | null;
+  compedReason: string | null;
   /** Set when a cancellation is scheduled but has not taken effect. */
   endsAt: Date | null;
   seats: number | null;
@@ -158,15 +164,35 @@ export async function getAdminAccounts(): Promise<AdminAccount[]> {
       (SELECT s.quantity FROM subscriptions s
         WHERE s.org_id = o.id
         ORDER BY s.created_at DESC LIMIT 1)                  AS sub_seats,
-      o.deactivated_at                                       AS deactivated_at
+      o.deactivated_at                                       AS deactivated_at,
+      o.comped_at                                            AS comped_at,
+      o.comped_until                                         AS comped_until,
+      o.comped_reason                                        AS comped_reason
     FROM organizations o
     ORDER BY o.created_at DESC
   `)) as unknown as Record<string, unknown>[];
 
-  return rows.map((r) => ({
+  return rows.map((r) => {
+    // A comp that has run out is not a comp. The column is left in place so
+    // the reason survives, but it stops deciding anything.
+    const compedUntil = r.comped_until
+      ? new Date(String(r.comped_until))
+      : null;
+    const comped =
+      Boolean(r.comped_at) &&
+      (compedUntil === null || compedUntil.getTime() > Date.now());
+
+    return {
     orgId: String(r.org_id),
-    status: r.deactivated_at ? "off" : statusOf(r.sub_status, r.sub_change),
+    status: r.deactivated_at
+      ? "off"
+      : comped
+        ? "comped"
+        : statusOf(r.sub_status, r.sub_change),
     deactivated: Boolean(r.deactivated_at),
+    comped,
+    compedUntil,
+    compedReason: r.comped_reason ? String(r.comped_reason) : null,
     endsAt: r.sub_ends_at ? new Date(String(r.sub_ends_at)) : null,
     seats: r.sub_seats === null || r.sub_seats === undefined
       ? null
@@ -182,7 +208,8 @@ export async function getAdminAccounts(): Promise<AdminAccount[]> {
     lastActivityAt: r.last_activity_at
       ? new Date(r.last_activity_at as string)
       : null,
-  }));
+    } satisfies AdminAccount;
+  });
 }
 
 export async function getAdminUsers(): Promise<AdminUser[]> {

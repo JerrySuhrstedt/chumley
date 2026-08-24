@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { MoreHorizontal, Power, Trash2, XCircle } from "lucide-react";
+import { Gift, MoreHorizontal, Power, Trash2, Undo2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,8 +23,11 @@ import type { AdminAccount } from "@/lib/admin-data";
 import {
   adminCancelSubscription,
   adminDeleteAccount,
+  adminGrantComp,
+  adminRevokeComp,
   adminSetActive,
 } from "./actions";
+import { CompDialog } from "./comp-dialog";
 
 /**
  * Ending an account, from the back office.
@@ -36,6 +39,7 @@ import {
  */
 export function AccountControls({ account }: { account: AdminAccount }) {
   const [confirming, setConfirming] = useState(false);
+  const [comping, setComping] = useState(false);
   const [typed, setTyped] = useState("");
   const [working, start] = useTransition();
 
@@ -80,6 +84,26 @@ export function AccountControls({ account }: { account: AdminAccount }) {
             {account.deactivated ? "Switch back on" : "Switch off"}
           </DropdownMenuItem>
 
+          {account.comped ? (
+            <DropdownMenuItem
+              onClick={() =>
+                start(async () => {
+                  const r = await adminRevokeComp(account.orgId);
+                  if (r.error) toast.error(r.error);
+                  else toast.success(r.message ?? "Done.");
+                })
+              }
+            >
+              <Undo2 className="size-4" />
+              End their free account
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem onClick={() => setComping(true)}>
+              <Gift className="size-4" />
+              Give them a free account
+            </DropdownMenuItem>
+          )}
+
           <DropdownMenuItem
             variant="destructive"
             onClick={() => {
@@ -92,6 +116,14 @@ export function AccountControls({ account }: { account: AdminAccount }) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <CompDialog
+        open={comping}
+        onOpenChange={setComping}
+        teamName={account.name}
+        ownerEmail={account.ownerEmail}
+        onGrant={(reason, days) => adminGrantComp(account.orgId, reason, days)}
+      />
 
       <Dialog open={confirming} onOpenChange={setConfirming}>
         <DialogContent>

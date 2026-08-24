@@ -13,6 +13,8 @@ import type { AccountStatus } from "@/lib/admin-data";
  */
 const LOOK: Record<AccountStatus, { label: string; className: string }> = {
   off: { label: "Switched off", className: "bg-slate-800 text-white" },
+  // Violet, so a gift does not read as a fault or as a sale.
+  comped: { label: "Comped", className: "bg-violet-100 text-violet-800" },
   free: { label: "Free", className: "bg-slate-100 text-slate-600" },
   trialing: { label: "Trial", className: "bg-indigo-100 text-indigo-800" },
   active: { label: "Active", className: "bg-emerald-100 text-emerald-800" },
@@ -29,10 +31,13 @@ export function StatusPill({
   status,
   endsAt,
   seats,
+  compedUntil,
 }: {
   status: AccountStatus;
   endsAt: Date | null;
   seats: number | null;
+  /** Null on a comped row means the free account has no end date. */
+  compedUntil?: Date | null;
 }) {
   const look = LOOK[status];
 
@@ -46,9 +51,15 @@ export function StatusPill({
       {status === "ending" && endsAt && (
         <span className="text-[11px] text-slate-500">till {day(endsAt)}</span>
       )}
+      {status === "comped" && (
+        <span className="text-[11px] text-slate-500">
+          {compedUntil ? `till ${day(compedUntil)}` : "no end date"}
+        </span>
+      )}
       {seats !== null &&
         status !== "free" &&
         status !== "off" &&
+        status !== "comped" &&
         status !== "canceled" && (
         <span className="text-[11px] text-slate-500">
           {seats} seat{seats === 1 ? "" : "s"}

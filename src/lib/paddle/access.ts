@@ -24,6 +24,13 @@ export type BillingState = {
    * to a person who has not paid us anything yet.
    */
   inTrial: boolean;
+  /**
+   * Comped by an administrator: full access, billed nothing, and not a
+   * Paddle subscription. Outranks the trial and outranks a lapsed plan.
+   */
+  comped: boolean;
+  /** When the comp runs out. Null while comped means indefinitely. */
+  compedUntil: Date | null;
   /** No payment provider configured at all, so nothing is being charged. */
   billingLive: boolean;
 };
@@ -55,6 +62,16 @@ export async function getBillingState(orgId: string): Promise<BillingState> {
 
   const seatsUsed = Number(used?.n ?? 0);
 
+  const [org] = await db
+    .select({
+      createdAt: organizations.createdAt,
+      compedAt: organizations.compedAt,
+      compedUntil: organizations.compedUntil,
+    })
+    .from(organizations)
+    .where(eq(organizations.id, orgId))
+    .limit(1);
+
   // Until billing is switched on, nothing is gated and nothing is capped.
   // A half-built paywall that locks people out of a free product is the
   // worst of both. This is the self-hosted and local-development case.
@@ -69,6 +86,38 @@ export async function getBillingState(orgId: string): Promise<BillingState> {
       endingAt: null,
       trialEndsAt: null,
       inTrial: false,
+      comped: false,
+      compedUntil: null,
+      billingLive,
+    };
+  }
+
+  /**
+   * A comp beats everything below it.
+   *
+   * Checked before the subscription and before the trial, because those
+   * are both answers to "have they paid" and a comp is the decision that
+   * they do not have to. A comped team whose card expired, or whose trial
+   * ran out months ago, still works.
+   */
+  const compExpired =
+    org?.compedUntil != null && Date.now() >= org.compedUntil.getTime();
+
+  if (org?.compedAt && !compExpired) {
+    return {
+      // Kept, so the admin screen and the billing page can still show what
+      // they were on before the comp rather than pretending it never was.
+      subscription: sub ?? null,
+      active: true,
+      seats: seatsUsed,
+      seatsUsed,
+      seatsLeft: Number.POSITIVE_INFINITY,
+      readOnly: false,
+      endingAt: null,
+      trialEndsAt: null,
+      inTrial: false,
+      comped: true,
+      compedUntil: org.compedUntil ?? null,
       billingLive,
     };
   }
@@ -84,12 +133,6 @@ export async function getBillingState(orgId: string): Promise<BillingState> {
    * code gave away the product.
    */
   if (!sub) {
-    const [org] = await db
-      .select({ createdAt: organizations.createdAt })
-      .from(organizations)
-      .where(eq(organizations.id, orgId))
-      .limit(1);
-
     const started = org?.createdAt ?? new Date();
     const trialEndsAt = new Date(
       started.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000
@@ -111,6 +154,8 @@ export async function getBillingState(orgId: string): Promise<BillingState> {
       // rather than just that it did.
       trialEndsAt,
       inTrial,
+      comped: false,
+      compedUntil: null,
       billingLive,
     };
   }
@@ -129,6 +174,8 @@ export async function getBillingState(orgId: string): Promise<BillingState> {
     endingAt: sub.scheduledChangeAt,
     trialEndsAt: sub.trialEndsAt,
     inTrial: sub.status === "trialing",
+    comped: false,
+    compedUntil: null,
     billingLive,
   };
 }

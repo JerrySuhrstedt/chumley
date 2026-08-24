@@ -18,7 +18,10 @@ export const authLink =
 export function Wordmark() {
   return (
     <Link href="/" aria-label="Chumley home" className="inline-block">
-      <ChumleyLogo className="h-9 w-auto" />
+      {/* 2.925rem is h-9 (36px) plus 30%. An arbitrary value rather than
+          h-11 or h-12, because neither is actually 30% and the lockup is
+          the first thing on the page. */}
+      <ChumleyLogo className="h-[2.925rem] w-auto" />
     </Link>
   );
 }

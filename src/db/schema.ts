@@ -115,6 +115,26 @@ export const organizations = pgTable("organizations", {
    * between stopping the billing and destroying the account.
    */
   deactivatedAt: timestamp("deactivated_at", { withTimezone: true }),
+  /**
+   * A comped account: full access, billed nothing.
+   *
+   * Deliberately a property of the team rather than a fake subscription
+   * row or a 100% discount in Paddle. A comp is our decision, not a
+   * payment event, and modelling it as one would mean a Paddle webhook
+   * could take it away, a cancellation could end it, and the seat
+   * arithmetic would be reading a quantity nobody ever bought.
+   *
+   * Null means not comped. Set means comped, and compedUntil decides
+   * whether that is forever or for a while.
+   */
+  compedAt: timestamp("comped_at", { withTimezone: true }),
+  /** Null while compedAt is set means indefinitely. */
+  compedUntil: timestamp("comped_until", { withTimezone: true }),
+  /** Why, in the admin's words. An unexplained free account is a mystery
+   *  to whoever finds it in six months, including the person who granted it. */
+  compedReason: text("comped_reason"),
+  /** Which administrator did it. auth.users id, not a membership. */
+  compedBy: uuid("comped_by"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

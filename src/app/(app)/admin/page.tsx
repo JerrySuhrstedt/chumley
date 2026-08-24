@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { CreditCard, ShieldCheck } from "lucide-react";
 import { AccountControls } from "./account-controls";
 import { StatusPill } from "./status-pill";
+import { Giveaway } from "./giveaway";
 import { Reports } from "./reports";
 import { requireAdmin } from "@/lib/admin";
 import {
@@ -124,9 +125,12 @@ export default async function AdminPage() {
         </section>
 
         <section>
-          <h2 className="mb-2 text-sm font-semibold text-slate-900">
-            Accounts ({accounts.length})
-          </h2>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-sm font-semibold text-slate-900">
+              Accounts ({accounts.length})
+            </h2>
+            <Giveaway />
+          </div>
           <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
             <table className="w-full min-w-[54rem] text-left text-sm">
               <thead className="bg-slate-50 text-xs text-slate-600">
@@ -153,12 +157,25 @@ export default async function AdminPage() {
               <tbody className="divide-y divide-slate-100">
                 {accounts.map((a) => (
                   <tr key={a.orgId} className="align-middle">
-                    <td className="px-3 py-2 font-medium text-slate-900">{a.name}</td>
+                    <td className="px-3 py-2 font-medium text-slate-900">
+                      {a.name}
+                      {/* The reason lives on the row, because a comped
+                          account with no explanation is unreadable later. */}
+                      {a.comped && a.compedReason && (
+                        <span
+                          title={a.compedReason}
+                          className="mt-0.5 block max-w-44 truncate text-[11px] font-normal text-violet-700"
+                        >
+                          {a.compedReason}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-3 py-2">
                       <StatusPill
                         status={a.status}
                         endsAt={a.endsAt}
                         seats={a.seats}
+                        compedUntil={a.compedUntil}
                       />
                     </td>
                     <td className="px-3 py-2 text-slate-600">{a.ownerEmail ?? "—"}</td>
