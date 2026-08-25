@@ -152,7 +152,10 @@ export function AccountControls({ account }: { account: AdminAccount }) {
               sign-in{account.members === 1 ? "" : "s"} are removed, so those
               addresses can be used again.
             </li>
-            <li>Any live subscription is stopped in Paddle first.</li>
+            <li>
+              Any live subscription is set to end at the end of the period
+              they have already paid for. No refund is issued.
+            </li>
             <li>
               Problems they reported are kept, so the feedback outlives the
               account.

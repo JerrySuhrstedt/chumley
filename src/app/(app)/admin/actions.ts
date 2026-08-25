@@ -138,6 +138,17 @@ export async function adminDeleteAccount(
   // away, so a second subscription missed here becomes a live Paddle
   // subscription with nothing left in our database pointing at it, billing
   // a real customer every month with no way to find it.
+  //
+  // next_billing_period, never immediately, and that is a deliberate policy
+  // rather than an oversight. Immediate cancellation has Paddle refund the
+  // unused part of the period, so an admin deleting an account would be
+  // issuing refunds as a side effect of a button that says nothing about
+  // money. Ending at the period boundary stops every future charge, which
+  // is the part that matters, and leaves the already-paid period alone.
+  //
+  // The scheduled cancellation outlives our record of it. Our row goes with
+  // the org moments later, but Paddle holds the schedule and honours it, and
+  // Paddle is the system of record for billing regardless of what we keep.
   const subs = await db
     .select()
     .from(subscriptions)
@@ -148,7 +159,7 @@ export async function adminDeleteAccount(
     if (!isBillingConfigured() || sub.status === "canceled") continue;
     try {
       await paddle().subscriptions.cancel(sub.id, {
-        effectiveFrom: "immediately",
+        effectiveFrom: "next_billing_period",
       });
     } catch (e) {
       // A subscription Paddle cannot find is already not billing anybody,
