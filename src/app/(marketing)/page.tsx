@@ -161,9 +161,13 @@ export default function HomePage() {
           height={1600}
           priority
           sizes="55vw"
-          // Smaller at the breakpoint itself, where the copy column and the
-          // phone are closest to colliding, and larger once there is room.
-          className="pointer-events-none absolute -right-6 -bottom-10 hidden h-[92%] w-auto max-w-none lg:block xl:h-[108%] 2xl:h-[116%]"
+          // Flush to the right edge rather than bleeding past it, and 15%
+          // smaller than it was, both to buy width back for the copy. The
+          // pinch is only between lg and xl: below lg the phone drops under
+          // the text entirely, and by 1440 there is already a comfortable
+          // gap. Aspect ratio is locked, so height is the only lever and
+          // trimming it moves the left edge right by the same proportion.
+          className="pointer-events-none absolute right-0 -bottom-10 hidden h-[78%] w-auto max-w-none lg:block xl:h-[92%] 2xl:h-[99%]"
         />
       </section>
 
