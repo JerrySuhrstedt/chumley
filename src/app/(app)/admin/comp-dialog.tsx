@@ -117,10 +117,14 @@ export function CompDialog({
         <ul className="flex flex-col gap-1 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
           <li>Seats are not capped while the account is free.</li>
           <li>
-            This does not touch Paddle. If they are on a paid plan, cancel it
-            separately or they keep being charged.
+            If they are on a paid plan it is cancelled first, so nothing is
+            charged again. They keep the period they have already paid for.
           </li>
-          <li>You can end it at any time, and nothing is deleted when you do.</li>
+          <li>
+            You can end the free account at any time. A cancelled plan does
+            not come back, so they would need to subscribe again.
+          </li>
+          <li>Nothing is deleted, either way.</li>
         </ul>
 
         <DialogFooter>

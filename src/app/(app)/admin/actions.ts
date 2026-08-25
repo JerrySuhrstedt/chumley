@@ -19,6 +19,26 @@ import { paddle, isBillingConfigured } from "@/lib/paddle/server";
 
 export type AdminActionResult = { error: string | null; message?: string };
 
+/**
+ * Whether a Paddle error means "there is nothing here to cancel".
+ *
+ * A subscription Paddle has never heard of is not a failure to stop
+ * billing, it is proof that nothing is being billed, and treating it as an
+ * error blocks perfectly reasonable admin work. This is not hypothetical:
+ * migrating from sandbox to live leaves mirror rows behind that reference
+ * sandbox ids, and every one of them looks exactly like this.
+ */
+function isMissingInPaddle(e: unknown): boolean {
+  const code = (e as { code?: string } | null)?.code ?? "";
+  const message = e instanceof Error ? e.message : String(e ?? "");
+  return (
+    code === "entity_not_found" ||
+    code === "not_found" ||
+    /not found/i.test(message)
+  );
+}
+
+
 /** Cancel a team's plan at the end of the period they have paid for. */
 export async function adminCancelSubscription(
   orgId: string
@@ -54,6 +74,22 @@ export async function adminCancelSubscription(
         : "Cancellation scheduled.",
     };
   } catch (e) {
+    if (isMissingInPaddle(e)) {
+      // A row we mirror but Paddle does not have. Nobody is being charged;
+      // correct our copy and say so plainly rather than showing a raw
+      // "not found" that reads like the app is broken.
+      await db
+        .update(subscriptions)
+        .set({ status: "canceled", updatedAt: new Date() })
+        .where(eq(subscriptions.id, sub.id));
+      revalidatePath("/admin");
+      revalidatePath("/", "layout");
+      return {
+        error: null,
+        message:
+          "Paddle has no record of that plan, so there was nothing to cancel. Marked it cancelled here.",
+      };
+    }
     return { error: e instanceof Error ? e.message : "Paddle refused that." };
   }
 }
@@ -115,11 +151,15 @@ export async function adminDeleteAccount(
         effectiveFrom: "immediately",
       });
     } catch (e) {
-      return {
-        error: `Could not stop billing, so nothing was deleted: ${
-          e instanceof Error ? e.message : "Paddle refused"
-        }`,
-      };
+      // A subscription Paddle cannot find is already not billing anybody,
+      // so it is not a reason to refuse the delete.
+      if (!isMissingInPaddle(e)) {
+        return {
+          error: `Could not stop billing, so nothing was deleted: ${
+            e instanceof Error ? e.message : "Paddle refused"
+          }`,
+        };
+      }
     }
   }
 
@@ -212,12 +252,13 @@ export async function adminSetActive(
  * take it back: a cancellation, a failed payment or a plan change would end
  * a gift that had nothing to do with any of them.
  *
- * Billing is left alone here on purpose, the same way switching an account
- * off leaves it alone. Giving somebody the product and stopping their card
- * being charged are two decisions, and an admin who wants both should make
- * both, so that neither happens by side effect. Where a team is genuinely
- * still being billed, the result below says so rather than leaving it to be
- * discovered on a statement.
+ * Granting a comp cancels any live Paddle plan as part of the same action,
+ * because "give them a free account" and "keep charging their card" cannot
+ * both be true. This is the one place that deliberately couples access and
+ * billing, unlike switching an account off, where the two really are
+ * separate decisions: suspending somebody for abuse should not hand them a
+ * refund by side effect, whereas comping somebody and still billing them is
+ * simply a bug with a friendly label on it.
  */
 
 /** Days a comp can run for. Null is indefinite. */
@@ -247,6 +288,69 @@ export async function adminGrantComp(
     .limit(1);
   if (!org) return { error: "That team is gone." };
 
+  /**
+   * Stop the money before giving the product away, in that order.
+   *
+   * The order is the whole point. Grant first and a Paddle failure leaves a
+   * team with free access and a live subscription still charging them every
+   * month, which is the worst of the possible outcomes and the one nobody
+   * would notice: the app would look right to them and to us. Cancelling
+   * first means the bad case is that nothing happens and this returns an
+   * error, which an admin can see and retry.
+   *
+   * next_billing_period rather than immediately. Both stop the next charge,
+   * which is the actual ask. Immediate cancellation can have Paddle issue a
+   * prorated refund, and an admin clicking "make it free" has not asked for
+   * money to move. They lose no access by waiting either way, because the
+   * comp covers them from this moment regardless.
+   */
+  const [sub] = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.orgId, orgId))
+    .orderBy(desc(subscriptions.createdAt))
+    .limit(1);
+
+  const live =
+    sub && !["canceled", "paused"].includes(sub.status) ? sub : null;
+
+  let billingNote = "";
+
+  if (live && isBillingConfigured()) {
+    if (live.scheduledChangeAction === "cancel") {
+      billingNote = " Their plan was already set to end, so nothing was charged again anyway.";
+    } else {
+      try {
+        await paddle().subscriptions.cancel(live.id, {
+          effectiveFrom: "next_billing_period",
+        });
+        billingNote = " Their paid plan is cancelled, so nothing will be charged again.";
+      } catch (e) {
+        if (isMissingInPaddle(e)) {
+          // Nothing to stop. Record that, rather than blocking on it.
+          await db
+            .update(subscriptions)
+            .set({ status: "canceled", updatedAt: new Date() })
+            .where(eq(subscriptions.id, live.id));
+          billingNote =
+            " Paddle has no record of their plan, so there was nothing to cancel.";
+        } else {
+          return {
+            error: `Could not cancel their Paddle plan, so nothing was changed: ${
+              e instanceof Error ? e.message : "Paddle refused"
+            }`,
+          };
+        }
+      }
+    }
+  } else if (live && !isBillingConfigured()) {
+    // No API key, so we cannot honour the promise this action makes.
+    return {
+      error:
+        "They are on a paid plan but billing is not configured here, so it cannot be cancelled. Nothing was changed.",
+    };
+  }
+
   const admin = await getCurrentUser();
 
   await db
@@ -263,25 +367,12 @@ export async function adminGrantComp(
   // Every page reads billing state through the layout.
   revalidatePath("/", "layout");
 
-  // Whether their card is still going to be charged, said out loud.
-  const [sub] = await db
-    .select()
-    .from(subscriptions)
-    .where(eq(subscriptions.orgId, orgId))
-    .orderBy(desc(subscriptions.createdAt))
-    .limit(1);
-
-  const stillBilling =
-    sub && !["canceled", "paused"].includes(sub.status)
-      ? ` They are still on a paid plan, so Paddle will keep charging them. Cancel their plan as well if that is not what you want.`
-      : "";
-
   const span =
     days === null ? "indefinitely" : `for ${days} day${days === 1 ? "" : "s"}`;
 
   return {
     error: null,
-    message: `"${org.name}" is free ${span}.${stillBilling}`,
+    message: `"${org.name}" is free ${span}.${billingNote}`,
   };
 }
 
@@ -318,7 +409,7 @@ export async function adminRevokeComp(
   revalidatePath("/", "layout");
   return {
     error: null,
-    message: `"${org.name}" is back on normal billing. Nothing was deleted.`,
+    message: `"${org.name}" is off the free account. Any plan cancelled when they were comped stays cancelled, so they will need to subscribe again. Nothing was deleted.`,
   };
 }
 
