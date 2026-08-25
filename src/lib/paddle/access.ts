@@ -31,6 +31,12 @@ export type BillingState = {
   comped: boolean;
   /** When the comp runs out. Null while comped means indefinitely. */
   compedUntil: Date | null;
+  /**
+   * A negotiated price for this team, in cents per seat per month, and the
+   * Paddle price that charges it. Null on both means list pricing.
+   */
+  customPriceCents: number | null;
+  customPriceId: string | null;
   /** No payment provider configured at all, so nothing is being charged. */
   billingLive: boolean;
 };
@@ -67,6 +73,8 @@ export async function getBillingState(orgId: string): Promise<BillingState> {
       createdAt: organizations.createdAt,
       compedAt: organizations.compedAt,
       compedUntil: organizations.compedUntil,
+      customPriceCents: organizations.customPriceCents,
+      customPriceId: organizations.customPriceId,
     })
     .from(organizations)
     .where(eq(organizations.id, orgId))
@@ -88,6 +96,8 @@ export async function getBillingState(orgId: string): Promise<BillingState> {
       inTrial: false,
       comped: false,
       compedUntil: null,
+      customPriceCents: org?.customPriceCents ?? null,
+      customPriceId: org?.customPriceId ?? null,
       billingLive,
     };
   }
@@ -118,6 +128,8 @@ export async function getBillingState(orgId: string): Promise<BillingState> {
       inTrial: false,
       comped: true,
       compedUntil: org.compedUntil ?? null,
+      customPriceCents: org.customPriceCents ?? null,
+      customPriceId: org.customPriceId ?? null,
       billingLive,
     };
   }
@@ -156,6 +168,8 @@ export async function getBillingState(orgId: string): Promise<BillingState> {
       inTrial,
       comped: false,
       compedUntil: null,
+      customPriceCents: org?.customPriceCents ?? null,
+      customPriceId: org?.customPriceId ?? null,
       billingLive,
     };
   }
@@ -176,6 +190,8 @@ export async function getBillingState(orgId: string): Promise<BillingState> {
     inTrial: sub.status === "trialing",
     comped: false,
     compedUntil: null,
+    customPriceCents: org?.customPriceCents ?? null,
+    customPriceId: org?.customPriceId ?? null,
     billingLive,
   };
 }

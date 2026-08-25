@@ -135,6 +135,32 @@ export const organizations = pgTable("organizations", {
   compedReason: text("comped_reason"),
   /** Which administrator did it. auth.users id, not a membership. */
   compedBy: uuid("comped_by"),
+  /**
+   * A negotiated price for this team, in cents per seat per month.
+   *
+   * Null means the published ladder decides. Set means this number does,
+   * and the volume breaks stop applying: a price agreed with a person is
+   * not a quantity discount, and quietly moving somebody off the number
+   * you shook hands on because they hired a fourth rep would be a nasty
+   * surprise on a statement.
+   *
+   * Cents, as an integer, because money in a float is a bug waiting for a
+   * decimal. Per seat rather than flat, so a bespoke price behaves like
+   * every other price in the product when the team grows.
+   */
+  customPriceCents: integer("custom_price_cents"),
+  /**
+   * The Paddle price object created for that amount.
+   *
+   * Paddle can only charge against a price it knows, so the number above is
+   * useless on its own. These are created on demand and reused across teams
+   * on the same amount, which keeps the catalog from filling up with a
+   * separate $2 price for every friend.
+   */
+  customPriceId: text("custom_price_id"),
+  customPriceReason: text("custom_price_reason"),
+  customPriceBy: uuid("custom_price_by"),
+  customPriceAt: timestamp("custom_price_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

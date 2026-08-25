@@ -73,6 +73,8 @@ export default async function BillingSettingsPage() {
               orgId={current.org.id}
               email={current.email}
               membersNow={billing.seatsUsed}
+              customPriceId={billing.customPriceId}
+              customPriceCents={billing.customPriceCents}
             />
 
             {/* What they are agreeing to, next to the button that agrees to

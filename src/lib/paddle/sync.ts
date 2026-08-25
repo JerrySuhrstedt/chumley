@@ -47,9 +47,14 @@ async function correctTier(
   subId: string,
   status: string,
   priceId: string,
-  quantity: number
+  quantity: number,
+  customPriceId: string | null
 ): Promise<string> {
   if (status !== "active") return "";
+  // A negotiated price is not a tier. Moving somebody off the number they
+  // were promised because the ladder says otherwise would rewrite a deal
+  // a human made, and it would do it silently, on a webhook.
+  if (customPriceId && priceId === customPriceId) return "";
   const wanted = priceFor(quantity, YEARLY_IDS.includes(priceId));
   if (wanted === priceId) return "";
 
@@ -131,16 +136,18 @@ export async function syncPaddleEvent(event: EventEntity): Promise<string> {
 
       // Remember the customer so a team that cancels and comes back bills
       // as the same one rather than a duplicate.
-      await db
+      const [org] = await db
         .update(organizations)
         .set({ paddleCustomerId: sub.customerId })
-        .where(eq(organizations.id, orgId));
+        .where(eq(organizations.id, orgId))
+        .returning({ customPriceId: organizations.customPriceId });
 
       const fixed = await correctTier(
         sub.id,
         values.status,
         values.priceId,
-        values.quantity
+        values.quantity,
+        org?.customPriceId ?? null
       );
 
       return `${event.eventType} -> ${sub.status}, ${values.quantity} seat(s)${fixed}`;

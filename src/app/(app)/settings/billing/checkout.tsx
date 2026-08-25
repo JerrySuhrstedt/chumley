@@ -25,11 +25,20 @@ export function Checkout({
   orgId,
   email,
   membersNow,
+  customPriceId,
+  customPriceCents,
 }: {
   orgId: string;
   email: string;
   /** Seats cannot be bought below the headcount already in the team. */
   membersNow: number;
+  /**
+   * A price negotiated for this team. When set it replaces the ladder
+   * entirely, and the yearly toggle goes with it: a bespoke price is a
+   * monthly number somebody agreed to, not a second ladder to climb.
+   */
+  customPriceId: string | null;
+  customPriceCents: number | null;
 }) {
   const paddleRef = useRef<Paddle | null>(null);
   const [ready, setReady] = useState(false);
@@ -56,16 +65,19 @@ export function Checkout({
 
   if (!token) return null;
 
+  const custom = customPriceId !== null && customPriceCents !== null;
   const solo = seats <= 1;
-  const rate = solo
-    ? yearly
-      ? SOLO.yearly
-      : SOLO.monthly
-    : yearly
-      ? tierFor(seats).yearly
-      : tierFor(seats).monthly;
+  const rate = custom
+    ? customPriceCents / 100
+    : solo
+      ? yearly
+        ? SOLO.yearly
+        : SOLO.monthly
+      : yearly
+        ? tierFor(seats).yearly
+        : tierFor(seats).monthly;
   const total = rate * seats;
-  const period = yearly ? "year" : "month";
+  const period = custom ? "month" : yearly ? "year" : "month";
 
   // Below the team minimum there is no team price, so the stepper skips the
   // gap rather than showing a number nobody can buy.
@@ -80,7 +92,12 @@ export function Checkout({
 
   const open = () => {
     paddleRef.current?.Checkout.open({
-      items: [{ priceId: priceFor(seats, yearly), quantity: seats }],
+      items: [
+        {
+          priceId: custom ? customPriceId : priceFor(seats, yearly),
+          quantity: seats,
+        },
+      ],
       customer: { email },
       // How the webhook finds this team. Without it a paid subscription
       // arrives with nowhere to put it.
@@ -103,22 +120,31 @@ export function Checkout({
         </p>
       </div>
 
-      <div className="inline-flex self-start rounded-full bg-slate-100 p-1">
-        {([false, true] as const).map((opt) => (
-          <button
-            key={String(opt)}
-            type="button"
-            onClick={() => setYearly(opt)}
-            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
-              yearly === opt
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-500"
-            }`}
-          >
-            {opt ? "Yearly" : "Monthly"}
-          </button>
-        ))}
-      </div>
+      {custom ? (
+        // No toggle. A negotiated price is one monthly number somebody
+        // agreed to, and offering a yearly variant of it would be offering
+        // a price that does not exist.
+        <p className="self-start rounded-full bg-violet-50 px-3 py-1.5 text-sm font-semibold text-violet-800">
+          Your price: ${(customPriceCents! / 100).toFixed(2)} per person, per month
+        </p>
+      ) : (
+        <div className="inline-flex self-start rounded-full bg-slate-100 p-1">
+          {([false, true] as const).map((opt) => (
+            <button
+              key={String(opt)}
+              type="button"
+              onClick={() => setYearly(opt)}
+              className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+                yearly === opt
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500"
+              }`}
+            >
+              {opt ? "Yearly" : "Monthly"}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="flex items-center justify-between rounded-lg bg-slate-50 p-4">
         <div>

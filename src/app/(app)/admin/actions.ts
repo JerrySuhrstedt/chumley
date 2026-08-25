@@ -7,6 +7,11 @@ import { organizations, subscriptions } from "@/db/schema";
 import { requireAdmin } from "@/lib/admin";
 import { getCurrentOrg, getCurrentUser } from "@/lib/org";
 import { paddle, isBillingConfigured } from "@/lib/paddle/server";
+import {
+  centsToDollars,
+  dollarsToCents,
+  ensureCustomPrice,
+} from "@/lib/paddle/custom-price";
 
 /**
  * Back-office controls that end an account.
@@ -466,5 +471,135 @@ export async function adminPickRandomForComp(): Promise<{
       name: String(row.name),
       ownerEmail: (row.owner_email as string) ?? null,
     },
+  };
+}
+
+
+/* --------------------------------------------------------- custom pricing */
+
+/**
+ * A negotiated price for one team.
+ *
+ * Separate from a comp, and deliberately so. A comp is "you pay nothing";
+ * this is "you pay this instead", which keeps them a real paying customer
+ * with a real invoice and real tax handling, and keeps the subscription
+ * machinery, the seat counting and the webhooks all working exactly as
+ * they do for everybody else. Setting it to zero is not supported: that is
+ * what the comp is for, and two ways to express free would eventually
+ * disagree with each other.
+ *
+ * Takes effect at the next checkout. Changing what an existing subscription
+ * is billed is a separate decision with proration attached, so it is left
+ * to the seat controls rather than done silently here.
+ */
+export async function adminSetCustomPrice(
+  orgId: string,
+  amount: string,
+  reason: string
+): Promise<AdminActionResult> {
+  await requireAdmin();
+
+  const cents = dollarsToCents(amount);
+  if (cents === null) {
+    return { error: "Give an amount like 2 or 2.50. Zero is a comp, not a price." };
+  }
+  if (cents > 100_000_00) {
+    return { error: "That is over $100,000 a seat. Check the number." };
+  }
+
+  const trimmed = reason.trim();
+  if (trimmed.length < 3) {
+    return { error: "Say why. Whoever finds this later will need it." };
+  }
+
+  const [org] = await db
+    .select()
+    .from(organizations)
+    .where(eq(organizations.id, orgId))
+    .limit(1);
+  if (!org) return { error: "That team is gone." };
+
+  if (!isBillingConfigured()) {
+    return { error: "Billing is not configured here, so no price can be created." };
+  }
+
+  // Paddle first. If it will not hold the price there is nothing to record,
+  // and a number in our database that Paddle cannot charge against is worse
+  // than no number at all: checkout would fail at the moment of payment.
+  let priceId: string;
+  try {
+    priceId = await ensureCustomPrice(cents);
+  } catch (e) {
+    return {
+      error: `Could not create that price in Paddle, so nothing was changed: ${
+        e instanceof Error ? e.message : "Paddle refused"
+      }`,
+    };
+  }
+
+  const admin = await getCurrentUser();
+
+  await db
+    .update(organizations)
+    .set({
+      customPriceCents: cents,
+      customPriceId: priceId,
+      customPriceReason: trimmed,
+      customPriceBy: admin?.id ?? null,
+      customPriceAt: new Date(),
+    })
+    .where(eq(organizations.id, orgId));
+
+  revalidatePath("/", "layout");
+
+  const [sub] = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.orgId, orgId))
+    .orderBy(desc(subscriptions.createdAt))
+    .limit(1);
+
+  const already =
+    sub && !["canceled", "paused"].includes(sub.status)
+      ? " They are already subscribed, so this applies when they next subscribe, not to the plan they are on."
+      : "";
+
+  return {
+    error: null,
+    message: `"${org.name}" pays ${centsToDollars(cents)} per seat a month.${already}`,
+  };
+}
+
+/** Back to the published ladder. Any live subscription keeps its own price. */
+export async function adminClearCustomPrice(
+  orgId: string
+): Promise<AdminActionResult> {
+  await requireAdmin();
+
+  const [org] = await db
+    .select()
+    .from(organizations)
+    .where(eq(organizations.id, orgId))
+    .limit(1);
+  if (!org) return { error: "That team is gone." };
+  if (org.customPriceCents === null) {
+    return { error: "That team is already on normal pricing." };
+  }
+
+  await db
+    .update(organizations)
+    .set({
+      customPriceCents: null,
+      customPriceId: null,
+      customPriceReason: null,
+      customPriceBy: null,
+      customPriceAt: null,
+    })
+    .where(eq(organizations.id, orgId));
+
+  revalidatePath("/", "layout");
+  return {
+    error: null,
+    message: `"${org.name}" is back on list pricing. Anything they are already subscribed to is unchanged.`,
   };
 }

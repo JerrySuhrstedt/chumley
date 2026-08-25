@@ -27,6 +27,9 @@ export type AdminAccount = {
   deactivated: boolean;
   /** On a free account granted by an administrator. */
   comped: boolean;
+  /** Negotiated price in cents per seat per month. Null is list pricing. */
+  customPriceCents: number | null;
+  customPriceReason: string | null;
   /** When the comp runs out. Null while comped means indefinitely. */
   compedUntil: Date | null;
   compedReason: string | null;
@@ -167,7 +170,9 @@ export async function getAdminAccounts(): Promise<AdminAccount[]> {
       o.deactivated_at                                       AS deactivated_at,
       o.comped_at                                            AS comped_at,
       o.comped_until                                         AS comped_until,
-      o.comped_reason                                        AS comped_reason
+      o.comped_reason                                        AS comped_reason,
+      o.custom_price_cents                                   AS custom_price_cents,
+      o.custom_price_reason                                  AS custom_price_reason
     FROM organizations o
     ORDER BY o.created_at DESC
   `)) as unknown as Record<string, unknown>[];
@@ -193,6 +198,13 @@ export async function getAdminAccounts(): Promise<AdminAccount[]> {
     comped,
     compedUntil,
     compedReason: r.comped_reason ? String(r.comped_reason) : null,
+    customPriceCents:
+      r.custom_price_cents === null || r.custom_price_cents === undefined
+        ? null
+        : Number(r.custom_price_cents),
+    customPriceReason: r.custom_price_reason
+      ? String(r.custom_price_reason)
+      : null,
     endsAt: r.sub_ends_at ? new Date(String(r.sub_ends_at)) : null,
     seats: r.sub_seats === null || r.sub_seats === undefined
       ? null

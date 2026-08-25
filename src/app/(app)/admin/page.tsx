@@ -161,6 +161,14 @@ export default async function AdminPage() {
                       {a.name}
                       {/* The reason lives on the row, because a comped
                           account with no explanation is unreadable later. */}
+                      {a.customPriceCents !== null && (
+                        <span
+                          title={a.customPriceReason ?? undefined}
+                          className="mt-0.5 block text-[11px] font-semibold text-sky-700"
+                        >
+                          ${(a.customPriceCents / 100).toFixed(2)}/seat/mo
+                        </span>
+                      )}
                       {a.comped && a.compedReason && (
                         <span
                           title={a.compedReason}

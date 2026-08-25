@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Gift, MoreHorizontal, Power, Trash2, Undo2, XCircle } from "lucide-react";
+import { Gift, MoreHorizontal, Power, Tag, Trash2, Undo2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,11 +23,13 @@ import type { AdminAccount } from "@/lib/admin-data";
 import {
   adminCancelSubscription,
   adminDeleteAccount,
+  adminClearCustomPrice,
   adminGrantComp,
   adminRevokeComp,
   adminSetActive,
 } from "./actions";
 import { CompDialog } from "./comp-dialog";
+import { PriceDialog } from "./price-dialog";
 
 /**
  * Ending an account, from the back office.
@@ -40,6 +42,7 @@ import { CompDialog } from "./comp-dialog";
 export function AccountControls({ account }: { account: AdminAccount }) {
   const [confirming, setConfirming] = useState(false);
   const [comping, setComping] = useState(false);
+  const [pricing, setPricing] = useState(false);
   const [typed, setTyped] = useState("");
   const [working, start] = useTransition();
 
@@ -84,6 +87,27 @@ export function AccountControls({ account }: { account: AdminAccount }) {
             {account.deactivated ? "Switch back on" : "Switch off"}
           </DropdownMenuItem>
 
+          <DropdownMenuItem onClick={() => setPricing(true)}>
+            <Tag className="size-4" />
+            {account.customPriceCents === null
+              ? "Set their own price"
+              : `Change their price ($${(account.customPriceCents / 100).toFixed(2)})`}
+          </DropdownMenuItem>
+          {account.customPriceCents !== null && (
+            <DropdownMenuItem
+              onClick={() =>
+                start(async () => {
+                  const r = await adminClearCustomPrice(account.orgId);
+                  if (r.error) toast.error(r.error);
+                  else toast.success(r.message ?? "Done.");
+                })
+              }
+            >
+              <Undo2 className="size-4" />
+              Back to list pricing
+            </DropdownMenuItem>
+          )}
+
           {account.comped ? (
             <DropdownMenuItem
               onClick={() =>
@@ -123,6 +147,14 @@ export function AccountControls({ account }: { account: AdminAccount }) {
         teamName={account.name}
         ownerEmail={account.ownerEmail}
         onGrant={(reason, days) => adminGrantComp(account.orgId, reason, days)}
+      />
+
+      <PriceDialog
+        open={pricing}
+        onOpenChange={setPricing}
+        orgId={account.orgId}
+        teamName={account.name}
+        current={account.customPriceCents}
       />
 
       <Dialog open={confirming} onOpenChange={setConfirming}>
