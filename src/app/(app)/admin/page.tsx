@@ -187,6 +187,7 @@ export default async function AdminPage() {
                         endsAt={a.endsAt}
                         seats={a.seats}
                         compedUntil={a.compedUntil}
+                        trialDaysLeft={a.trialDaysLeft}
                       />
                     </td>
                     <td className="px-3 py-2 text-slate-600">{a.ownerEmail ?? "—"}</td>

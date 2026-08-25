@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
+import { TRIAL_DAYS } from "@/app/(marketing)/pricing/plans";
 
 /**
  * What is actually true about a team's billing, rather than a label.
@@ -11,7 +12,8 @@ import { db } from "@/db";
 export type AccountStatus =
   | "off"
   | "comped"
-  | "free"
+  | "trial"
+  | "trial_ended"
   | "trialing"
   | "active"
   | "past_due"
@@ -27,6 +29,8 @@ export type AdminAccount = {
   deactivated: boolean;
   /** On a free account granted by an administrator. */
   comped: boolean;
+  /** Days remaining in the free trial. Null unless the status is "trial". */
+  trialDaysLeft: number | null;
   /** Negotiated price in cents per seat per month. Null is list pricing. */
   customPriceCents: number | null;
   customPriceReason: string | null;
@@ -117,9 +121,19 @@ export async function getAdminMetrics(): Promise<AdminMetrics> {
  * A pending cancellation outranks the status it is pending on. Paddle
  * keeps a subscription "active" right up to the date, which is correct
  * for access and useless for a column headed Status.
+ *
+ * With no subscription at all the answer comes from the team's own age,
+ * not from Paddle, because the free trial runs from the day they signed up
+ * and needs no card. "Free" used to be returned here and was wrong twice
+ * over: it read as a permanent state when it expires in a fortnight, and
+ * it collided with the genuinely free accounts an administrator grants.
  */
-function statusOf(raw: unknown, change: unknown): AccountStatus {
-  if (!raw) return "free";
+function statusOf(
+  raw: unknown,
+  change: unknown,
+  daysLeft: number
+): AccountStatus {
+  if (!raw) return daysLeft > 0 ? "trial" : "trial_ended";
   if (change === "cancel") return "ending";
   const known: AccountStatus[] = [
     "trialing",
@@ -129,7 +143,7 @@ function statusOf(raw: unknown, change: unknown): AccountStatus {
     "canceled",
   ];
   const value = String(raw) as AccountStatus;
-  return known.includes(value) ? value : "free";
+  return known.includes(value) ? value : "trial_ended";
 }
 
 export async function getAdminAccounts(): Promise<AdminAccount[]> {
@@ -187,13 +201,21 @@ export async function getAdminAccounts(): Promise<AdminAccount[]> {
       Boolean(r.comped_at) &&
       (compedUntil === null || compedUntil.getTime() > Date.now());
 
-    return {
-    orgId: String(r.org_id),
-    status: r.deactivated_at
+    // Whole days, rounded up, so a team on its final afternoon still reads
+    // "1 day left" rather than zero while they can still use the thing.
+    const created = new Date(r.created_at as string);
+    const elapsedDays = (Date.now() - created.getTime()) / 86_400_000;
+    const daysLeft = Math.max(0, Math.ceil(TRIAL_DAYS - elapsedDays));
+    const status: AccountStatus = r.deactivated_at
       ? "off"
       : comped
         ? "comped"
-        : statusOf(r.sub_status, r.sub_change),
+        : statusOf(r.sub_status, r.sub_change, daysLeft);
+
+    return {
+    orgId: String(r.org_id),
+    status,
+    trialDaysLeft: status === "trial" ? daysLeft : null,
     deactivated: Boolean(r.deactivated_at),
     comped,
     compedUntil,
