@@ -3,6 +3,7 @@ import { CreditCard, ShieldCheck } from "lucide-react";
 import { AccountControls } from "./account-controls";
 import { StatusPill } from "./status-pill";
 import { Giveaway } from "./giveaway";
+import { EnvLine } from "./env-line";
 import { Reports } from "./reports";
 import { requireAdmin } from "@/lib/admin";
 import {
@@ -86,6 +87,8 @@ export default async function AdminPage() {
             </p>
           </div>
         </div>
+
+        <EnvLine />
 
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
           <Stat
