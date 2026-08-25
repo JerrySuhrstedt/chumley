@@ -50,13 +50,7 @@ the cheapest item on this list.
 
 The stated core problem. Everything here is small and compounds.
 
-**Built 08-25-2026, awaiting UAT.** One correction to the audit above came out of
-building it: **text and email already logged themselves** on send, through
-`logSentMessage` in the compose sheet. Only Call did not. So the fix was narrower
-and sharper than "make logging one tap": it was "make calling behave like the other
-two already do".
-
-### S1-1 · Log the interaction on tap `IN UAT` · S
+### S1-1 · Log the interaction on tap `PARTIAL → DONE` · S
 Tapping Call, Text or Email writes the activity immediately with its timestamp, rather
 than pre-filling a form. The row appears in the feed with an **Undo** for a few seconds,
 which is the honest answer to "what if they misdialled" and is cheaper than a confirm
@@ -65,12 +59,12 @@ step. Turns three taps into one.
 *Risk:* a rep browsing a lead and tapping a number to read it now creates a log line.
 Undo covers it; if it grates in practice, gate on the dialer actually opening.
 
-### S1-2 · The wrap-up appears without being asked for `IN UAT` · S
+### S1-2 · The wrap-up appears without being asked for `PARTIAL → DONE` · S
 Once S1-1 lands, the note box opens by itself against the row just written, one line,
 focused, dismissible by tapping away. Typing into it updates that activity rather than
 creating a second one. Falls almost entirely out of S1-1.
 
-### S1-3 · Follow-up presets `IN UAT` · S
+### S1-3 · Follow-up presets `PARTIAL → DONE` · S
 Replace the bare date input with **Tomorrow · In 3 days · Next week · In 2 weeks**, and
 keep the date picker behind a "pick a date" link for the rest. `setNextAction` already
 takes a date, so this is presentation only.
