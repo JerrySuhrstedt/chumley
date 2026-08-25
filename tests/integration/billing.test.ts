@@ -85,3 +85,31 @@ suite("one live subscription per team", () => {
     });
   });
 });
+
+suite("a lapsed plan offers no seats", () => {
+  it("reports zero seats left once the subscription is not active", async () => {
+    await withOrg("lapsed-seats", async (orgId) => {
+      // Three seats bought, one person in the team, then cancelled. The
+      // dead row still says three; the answer must still be none.
+      await sql!`INSERT INTO subscriptions (id, org_id, customer_id, status, price_id, quantity)
+                 VALUES ('sub_ZZZ_LAPSED', ${orgId}, 'ctm_z', 'canceled', 'pri_z', 3)`;
+      const { getBillingState } = await import("@/lib/paddle/access");
+      const s = await getBillingState(orgId);
+      expect(s.readOnly).toBe(true);
+      expect(s.seatsLeft).toBe(0);
+      // The number bought is still worth showing, so it is kept.
+      expect(s.seats).toBe(3);
+    });
+  });
+
+  it("still reports free seats while the plan is active", async () => {
+    await withOrg("active-seats", async (orgId) => {
+      await sql!`INSERT INTO subscriptions (id, org_id, customer_id, status, price_id, quantity)
+                 VALUES ('sub_ZZZ_ACTIVE', ${orgId}, 'ctm_z', 'active', 'pri_z', 3)`;
+      const { getBillingState } = await import("@/lib/paddle/access");
+      const s = await getBillingState(orgId);
+      expect(s.readOnly).toBe(false);
+      expect(s.seatsLeft).toBe(3);
+    });
+  });
+});

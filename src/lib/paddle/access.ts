@@ -181,7 +181,11 @@ export async function getBillingState(orgId: string): Promise<BillingState> {
     active,
     seats: sub.quantity,
     seatsUsed,
-    seatsLeft: Math.max(0, sub.quantity - seatsUsed),
+    // A cancelled plan has no free seats to offer, whatever quantity the
+    // dead row still carries. The invite path never reached this, because
+    // seatCheck refuses on readOnly first, but the number is also on screen
+    // and told a lapsed team it had room for two more people.
+    seatsLeft: active ? Math.max(0, sub.quantity - seatsUsed) : 0,
     // Lapsed teams keep their data and can still read it. Holding somebody's
     // own contacts hostage is not a business model.
     readOnly: !active,
