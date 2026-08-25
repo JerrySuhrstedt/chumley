@@ -77,7 +77,12 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/f/") ||
     pathname.startsWith("/auth/") ||
     pathname.startsWith("/join/") ||
-    pathname.startsWith("/api/webhooks/");
+    pathname.startsWith("/api/webhooks/") ||
+    // A page that has already crashed cannot prove who it is, so the
+    // endpoint it reports to has to answer without a session. Behind the
+    // gate it would 307 to the login screen and the report would be lost,
+    // which is the exact failure the reporting exists to catch.
+    pathname === "/api/client-error";
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
