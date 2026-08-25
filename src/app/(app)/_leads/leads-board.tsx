@@ -38,6 +38,7 @@ import { LeadCardView } from "./lead-card";
 import { LeadColumn } from "./lead-column";
 import { LeadDetailDialog } from "./lead-detail-dialog";
 import { QuickAddLeadDialog } from "./quick-add-lead-dialog";
+import { CoachMarks } from "../_onboarding/coach-marks";
 import { SampleBanner } from "./sample-banner";
 import { Scorecard } from "./scorecard";
 import { nextStage, prevStage } from "./stages";
@@ -397,7 +398,10 @@ export function LeadsBoard({
               cards, which is the part of the screen a rep actually
               works in. */}
           <div className="flex items-center gap-2 md:contents">
-            <div className="w-1/3 shrink-0 md:order-last md:ml-auto md:w-auto">
+            <div
+              data-coach="add-lead"
+              className="w-1/3 shrink-0 md:order-last md:ml-auto md:w-auto"
+            >
               <QuickAddLeadDialog
                 highlight={!localLeads.some((l) => !l.isSample)}
               />
@@ -418,6 +422,17 @@ export function LeadsBoard({
         {localLeads.some((l) => l.isSample) && (
           <SampleBanner count={localLeads.filter((l) => l.isSample).length} />
         )}
+
+        {/* A board still carrying our seeded cards and nothing of their own
+            is a first visit, and it can never be true again once they add
+            anything. That, rather than a date or a login count, is what
+            decides whether the tour runs. */}
+        <CoachMarks
+          enabled={
+            localLeads.some((l) => l.isSample) &&
+            !localLeads.some((l) => !l.isSample)
+          }
+        />
 
         <BoardFilters
           temp={temp}
