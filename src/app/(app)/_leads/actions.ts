@@ -464,26 +464,6 @@ export async function setActivityNote(
   return { error: null };
 }
 
-export async function updateActivityNote(
-  activityId: string,
-  _prevState: FormState,
-  formData: FormData,
-): Promise<FormState> {
-  const body = toNullable(formData.get("body")) ?? "";
-  const { current, error: refused } = await getWritableOrg();
-  if (!current) return { error: refused };
-  const { org } = current;
-
-  await db
-    .update(activities)
-    .set({ body })
-    .where(and(eq(activities.id, activityId), eq(activities.orgId, org.id)));
-
-  revalidatePath("/pipeline");
-  revalidatePath("/contacts");
-  return { error: null };
-}
-
 export async function deleteActivity(activityId: string) {
   const { org } = await requireOrg();
 
