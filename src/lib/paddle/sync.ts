@@ -1,6 +1,7 @@
 import { eq, sql as raw } from "drizzle-orm";
 import type { EventEntity } from "@paddle/paddle-node-sdk";
 import { db } from "@/db";
+import { alertAsync } from "@/lib/alert";
 import { organizations, subscriptions } from "@/db/schema";
 import { priceFor } from "@/lib/paddle/catalog";
 import { paddle } from "@/lib/paddle/server";
@@ -156,6 +157,26 @@ export async function syncPaddleEvent(event: EventEntity): Promise<string> {
             occurredAt: event.occurredAt,
           })
         );
+        // Its own key, because this one is not "something broke", it is
+        // "somebody paid and cannot use what they bought", and it should
+        // not be suppressed by an unrelated webhook failure holding the
+        // shared throttle.
+        alertAsync(
+          "paddle-subscription-no-team",
+          "Chumley: somebody paid and has no access",
+          [
+            `A ${event.eventType} arrived that cannot be matched to a team.`,
+            "",
+            `Subscription: ${sub.id}`,
+            `Customer:     ${sub.customerId}`,
+            `Occurred:     ${event.occurredAt}`,
+            "",
+            "They are being billed and have no access. Find the team in the",
+            "back office, set its Paddle customer id to the one above, then",
+            "replay the event from Notifications in the Paddle dashboard.",
+          ].join("\n")
+        );
+
         throw new Error(
           `No team for subscription ${sub.id} (customer ${sub.customerId}). Nothing was recorded.`
         );

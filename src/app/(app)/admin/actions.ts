@@ -5,6 +5,7 @@ import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { organizations, subscriptions } from "@/db/schema";
 import { requireAdmin } from "@/lib/admin";
+import { alert } from "@/lib/alert";
 import { getCurrentOrg, getCurrentUser } from "@/lib/org";
 import { paddle, isBillingConfigured } from "@/lib/paddle/server";
 import {
@@ -601,5 +602,53 @@ export async function adminClearCustomPrice(
   return {
     error: null,
     message: `"${org.name}" is back on list pricing. Anything they are already subscribed to is unchanged.`,
+  };
+}
+
+/* -------------------------------------------------------------- alerting */
+
+/**
+ * Prove the alert path works, before it is needed.
+ *
+ * Alerting that has never been exercised is a guess. The failure it guards
+ * against happens rarely and at bad times, which is exactly when nobody
+ * wants to be discovering that the API key was wrong or the sender domain
+ * was never verified.
+ *
+ * Bypasses the throttle deliberately, because a test that silently does
+ * nothing because you pressed it twice teaches the wrong lesson.
+ */
+export async function adminSendTestAlert(): Promise<AdminActionResult> {
+  await requireAdmin();
+
+  if (!process.env.RESEND_API_KEY) {
+    return {
+      error:
+        "RESEND_API_KEY is not set on this deployment, so nothing can be sent.",
+    };
+  }
+
+  const admin = await getCurrentUser();
+
+  await db.execute(
+    sql`DELETE FROM alert_log WHERE key = 'manual-test'`
+  );
+
+  await alert(
+    "manual-test",
+    "Chumley: test alert",
+    [
+      "This is a test, sent from the back office.",
+      "",
+      `Requested by: ${admin?.email ?? "unknown"}`,
+      "",
+      "If this arrived, alerts about failing Paddle webhooks and about",
+      "payments that cannot be matched to a team will arrive the same way.",
+    ].join("\n")
+  );
+
+  return {
+    error: null,
+    message: "Sent. Check info@sumolab.co, including the spam folder.",
   };
 }

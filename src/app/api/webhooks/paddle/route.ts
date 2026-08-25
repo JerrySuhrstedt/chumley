@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { paddle } from "@/lib/paddle/server";
 import { checkPaddleIp } from "@/lib/paddle/ips";
+import { alertAsync } from "@/lib/alert";
 import { syncPaddleEvent } from "@/lib/paddle/sync";
 
 /**
@@ -62,7 +63,25 @@ export async function POST(request: Request) {
   } catch (error) {
     // A genuine failure on our side. Returning 500 asks Paddle to retry,
     // which is what we want, because the event is real and unrecorded.
+    const detail = error instanceof Error ? error.message : String(error);
     console.error("paddle webhook failed", event.eventType, error);
+
+    // Not awaited. Paddle is timing this request, and the point of the 500
+    // is to be quick about asking for a retry.
+    alertAsync(
+      "paddle-webhook-failed",
+      "Chumley: a Paddle webhook is failing",
+      [
+        `Event: ${event.eventType}`,
+        `Occurred: ${event.occurredAt}`,
+        `Error: ${detail}`,
+        "",
+        "Paddle will retry, and the event stays replayable from",
+        "Notifications in the Paddle dashboard. If retries run out the",
+        "event is lost and whatever it was recording never happened here.",
+      ].join("\n")
+    );
+
     return NextResponse.json({ error: "Sync failed" }, { status: 500 });
   }
 }

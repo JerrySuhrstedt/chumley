@@ -497,3 +497,22 @@ export type Subscription = typeof subscriptions.$inferSelect;
 export type NewSubscription = typeof subscriptions.$inferInsert;
 export type Activity = typeof activities.$inferSelect;
 export type NewActivity = typeof activities.$inferInsert;
+
+/**
+ * When each kind of alert was last emailed.
+ *
+ * Exists to stop the alerting becoming the incident. Paddle retries a
+ * failing webhook, and without a throttle a single broken deploy would
+ * send an email per delivery per event until somebody's inbox gave up,
+ * which is the same as no alerting at all except louder.
+ *
+ * Keyed on what went wrong rather than on the individual failure, so
+ * "webhook sync is failing" is one message however many events hit it.
+ */
+export const alertLog = pgTable("alert_log", {
+  /** A stable name for the kind of problem, not the instance of it. */
+  key: text("key").primaryKey(),
+  lastSentAt: timestamp("last_sent_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});

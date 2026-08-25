@@ -1,4 +1,5 @@
-import { Database, CreditCard } from "lucide-react";
+import { Database, CreditCard, Mail } from "lucide-react";
+import { TestAlertButton } from "./test-alert";
 
 /**
  * What this deployment is actually connected to.
@@ -88,8 +89,10 @@ export function EnvLine() {
   const key = process.env.PADDLE_API_KEY ?? "";
   const keyLive = key.startsWith("pdl_live_");
 
+  const alertsOn = Boolean(process.env.RESEND_API_KEY);
+
   return (
-    <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-3 sm:grid-cols-2">
+    <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-3 sm:grid-cols-3">
       <Line
         icon={<Database className="size-4" />}
         label="Database"
@@ -110,6 +113,20 @@ export function EnvLine() {
         }
         ok={paddleLive === keyLive}
       />
+      <div className="flex items-start justify-between gap-2">
+        <Line
+          icon={<Mail className="size-4" />}
+          label="Alerts"
+          value={alertsOn ? "on" : "off"}
+          detail={
+            alertsOn
+              ? "Failures email info@sumolab.co"
+              : "RESEND_API_KEY unset. Failures only reach the logs."
+          }
+          ok={alertsOn}
+        />
+        {alertsOn && <TestAlertButton />}
+      </div>
     </div>
   );
 }
