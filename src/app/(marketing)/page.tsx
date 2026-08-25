@@ -10,7 +10,7 @@ import { TRIAL_DAYS } from "./pricing/plans";
 export const metadata: Metadata = {
   title: "Chumley | Finally, a sales CRM you'll actually want to use",
   description:
-    "Stupid simple sales CRM for independent sales reps and small sales teams. Nothing to set up, nothing to learn.",
+    "Ridiculously simple sales CRM for independent sales reps and small sales teams. Nothing to set up, nothing to learn.",
 };
 
 const HERO_POINTS = [
@@ -91,7 +91,7 @@ export default function HomePage() {
                 is the question every other line was making the reader
                 answer for themselves. */}
             <p className="mt-6 max-w-[52ch] text-[1.35rem] leading-snug font-bold text-[var(--ink)] sm:text-2xl">
-              Stupid simple sales CRM for independent sales reps and small
+              Ridiculously simple sales CRM for independent sales reps and small
               sales teams.
             </p>
 
