@@ -27,6 +27,7 @@ import { NextActionSection } from "./next-action-section";
 import { CONTACT_STAGE } from "./stages";
 import { useStages } from "./stages-context";
 import { TapToContact } from "./tap-to-contact";
+import { CallWrapUp } from "./call-wrap-up";
 
 type LeadWithActivities = Lead & { activities: Activity[] };
 
@@ -56,7 +57,10 @@ export function LeadDetailDialog({
   const allStages = useStages();
   const [editing, setEditing] = useState(false);
   const [logType, setLogType] = useState<ActivityType>(initialLogType);
+  /** The call just dialled from here, waiting on its outcome. */
+  const [wrapUpId, setWrapUpId] = useState<string | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- follow the channel the caller opened with
@@ -64,10 +68,21 @@ export function LeadDetailDialog({
   }, [initialLogType]);
 
   // Reaching out scrolls the log panel into view so the note is the obvious
-  // next step once the dialer or mail client hands control back.
+  // next step once the dialer or mail client hands control back. Calling no
+  // longer needs that panel at all, because the row is already written by
+  // the time the dialer opens, so it scrolls to the wrap-up instead.
   function handleContact(type: "call" | "text" | "email") {
+    if (type === "call") return;
     setLogType(type);
     logRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function handleCallLogged(activityId: string) {
+    setWrapUpId(activityId);
+    // Deferred a frame so the strip exists before we scroll to it.
+    requestAnimationFrame(() =>
+      wrapRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+    );
   }
 
   const activities = [...lead.activities].sort(
@@ -151,7 +166,18 @@ export function LeadDetailDialog({
                     templates={templates}
                     size="default"
                     onContact={handleContact}
+                    onCallLogged={handleCallLogged}
                   />
+
+                  {wrapUpId && (
+                    <div ref={wrapRef} className="mt-3">
+                      <CallWrapUp
+                        key={wrapUpId}
+                        activityId={wrapUpId}
+                        onDone={() => setWrapUpId(null)}
+                      />
+                    </div>
+                  )}
                 </section>
 
                 <section
