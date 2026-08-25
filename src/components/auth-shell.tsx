@@ -14,25 +14,40 @@ export const authButton =
 export const authLink =
   "font-semibold text-[var(--brand)] hover:underline";
 
-/** The real mark, linked back to the marketing page. */
-export function Wordmark() {
+/**
+ * The real mark, linked back to the marketing page.
+ *
+ * Two sizes. Sign-in gets the larger one because it is the front door and
+ * the only one of these screens a stranger arrives at cold; the invite and
+ * onboarding screens are reached mid-flow by somebody who already knows
+ * whose product this is, and do not need re-introducing.
+ *
+ * 2.925rem is h-9 (36px) plus exactly 30%. An arbitrary value rather than
+ * h-11 or h-12, because neither of those is actually 30%.
+ */
+export function Wordmark({ size = "default" }: { size?: "default" | "large" }) {
   return (
     <Link href="/" aria-label="Chumley home" className="inline-block">
-      {/* 2.925rem is h-9 (36px) plus 30%. An arbitrary value rather than
-          h-11 or h-12, because neither is actually 30% and the lockup is
-          the first thing on the page. */}
-      <ChumleyLogo className="h-[2.925rem] w-auto" />
+      <ChumleyLogo
+        className={`w-auto ${size === "large" ? "h-[2.925rem]" : "h-9"}`}
+      />
     </Link>
   );
 }
 
-export function AuthShell({ children }: { children: ReactNode }) {
+export function AuthShell({
+  children,
+  logo = "default",
+}: {
+  children: ReactNode;
+  logo?: "default" | "large";
+}) {
   return (
     <div className="flex min-h-screen flex-col bg-white">
       <main className="flex flex-1 flex-col items-center px-4 pt-14 md:pt-20">
         <div className="w-full max-w-sm">
           <div className="mb-8 flex justify-center">
-            <Wordmark />
+            <Wordmark size={logo} />
           </div>
           {children}
         </div>

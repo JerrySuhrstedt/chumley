@@ -7,7 +7,7 @@ export default async function LoginPage({
   const { next, error, mode } = await searchParams;
 
   return (
-    <AuthShell>
+    <AuthShell logo="large">
       <LoginForm
         next={typeof next === "string" ? next : undefined}
         initialMode={mode === "signup" ? "signup" : undefined}
