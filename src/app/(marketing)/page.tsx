@@ -79,20 +79,21 @@ export default function HomePage() {
               {TRIAL_DAYS} days free · No credit card
             </span>
 
-            {/* Breaks are forced from sm up. Below that the line "a sales CRM
-                you'll" is wider than a phone, so mobile wraps naturally. */}
-            <h1 className="mt-6 text-[2.6rem] leading-[1.04] font-extrabold tracking-tight text-[var(--ink)] sm:text-[3.1rem] xl:text-[4rem]">
-              Finally, <br className="hidden sm:inline" />a sales&nbsp;CRM
-              you&apos;ll <br className="hidden sm:inline" />
-              actually want to use.
+            {/* Two lines, always, with the category on its own. The break is
+                forced at every width rather than from sm up, because the
+                point is the shape of the lockup and not just fitting: the
+                claim on top, what it is underneath. Sizes are the previous
+                2.6/3.1/4rem plus 30%. */}
+            <h1 className="mt-6 text-[3.38rem] leading-[1.02] font-extrabold tracking-tight text-[var(--ink)] sm:text-[4.03rem] xl:text-[5.2rem]">
+              Ridiculously simple
+              <br />
+              sales&nbsp;CRM.
             </h1>
 
-            {/* One subhead, not three. It names who this is for, which
-                is the question every other line was making the reader
-                answer for themselves. */}
+            {/* Names who it is for, which is the question the headline
+                leaves open. */}
             <p className="mt-6 max-w-[52ch] text-[1.35rem] leading-snug font-bold text-[var(--ink)] sm:text-2xl">
-              Ridiculously simple sales CRM for independent sales reps and small
-              sales teams.
+              Sales CRM for independent sales reps and small sales teams.
             </p>
 
             {/* Its own line with air above it, rather than a break inside
