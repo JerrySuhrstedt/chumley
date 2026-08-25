@@ -393,6 +393,17 @@ export const subscriptions = pgTable(
     scheduledChangeAction: text("scheduled_change_action"),
     currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
     trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
+    /**
+     * When Paddle says the event happened, not when we received it.
+     *
+     * This is what makes the webhook safe against out-of-order delivery.
+     * Paddle retries failed deliveries, so an older event can land after a
+     * newer one: a cancellation arrives and applies, then a retry of the
+     * earlier "updated" succeeds and writes active back over it, and a
+     * cancelled customer keeps access forever. Receipt time cannot detect
+     * that, because both writes are recent. This can.
+     */
+    occurredAt: timestamp("occurred_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
