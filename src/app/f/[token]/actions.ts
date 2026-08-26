@@ -6,6 +6,7 @@ import { db } from "@/db";
 import { defaultStageKey } from "@/lib/stages";
 import { activities, leads, organizations } from "@/db/schema";
 import { normalizePhone } from "@/lib/phone";
+import { overIngestCap } from "@/lib/ingest-guard";
 
 export type FormState = { error: string | null; done: boolean };
 
@@ -46,6 +47,15 @@ export async function submitPublicForm(
     where: eq(organizations.webhookToken, token),
   });
   if (!org) return { error: "This form is no longer active.", done: false };
+
+  // A flood is refused politely; the message names no cap, because the
+  // number would just become the script's target.
+  if (await overIngestCap(org.id)) {
+    return {
+      error: "This form is busy right now. Please try again in a while.",
+      done: false,
+    };
+  }
 
   const firstName = text(formData, "firstName");
   const lastName = text(formData, "lastName");

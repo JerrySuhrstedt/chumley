@@ -1,3 +1,4 @@
+import "server-only";
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { TRIAL_DAYS } from "@/app/(marketing)/pricing/plans";

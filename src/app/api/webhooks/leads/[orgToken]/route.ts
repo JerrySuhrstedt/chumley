@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { defaultStageKey } from "@/lib/stages";
 import { activities, leads, organizations } from "@/db/schema";
 import { normalizePhone } from "@/lib/phone";
+import { overIngestCap } from "@/lib/ingest-guard";
 
 function toNullable(value: unknown) {
   if (typeof value !== "string") return null;
@@ -38,6 +39,14 @@ export async function POST(
 
   if (!org) {
     return NextResponse.json({ error: "Unknown webhook URL" }, { status: 404 });
+  }
+
+  if (await overIngestCap(org.id)) {
+    // 429 tells a well-behaved integration to back off and retry.
+    return NextResponse.json(
+      { error: "Rate limit exceeded, retry later" },
+      { status: 429 }
+    );
   }
 
   let body: Record<string, unknown>;

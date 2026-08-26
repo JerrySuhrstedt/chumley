@@ -1,4 +1,4 @@
-import { pgTable, text, uuid, boolean, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, text, uuid, boolean, timestamp, index, integer, bigint } from "drizzle-orm/pg-core";
 
 /**
  * Better Auth's tables, defined by hand so the ids stay uuid.
@@ -67,4 +67,17 @@ export const verifications = pgTable("verifications", {
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * Better Auth's rate limit counters. In the database rather than the
+ * default in-process memory, because on serverless every instance has
+ * its own memory and a distributed brute force never meets the counter
+ * it already incremented.
+ */
+export const rateLimits = pgTable("rate_limits", {
+  id: uuid("id").primaryKey(),
+  key: text("key").notNull(),
+  count: integer("count").notNull(),
+  lastRequest: bigint("last_request", { mode: "number" }).notNull(),
 });

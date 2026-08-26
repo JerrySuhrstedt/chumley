@@ -1,10 +1,11 @@
+import "server-only";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { magicLink } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
 import { randomUUID } from "crypto";
 import { db } from "@/db";
-import { users, sessions, accounts, verifications } from "@/db/auth-schema";
+import { users, sessions, accounts, verifications, rateLimits } from "@/db/auth-schema";
 
 /**
  * Auth, owned by the app instead of rented from a vendor.
@@ -25,6 +26,14 @@ import { users, sessions, accounts, verifications } from "@/db/auth-schema";
  */
 
 const FROM = process.env.ALERT_FROM ?? "Chumley <onboarding@resend.dev>";
+
+// Fail closed. Without a secret Better Auth falls back to a published
+// development value, and sessions signed with a known key are forgeable
+// by anyone who reads the docs. A down site beats an open one.
+const secret = process.env.BETTER_AUTH_SECRET;
+if (!secret && process.env.NODE_ENV === "production") {
+  throw new Error("BETTER_AUTH_SECRET is not set");
+}
 
 async function sendMagicLinkEmail(email: string, url: string) {
   const res = await fetch("https://api.resend.com/emails", {
@@ -54,7 +63,7 @@ async function sendMagicLinkEmail(email: string, url: string) {
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
-  secret: process.env.BETTER_AUTH_SECRET,
+  secret,
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {
@@ -62,8 +71,15 @@ export const auth = betterAuth({
       session: sessions,
       account: accounts,
       verification: verifications,
+      rateLimit: rateLimits,
     },
   }),
+  rateLimit: {
+    enabled: true,
+    // Counters live in Postgres so every serverless instance sees the
+    // same tally; in-process memory resets with each instance.
+    storage: "database",
+  },
   advanced: {
     database: {
       // uuid columns, and ids that match the ones Supabase minted.
