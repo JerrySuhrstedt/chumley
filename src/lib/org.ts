@@ -1,15 +1,24 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { leads, memberships, organizations, templates } from "@/db/schema";
+import { cache } from "react";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 
-export async function getCurrentUser() {
+/**
+ * Wrapped in React's cache so one request resolves the session once.
+ *
+ * The layout asks who is signed in, then the page asks again, and each
+ * ask was a full session lookup. cache() memoizes per request: same
+ * render pass, same answer, one query. A new request always re-asks,
+ * so nothing here outlives the moment it was true.
+ */
+export const getCurrentUser = cache(async () => {
   const session = await auth.api.getSession({ headers: await headers() });
   return session?.user ?? null;
-}
+});
 
-export async function getCurrentOrg() {
+export const getCurrentOrg = cache(async () => {
   const user = await getCurrentUser();
   if (!user) return null;
 
@@ -40,7 +49,7 @@ export async function getCurrentOrg() {
     avatarUrl: membership.avatarUrl ?? providerPhoto,
     providerPhoto,
   };
-}
+});
 
 /**
  * Starter messages. The tap-to-text and tap-to-email buttons pre-fill from

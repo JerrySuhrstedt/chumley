@@ -86,6 +86,19 @@ export const auth = betterAuth({
       generateId: () => randomUUID(),
     },
   },
+  session: {
+    /**
+     * A signed five-minute copy of the session rides in the cookie, so
+     * navigation inside that window skips the database entirely. Signing
+     * out clears the cookie, so revocation is still immediate for the
+     * person holding it. Org-level gates (deactivated teams, roles) are
+     * separate queries and unaffected by this cache.
+     */
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60,
+    },
+  },
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
