@@ -182,6 +182,25 @@ export async function syncPaddleEvent(event: EventEntity): Promise<string> {
         );
       }
 
+      // The opposite failure: the id resolves, the team is gone. An
+      // administrator deleting an account cancels its subscription at
+      // period end and removes the rows, but Paddle keeps narrating the
+      // subscription's remaining life, and every episode used to hit the
+      // organizations foreign key, 500, and retry for days. A deleted
+      // tenant's billing epilogue is not an incident; acknowledge and drop.
+      const [orgRow] = await db
+        .select({ id: organizations.id })
+        .from(organizations)
+        .where(eq(organizations.id, orgId))
+        .limit(1);
+      if (!orgRow) {
+        console.log(
+          "paddle webhook: event for deleted team ignored",
+          JSON.stringify({ event: event.eventType, subscriptionId: sub.id, orgId })
+        );
+        return `team ${orgId} was deleted; ${sub.id} not mirrored`;
+      }
+
       const item = sub.items?.[0];
       const values = {
         id: sub.id,
