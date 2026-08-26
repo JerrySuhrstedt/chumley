@@ -516,3 +516,57 @@ export const alertLog = pgTable("alert_log", {
     .notNull()
     .defaultNow(),
 });
+
+/**
+ * Promo codes, created in the back office and given a name worth
+ * marketing.
+ *
+ * Two families with different systems of record. Money codes (percent
+ * or flat amount off) are mirrors of a real Paddle Discount, created via
+ * the API when the code is created; Paddle applies them at checkout and
+ * owns every cent of the math. Free-time codes are ours alone: they ride
+ * the comp mechanism, and never touch billing.
+ */
+export const promoKindEnum = pgEnum("promo_kind", [
+  "percent",
+  "amount",
+  "free_days",
+]);
+
+export const promoCodes = pgTable("promo_codes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  /** What people type. Uppercase, unique, the thing on the flyer. */
+  code: text("code").notNull().unique(),
+  /** The campaign name, for the table rather than the customer. */
+  name: text("name").notNull(),
+  kind: promoKindEnum("kind").notNull(),
+  /** Percent 1-100, cents for amount, days for free_days. */
+  value: integer("value").notNull(),
+  /** Set for money codes; the Paddle Discount this mirrors. */
+  paddleDiscountId: text("paddle_discount_id"),
+  /** Null is unlimited. */
+  maxRedemptions: integer("max_redemptions"),
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+/** One row per team per code, which is also the double-redeem guard. */
+export const promoRedemptions = pgTable(
+  "promo_redemptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    codeId: uuid("code_id")
+      .notNull()
+      .references(() => promoCodes.id, { onDelete: "cascade" }),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    redeemedAt: timestamp("redeemed_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [uniqueIndex("promo_once_per_org").on(t.codeId, t.orgId)]
+);

@@ -5,11 +5,13 @@ import { StatusPill } from "./status-pill";
 import { Giveaway } from "./giveaway";
 import { EnvLine } from "./env-line";
 import { Reports } from "./reports";
+import { PromoCodes } from "./promo-codes";
 import { Sparkline, Delta, WeeklyGrowth, Funnel } from "./charts";
 import { requireAdmin } from "@/lib/admin";
 import {
   getAdminAccounts,
   getAdminMetrics,
+  getAdminPromoCodes,
   getAdminReports,
   getAdminTrends,
   getAdminUsers,
@@ -84,13 +86,15 @@ export default async function AdminPage() {
   // Gate first, before a single row is read.
   await requireAdmin();
 
-  const [metrics, accounts, users, reports, trends] = await Promise.all([
-    getAdminMetrics(),
-    getAdminAccounts(),
-    getAdminUsers(),
-    getAdminReports(),
-    getAdminTrends(),
-  ]);
+  const [metrics, accounts, users, reports, trends, promoCodes] =
+    await Promise.all([
+      getAdminMetrics(),
+      getAdminAccounts(),
+      getAdminUsers(),
+      getAdminReports(),
+      getAdminTrends(),
+      getAdminPromoCodes(),
+    ]);
 
   const activation = metrics.teams
     ? Math.round((metrics.activatedTeams / metrics.teams) * 100)
@@ -226,6 +230,8 @@ export default async function AdminPage() {
             ]}
           />
         </div>
+
+        <PromoCodes codes={promoCodes} />
 
         <section>
           <h2 className="mb-2 text-sm font-semibold text-slate-900">

@@ -7,6 +7,7 @@ import { Checkout } from "./checkout";
 import { TestModeNotice } from "@/components/test-mode-notice";
 import { Seats } from "./seats";
 import { CancelPlan } from "./cancel-plan";
+import { RedeemCode } from "./redeem-code";
 
 const LABEL: Record<string, string> = {
   active: "Active",
@@ -195,6 +196,10 @@ export default async function BillingSettingsPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Free-time promo codes apply before there is a subscription;
+            once one exists, discounts belong to the checkout instead. */}
+        {!sub && <RedeemCode />}
 
         {sub && current.role === "owner" && (
           <Seats paidFor={sub.quantity} membersNow={billing.seatsUsed} />

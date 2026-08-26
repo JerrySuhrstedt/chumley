@@ -402,3 +402,42 @@ export async function getAdminTrends(): Promise<AdminTrends> {
     teams7dAgo: Number(s.teams_7d_ago),
   };
 }
+
+export type AdminPromoCode = {
+  id: string;
+  code: string;
+  name: string;
+  kind: "percent" | "amount" | "free_days";
+  value: number;
+  maxRedemptions: number | null;
+  redemptions: number;
+  expiresAt: Date | null;
+  archived: boolean;
+  createdAt: Date;
+};
+
+/** Every promo code, live first, with how often each has been used. */
+export async function getAdminPromoCodes(): Promise<AdminPromoCode[]> {
+  const rows = (await db.execute(sql`
+    SELECT p.id, p.code, p.name, p.kind, p.value, p.max_redemptions,
+           p.expires_at, p.archived_at, p.created_at,
+           (SELECT count(*) FROM promo_redemptions r
+             WHERE r.code_id = p.id)::int AS redemptions
+    FROM promo_codes p
+    ORDER BY (p.archived_at IS NULL) DESC, p.created_at DESC
+  `)) as unknown as Record<string, unknown>[];
+
+  return rows.map((r) => ({
+    id: String(r.id),
+    code: String(r.code),
+    name: String(r.name),
+    kind: r.kind as AdminPromoCode["kind"],
+    value: Number(r.value),
+    maxRedemptions:
+      r.max_redemptions === null ? null : Number(r.max_redemptions),
+    redemptions: Number(r.redemptions),
+    expiresAt: r.expires_at ? new Date(String(r.expires_at)) : null,
+    archived: Boolean(r.archived_at),
+    createdAt: new Date(String(r.created_at)),
+  }));
+}

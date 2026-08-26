@@ -5,6 +5,7 @@ import { desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { subscriptions } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
+import { redeemFreeTimeCode, type RedeemResult } from "@/lib/promo";
 import { paddle } from "@/lib/paddle/server";
 import { priceFor } from "@/lib/paddle/catalog";
 import { countMembers } from "@/lib/paddle/access";
@@ -283,4 +284,28 @@ export async function subscriptionLanded(): Promise<{
     return { ready: false, seats: null, status: sub?.status ?? null };
   }
   return { ready: true, seats: sub.quantity, status: sub.status };
+}
+
+
+/**
+ * The "Have a code?" box on the billing page. Free-time codes redeem
+ * here; a money code gets pointed at the checkout instead.
+ */
+export async function redeemPromoCode(
+  _prev: RedeemResult,
+  formData: FormData
+): Promise<RedeemResult> {
+  const current = await getCurrentOrg();
+  if (!current) return { error: "You need to be signed in." };
+
+  const result = await redeemFreeTimeCode(
+    current.org.id,
+    String(formData.get("code") ?? "")
+  );
+  if (!result.error) {
+    const { revalidatePath } = await import("next/cache");
+    revalidatePath("/settings/billing");
+    revalidatePath("/", "layout");
+  }
+  return result;
 }
