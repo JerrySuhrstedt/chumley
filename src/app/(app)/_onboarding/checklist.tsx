@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { Check, ChevronDown, PartyPopper, X } from "lucide-react";
 import type { OnboardingState } from "@/lib/onboarding";
+import { usePathname, useRouter } from "next/navigation";
 import { NameStep } from "./name-step";
+import { REPLAY_EVENT, REPLAY_KEY } from "./coach-marks";
 
 const HIDDEN = "chumley:onboarding-hidden";
 const NAME_ASKED = "chumley:name-asked";
@@ -31,6 +33,8 @@ export function OnboardingChecklist({
   firstName: string;
   lastName: string;
 }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [hidden, setHidden] = useState(true);
   const [naming, setNaming] = useState(false);
@@ -140,6 +144,22 @@ export function OnboardingChecklist({
                 );
               })}
             </ul>
+
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                if (pathname === "/pipeline") {
+                  window.dispatchEvent(new Event(REPLAY_EVENT));
+                } else {
+                  sessionStorage.setItem(REPLAY_KEY, "1");
+                  router.push("/pipeline");
+                }
+              }}
+              className="w-full border-t border-slate-100 px-4 py-2.5 text-left text-xs font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+            >
+              Show me around again
+            </button>
           </div>
         )}
 

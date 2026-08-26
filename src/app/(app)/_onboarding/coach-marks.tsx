@@ -24,6 +24,15 @@ import { createPortal } from "react-dom";
 
 const SEEN_KEY = "chumley.coach.v1";
 
+/**
+ * Set by the checklist's "Show me around again", read once on mount.
+ * sessionStorage because a replay request should survive the navigation
+ * to the board and nothing longer than that.
+ */
+export const REPLAY_KEY = "chumley.coach.replay";
+/** Fired instead when the board is already the current page. */
+export const REPLAY_EVENT = "chumley:coach-replay";
+
 type Step = {
   target: string;
   title: string;
@@ -116,6 +125,22 @@ export function placeBubble(
   return { left, top, width, below, arrowLeft };
 }
 
+/**
+ * The first step at or after `from` whose target is on the page.
+ *
+ * A replay can run on a board that has changed since the first visit:
+ * clear the examples and there is no sample lead left to point at. A tour
+ * that opens on a target that is not there renders nothing and reads as
+ * broken, so missing targets are skipped rather than waited for.
+ */
+function nextAvailableStep(from: number): number {
+  for (let i = from; i < STEPS.length; i++) {
+    const node = document.querySelector(`[data-coach="${STEPS[i].target}"]`);
+    if (node) return i;
+  }
+  return -1;
+}
+
 export function CoachMarks({ enabled }: { enabled: boolean }) {
   const [step, setStep] = useState(0);
   const [box, setBox] = useState<Box | null>(null);
@@ -133,11 +158,37 @@ export function CoachMarks({ enabled }: { enabled: boolean }) {
    * again, and once the run has finished the flag below stops it.
    */
   useEffect(() => {
-    if (!enabled) return;
-    if (localStorage.getItem(SEEN_KEY) === "1") return;
-    const t = setTimeout(() => setRunning(true), 450);
+    // A requested replay outranks both gates: the seen flag, and the
+    // board holding real leads. The person asked.
+    const replay = sessionStorage.getItem(REPLAY_KEY) === "1";
+    if (replay) sessionStorage.removeItem(REPLAY_KEY);
+    if (!replay) {
+      if (!enabled) return;
+      if (localStorage.getItem(SEEN_KEY) === "1") return;
+    }
+    const t = setTimeout(() => {
+      const first = nextAvailableStep(0);
+      if (first === -1) return;
+      setStep(first);
+      setRunning(true);
+    }, 450);
     return () => clearTimeout(t);
   }, [enabled]);
+
+  // The same replay, requested while the board is already the page on
+  // screen, where no remount will happen to read the sessionStorage flag.
+  useEffect(() => {
+    const onReplay = () => {
+      sessionStorage.removeItem(REPLAY_KEY);
+      const first = nextAvailableStep(0);
+      if (first === -1) return;
+      setStep(first);
+      setBox(null);
+      setRunning(true);
+    };
+    window.addEventListener(REPLAY_EVENT, onReplay);
+    return () => window.removeEventListener(REPLAY_EVENT, onReplay);
+  }, []);
 
   const measure = useCallback(() => {
     const current = STEPS[step];
@@ -206,14 +257,15 @@ export function CoachMarks({ enabled }: { enabled: boolean }) {
   }, []);
 
   const next = () => {
-    if (step + 1 >= STEPS.length) {
+    const upcoming = nextAvailableStep(step + 1);
+    if (upcoming === -1) {
       finish();
       return;
     }
     // The box is deliberately left alone. It is replaced by the next
     // measurement rather than cleared, so there is never a frame with
     // nothing to point at.
-    setStep((s) => s + 1);
+    setStep(upcoming);
   };
 
   useEffect(() => {
