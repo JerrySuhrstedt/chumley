@@ -93,9 +93,9 @@ export type AdminMetrics = {
 export async function getAdminMetrics(): Promise<AdminMetrics> {
   const rows = (await db.execute(sql`
     SELECT
-      (SELECT count(*) FROM auth.users)::int AS users,
+      (SELECT count(*) FROM users)::int AS users,
       (SELECT count(*) FROM organizations)::int AS teams,
-      (SELECT count(*) FROM auth.users
+      (SELECT count(*) FROM users
          WHERE created_at > now() - interval '7 days')::int AS new_users_7d,
       (SELECT count(DISTINCT org_id) FROM leads
          WHERE is_sample = false)::int AS activated_teams,
@@ -153,7 +153,7 @@ export async function getAdminAccounts(): Promise<AdminAccount[]> {
       o.name              AS name,
       o.created_at        AS created_at,
       (SELECT u.email FROM memberships m
-         JOIN auth.users u ON u.id = m.user_id
+         JOIN users u ON u.id = m.user_id
         WHERE m.org_id = o.id AND m.role = 'owner'
         ORDER BY m.created_at LIMIT 1)                       AS owner_email,
       (SELECT count(*) FROM memberships m
@@ -249,10 +249,15 @@ export async function getAdminAccounts(): Promise<AdminAccount[]> {
 export async function getAdminUsers(): Promise<AdminUser[]> {
   const rows = (await db.execute(sql`
     SELECT
-      u.id, u.email, u.created_at, u.last_sign_in_at,
+      u.id, u.email, u.created_at,
+      -- Sessions stand in for Supabase's last_sign_in_at. A migrated user
+      -- who has not signed in since the auth move has no sessions yet and
+      -- reads as "never", which is the truth about the new system.
+      (SELECT max(s.created_at) FROM sessions s
+        WHERE s.user_id = u.id)            AS last_sign_in_at,
       COALESCE(
-        (SELECT array_agg(i.provider ORDER BY i.created_at)
-           FROM auth.identities i WHERE i.user_id = u.id),
+        (SELECT array_agg(DISTINCT a.provider_id)
+           FROM accounts a WHERE a.user_id = u.id),
         '{}'
       )                                    AS providers,
       (SELECT o.name FROM memberships m
@@ -260,7 +265,7 @@ export async function getAdminUsers(): Promise<AdminUser[]> {
         WHERE m.user_id = u.id ORDER BY m.created_at LIMIT 1) AS team_name,
       (SELECT m.role FROM memberships m
         WHERE m.user_id = u.id ORDER BY m.created_at LIMIT 1) AS role
-    FROM auth.users u
+    FROM users u
     ORDER BY u.created_at DESC
   `)) as unknown as Record<string, unknown>[];
 
@@ -349,7 +354,7 @@ export async function getAdminTrends(): Promise<AdminTrends> {
       )
       SELECT
         weeks.w AS week,
-        (SELECT count(*) FROM auth.users u
+        (SELECT count(*) FROM users u
           WHERE date_trunc('week', u.created_at) = weeks.w)::int AS users,
         (SELECT count(*) FROM organizations o
           WHERE date_trunc('week', o.created_at) = weeks.w)::int AS teams,

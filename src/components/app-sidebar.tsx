@@ -72,6 +72,13 @@ export function AppSidebar({
               edge rather than floating in the middle of the chrome. */}
           <ChumleyDisc className="size-11" />
         </Link>
+        {/* Honest labelling while the app is in beta: an early user who
+            hits a rough edge should feel like a scout, not a victim. */}
+        {!collapsed && (
+          <span className="ml-2 rounded border border-[var(--brand)]/50 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-[var(--brand)] uppercase">
+            Beta
+          </span>
+        )}
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 px-2 py-2">

@@ -1,10 +1,17 @@
 "use server";
 
-import { getOrigin } from "@/lib/site-url";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { headers } from "next/headers";
+import { APIError } from "better-auth/api";
+import { auth } from "@/lib/auth";
 
 export type LoginState = { error: string | null; sent: boolean };
+
+/** Better Auth throws APIError with a readable message; everything else is generic. */
+function messageOf(e: unknown): string {
+  if (e instanceof APIError) return e.message;
+  return "Sign-in failed. Try again.";
+}
 
 export async function signInWithPassword(
   _prevState: LoginState,
@@ -18,14 +25,13 @@ export async function signInWithPassword(
     return { error: "Enter your email and password.", sent: false };
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) {
-    return { error: error.message, sent: false };
+  try {
+    await auth.api.signInEmail({
+      body: { email, password },
+      headers: await headers(),
+    });
+  } catch (e) {
+    return { error: messageOf(e), sent: false };
   }
 
   redirect(next);
@@ -47,30 +53,19 @@ export async function signUpWithPassword(
     return { error: "Password must be at least 8 characters.", sent: false };
   }
 
-  // Point the confirmation link back at whichever host they signed up on,
-  // rather than relying on the project's single configured Site URL.
-  const origin = await getOrigin();
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(next)}`,
-    },
-  });
-
-  if (error) {
-    return { error: error.message, sent: false };
+  try {
+    await auth.api.signUpEmail({
+      // The name is required by the schema and asked for later, in the
+      // name step after the first deal. The email prefix stands in.
+      body: { email, password, name: email.split("@")[0] },
+      headers: await headers(),
+    });
+  } catch (e) {
+    return { error: messageOf(e), sent: false };
   }
 
-  // With "Confirm email" enabled, signUp returns a user but no session.
-  if (!data.session) {
-    return {
-      error: null,
-      sent: true,
-    };
-  }
-
+  // Signing up signs you in. No confirmation email standing in the way;
+  // the address gets proven the first time a magic link is used.
   redirect(next);
 }
 
@@ -85,57 +80,53 @@ export async function sendMagicLink(
     return { error: "Enter an email address.", sent: false };
   }
 
-  const origin = await getOrigin();
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: {
-      shouldCreateUser: true,
-      emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(next)}`,
-    },
-  });
-
-  if (error) {
-    return { error: error.message, sent: false };
+  try {
+    await auth.api.signInMagicLink({
+      body: { email, callbackURL: next },
+      headers: await headers(),
+    });
+  } catch (e) {
+    return { error: messageOf(e), sent: false };
   }
 
   return { error: null, sent: true };
 }
 
-type OAuthProvider = "google" | "linkedin_oidc";
+type OAuthProvider = "google" | "linkedin";
 
 const PROVIDER_LABEL: Record<OAuthProvider, string> = {
   google: "Google",
-  linkedin_oidc: "LinkedIn",
+  linkedin: "LinkedIn",
 };
 
 /**
- * Hands off to the provider. It comes back to /auth/confirm with a PKCE
- * code, which that route already knows how to exchange for a session.
- *
- * Both providers return a profile picture in the token, which Supabase puts
- * on the user record. getCurrentOrg picks it up as the default headshot.
+ * Hands off to the provider. Better Auth builds the authorization URL
+ * against our own OAuth apps and handles the callback on
+ * /api/auth/callback/<provider>; both providers return a profile photo,
+ * which lands on the user record and becomes the default headshot.
  */
 async function startOAuth(provider: OAuthProvider, formData: FormData) {
   const next = String(formData.get("next") ?? "/pipeline").trim() || "/pipeline";
 
-  const origin = await getOrigin();
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider,
-    options: {
-      redirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(next)}`,
-    },
-  });
+  let url: string | undefined;
+  try {
+    const result = await auth.api.signInSocial({
+      body: { provider, callbackURL: next },
+      headers: await headers(),
+    });
+    url = result.url ?? undefined;
+  } catch {
+    url = undefined;
+  }
 
-  if (error || !data.url) {
+  if (!url) {
     const label = PROVIDER_LABEL[provider];
     redirect(
-      `/login?error=${encodeURIComponent(error?.message ?? `${label} sign-in is unavailable.`)}`
+      `/login?error=${encodeURIComponent(`${label} sign-in is unavailable.`)}`
     );
   }
 
-  redirect(data.url);
+  redirect(url);
 }
 
 export async function signInWithGoogle(formData: FormData) {
@@ -143,5 +134,5 @@ export async function signInWithGoogle(formData: FormData) {
 }
 
 export async function signInWithLinkedIn(formData: FormData) {
-  await startOAuth("linkedin_oidc", formData);
+  await startOAuth("linkedin", formData);
 }

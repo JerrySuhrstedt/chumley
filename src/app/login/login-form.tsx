@@ -97,8 +97,11 @@ export function LoginForm({
 
   return (
     <div>
-      <h1 className="text-center text-2xl font-semibold text-slate-800">
+      <h1 className="flex items-center justify-center gap-2 text-center text-2xl font-semibold text-slate-800">
         {copy.title}
+        <span className="rounded border border-[var(--brand)]/50 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-[var(--brand)] uppercase">
+          Beta
+        </span>
       </h1>
       {/* Not shown on the link panel. That one already creates accounts,
           so offering "create an account" beside it implies it does not,
