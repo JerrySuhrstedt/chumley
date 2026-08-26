@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 /**
  * The two things a brand new user needs told, once.
@@ -257,7 +258,15 @@ export function CoachMarks({ enabled }: { enabled: boolean }) {
     height: vv?.height ?? window.innerHeight,
   });
 
-  return (
+  /**
+   * Portalled to <body>, and not decoration: the board lives inside the
+   * pull-to-refresh wrapper, which keeps a translateY transform on itself
+   * at all times. A transformed ancestor becomes the containing block for
+   * position:fixed descendants, so rendered in place this overlay was
+   * offset by exactly the sidebar's width and the header's height, and
+   * every spotlight landed one column to the right of its target.
+   */
+  return createPortal(
     <div className="fixed inset-0 z-[70]" role="dialog" aria-modal="true">
       {/* One element does the dimming and the cutout together: an enormous
           spread shadow painted outward from a transparent rectangle. Four
@@ -330,6 +339,7 @@ export function CoachMarks({ enabled }: { enabled: boolean }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
