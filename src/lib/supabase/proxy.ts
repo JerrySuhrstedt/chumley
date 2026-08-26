@@ -82,7 +82,10 @@ export async function updateSession(request: NextRequest) {
     // endpoint it reports to has to answer without a session. Behind the
     // gate it would 307 to the login screen and the report would be lost,
     // which is the exact failure the reporting exists to catch.
-    pathname === "/api/client-error";
+    pathname === "/api/client-error" ||
+    // Development-only visual harness. The page itself 404s in production,
+    // so this only opens a door that leads nowhere once deployed.
+    pathname === "/coach-harness";
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();

@@ -250,3 +250,37 @@ export async function resumeSubscription() {
     };
   }
 }
+
+/**
+ * Has the webhook for a just-completed checkout arrived yet?
+ *
+ * Paddle's overlay hands control back the instant payment succeeds, but the
+ * subscription only exists here once `subscription.created` has been
+ * delivered and processed, which measured at three to four seconds during
+ * the live test. Re-rendering immediately shows the buyer the subscribe
+ * button they just used, which reads as the payment having failed.
+ *
+ * So the page waits and asks. Returns the seat count once the row lands so
+ * the caller can confirm what was bought rather than just that something
+ * was.
+ */
+export async function subscriptionLanded(): Promise<{
+  ready: boolean;
+  seats: number | null;
+  status: string | null;
+}> {
+  const current = await getCurrentOrg();
+  if (!current) return { ready: false, seats: null, status: null };
+
+  const [sub] = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.orgId, current.org.id))
+    .orderBy(desc(subscriptions.createdAt))
+    .limit(1);
+
+  if (!sub || sub.status === "canceled") {
+    return { ready: false, seats: null, status: sub?.status ?? null };
+  }
+  return { ready: true, seats: sub.quantity, status: sub.status };
+}

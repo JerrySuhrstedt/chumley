@@ -37,6 +37,15 @@ export type BillingState = {
    */
   customPriceCents: number | null;
   customPriceId: string | null;
+  /**
+   * Whether to offer checkout.
+   *
+   * Not the same as "has no subscription row". A cancelled row is still a
+   * row, and treating its presence as proof of a plan left a team that
+   * cancelled unable to ever pay again: read-only forever, with the
+   * subscribe button hidden by the record of the plan they had ended.
+   */
+  canSubscribe: boolean;
   /** No payment provider configured at all, so nothing is being charged. */
   billingLive: boolean;
 };
@@ -98,6 +107,7 @@ export async function getBillingState(orgId: string): Promise<BillingState> {
       compedUntil: null,
       customPriceCents: org?.customPriceCents ?? null,
       customPriceId: org?.customPriceId ?? null,
+      canSubscribe: false,
       billingLive,
     };
   }
@@ -128,6 +138,8 @@ export async function getBillingState(orgId: string): Promise<BillingState> {
       inTrial: false,
       comped: true,
       compedUntil: org.compedUntil ?? null,
+      // Nothing to buy while it is free.
+      canSubscribe: false,
       customPriceCents: org.customPriceCents ?? null,
       customPriceId: org.customPriceId ?? null,
       billingLive,
@@ -170,6 +182,8 @@ export async function getBillingState(orgId: string): Promise<BillingState> {
       compedUntil: null,
       customPriceCents: org?.customPriceCents ?? null,
       customPriceId: org?.customPriceId ?? null,
+      // On trial or out of it, there is no plan yet, so offer one.
+      canSubscribe: true,
       billingLive,
     };
   }
@@ -194,6 +208,9 @@ export async function getBillingState(orgId: string): Promise<BillingState> {
     inTrial: sub.status === "trialing",
     comped: false,
     compedUntil: null,
+    // A live plan is a live plan; anything else is a record of one that
+    // ended, and they should be able to start again.
+    canSubscribe: !active && sub.status !== "paused",
     customPriceCents: org?.customPriceCents ?? null,
     customPriceId: org?.customPriceId ?? null,
     billingLive,

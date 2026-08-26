@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { initializePaddle, type Paddle } from "@paddle/paddle-js";
+import { Loader2 } from "lucide-react";
+import { subscriptionLanded } from "./actions";
 import { Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { priceFor } from "@/lib/paddle/catalog";
@@ -40,12 +43,40 @@ export function Checkout({
   customPriceId: string | null;
   customPriceCents: number | null;
 }) {
+  const router = useRouter();
   const paddleRef = useRef<Paddle | null>(null);
   const [ready, setReady] = useState(false);
+  /** Set between the payment succeeding and the webhook landing. */
+  const [settling, setSettling] = useState(false);
+  const [slow, setSlow] = useState(false);
   const [yearly, setYearly] = useState(false);
   const [seats, setSeats] = useState(Math.max(1, membersNow));
 
   const token = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN;
+
+  /**
+   * Poll until the webhook lands, then re-render the page from the server.
+   *
+   * Measured at three to four seconds in the live test, so a fixed delay
+   * would be either a guess that is too short or a wait that is too long.
+   * After eight seconds it says so rather than spinning silently, and after
+   * thirty it refreshes anyway: the payment did succeed, and a page showing
+   * the truth late beats a spinner that never stops.
+   */
+  const waitForSubscription = useCallback(async () => {
+    const started = Date.now();
+    const slowAt = setTimeout(() => setSlow(true), 8000);
+    try {
+      while (Date.now() - started < 30000) {
+        const { ready: landed } = await subscriptionLanded();
+        if (landed) break;
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+    } finally {
+      clearTimeout(slowAt);
+      router.refresh();
+    }
+  }, [router]);
 
   useEffect(() => {
     if (!token) return;
@@ -55,13 +86,26 @@ export function Checkout({
         process.env.NEXT_PUBLIC_PADDLE_ENV === "production"
           ? "production"
           : "sandbox",
+      /**
+       * Paddle hands control back the moment payment succeeds, but the
+       * subscription does not exist here until its webhook has been
+       * delivered and processed. Without this the buyer lands back on the
+       * page that still offers them the plan they just bought, which reads
+       * as the payment having failed.
+       */
+      eventCallback: (event) => {
+        if (event.name !== "checkout.completed") return;
+        setSettling(true);
+        paddleRef.current?.Checkout.close();
+        void waitForSubscription();
+      },
     })
       .then((p) => {
         paddleRef.current = p ?? null;
         setReady(Boolean(p));
       })
       .catch(() => setReady(false));
-  }, [token]);
+  }, [token, waitForSubscription]);
 
   if (!token) return null;
 
@@ -109,6 +153,24 @@ export function Checkout({
       },
     });
   };
+
+  if (settling) {
+    return (
+      <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-5">
+        <Loader2 className="mt-0.5 size-5 shrink-0 animate-spin text-[var(--brand)]" />
+        <div>
+          <p className="font-medium text-slate-900">
+            Payment received. Setting up your subscription...
+          </p>
+          <p className="mt-1 text-sm text-slate-600">
+            {slow
+              ? "Taking longer than usual. Your payment went through, so nothing is lost. This page will update by itself."
+              : "This takes a few seconds. You do not need to do anything."}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5">

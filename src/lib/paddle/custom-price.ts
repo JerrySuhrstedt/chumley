@@ -29,7 +29,10 @@ import { PRICES } from "@/lib/paddle/catalog";
 /** The bill this covers. Solo product, because a bespoke price is per seat. */
 const PRODUCT_HINT = PRICES.solo.monthly;
 
-const marker = (cents: number) => `Chumley custom ${cents}c per seat monthly`;
+const marker = (cents: number, trialDays: number) =>
+  trialDays > 0
+    ? `Chumley custom ${cents}c per seat monthly, ${trialDays}d trial`
+    : `Chumley custom ${cents}c per seat monthly`;
 
 let productIdCache: string | null = null;
 
@@ -50,12 +53,31 @@ async function productId(): Promise<string> {
  * prices can share an amount and mean different things, and a description
  * we wrote ourselves is the only field here we fully control.
  */
-export async function ensureCustomPrice(cents: number): Promise<string> {
+export async function ensureCustomPrice(
+  cents: number,
+  /**
+   * Days of trial before the first charge. Zero, the default, charges at
+   * checkout, which is what a negotiated price normally wants: the trial
+   * already happened before anybody negotiated anything.
+   *
+   * The exception is testing. A one-day trial is the only way to watch a
+   * real card actually get charged without waiting a fortnight for the
+   * catalog prices to come due, and the trial length is part of the price
+   * in Paddle, so it cannot be changed afterwards.
+   */
+  trialDays = 0
+): Promise<string> {
   if (!Number.isInteger(cents) || cents < 1) {
     throw new Error("A custom price must be a whole number of cents above zero.");
   }
+  if (!Number.isInteger(trialDays) || trialDays < 0 || trialDays > 365) {
+    throw new Error("Trial days must be a whole number between 0 and 365.");
+  }
 
-  const want = marker(cents);
+  // The trial is part of the marker, so two prices at the same amount with
+  // different trials stay distinct rather than one silently standing in
+  // for the other.
+  const want = marker(cents, trialDays);
   const product = await productId();
 
   for await (const p of paddle().prices.list({ productId: [product] })) {
@@ -67,9 +89,12 @@ export async function ensureCustomPrice(cents: number): Promise<string> {
     description: want,
     unitPrice: { amount: String(cents), currencyCode: "USD" },
     billingCycle: { interval: "month", frequency: 1 },
-    // No trial. A team being moved onto a negotiated price has already had
-    // whatever trial they were going to get, and handing them another one
-    // by accident is a fortnight of free service nobody decided to give.
+    // Normally no trial. A team moved onto a negotiated price has already
+    // had whatever trial they were going to get, and handing them another
+    // by accident is free service nobody decided to give.
+    ...(trialDays > 0
+      ? { trialPeriod: { interval: "day" as const, frequency: trialDays } }
+      : {}),
   });
 
   return created.id;

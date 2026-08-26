@@ -113,3 +113,51 @@ suite("a lapsed plan offers no seats", () => {
     });
   });
 });
+
+suite("a cancelled team can pay again", () => {
+  it("offers checkout once the subscription is cancelled", async () => {
+    await withOrg("resubscribe-ui", async (orgId) => {
+      const { getBillingState } = await import("@/lib/paddle/access");
+
+      await sql!`INSERT INTO subscriptions (id, org_id, customer_id, status, price_id, quantity)
+                 VALUES ('sub_ZZZ_LIVE', ${orgId}, 'ctm_z', 'active', 'pri_z', 1)`;
+      expect((await getBillingState(orgId)).canSubscribe).toBe(false);
+
+      // The bug: a cancelled row is still a row, and the page treated its
+      // presence as proof of a plan. The team could never pay again.
+      await sql!`UPDATE subscriptions SET status = 'canceled' WHERE id = 'sub_ZZZ_LIVE'`;
+      const after = await getBillingState(orgId);
+      expect(after.readOnly).toBe(true);
+      expect(after.canSubscribe).toBe(true);
+    });
+  });
+
+  it("does not offer checkout to a team that already has one", async () => {
+    await withOrg("no-double-sub", async (orgId) => {
+      const { getBillingState } = await import("@/lib/paddle/access");
+      for (const status of ["active", "trialing", "past_due"]) {
+        await sql!`DELETE FROM subscriptions WHERE org_id = ${orgId}`;
+        await sql!`INSERT INTO subscriptions (id, org_id, customer_id, status, price_id, quantity)
+                   VALUES ('sub_ZZZ_S', ${orgId}, 'ctm_z', ${status}, 'pri_z', 1)`;
+        expect((await getBillingState(orgId)).canSubscribe).toBe(false);
+      }
+    });
+  });
+
+  it("offers checkout on a trial, and after one lapses", async () => {
+    await withOrg("trial-can-buy", async (orgId) => {
+      const { getBillingState } = await import("@/lib/paddle/access");
+      expect((await getBillingState(orgId)).canSubscribe).toBe(true);
+      await sql!`UPDATE organizations SET created_at = now() - interval '30 days' WHERE id = ${orgId}`;
+      expect((await getBillingState(orgId)).canSubscribe).toBe(true);
+    });
+  });
+
+  it("offers nothing to buy while an account is comped", async () => {
+    await withOrg("comped-no-buy", async (orgId) => {
+      const { getBillingState } = await import("@/lib/paddle/access");
+      await sql!`UPDATE organizations SET comped_at = now() WHERE id = ${orgId}`;
+      expect((await getBillingState(orgId)).canSubscribe).toBe(false);
+    });
+  });
+});

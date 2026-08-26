@@ -33,8 +33,8 @@ type Step = {
 const STEPS: Step[] = [
   {
     target: "sample-lead",
-    title: "These are sample leads",
-    body: "We put three on the board so it is not empty. Drag them, open them, delete them. Nothing here is real, so you cannot break anything.",
+    title: "This is a sample lead",
+    body: "There are three of these across the board so it is not empty. Drag them, open them, delete them. None of it is real, so you cannot break anything.",
     cta: "Got it",
   },
   {
@@ -47,25 +47,72 @@ const STEPS: Step[] = [
 
 type Box = { top: number; left: number; width: number; height: number };
 
-/** The rectangle around every element matching a target, in page space. */
-function boxFor(target: string): Box | null {
-  const nodes = [
+/**
+ * The rectangle around the first visible element matching a target.
+ *
+ * It used to take the union of every match, which was wrong for the one
+ * step that has more than one. The three sample leads are seeded into three
+ * different stages, so on a kanban board they sit in three separate columns
+ * and the union of them is a rectangle spanning the entire board. The
+ * spotlight highlighted everything, which is the same as highlighting
+ * nothing, and the arrow pointed at the middle of the screen.
+ *
+ * One target, pointed at properly. The copy carries the fact that there are
+ * three of them, which is what the union was clumsily trying to say.
+ */
+export function boxFor(target: string): Box | null {
+  const node = [
     ...document.querySelectorAll<HTMLElement>(`[data-coach="${target}"]`),
-  ].filter((n) => n.offsetParent !== null);
-  if (nodes.length === 0) return null;
+  ].find((n) => n.offsetParent !== null);
+  if (!node) return null;
 
-  let top = Infinity,
-    left = Infinity,
-    right = -Infinity,
-    bottom = -Infinity;
-  for (const n of nodes) {
-    const r = n.getBoundingClientRect();
-    top = Math.min(top, r.top);
-    left = Math.min(left, r.left);
-    right = Math.max(right, r.right);
-    bottom = Math.max(bottom, r.bottom);
-  }
-  return { top, left, width: right - left, height: bottom - top };
+  const r = node.getBoundingClientRect();
+  return { top: r.top, left: r.left, width: r.width, height: r.height };
+}
+
+/**
+ * Where the bubble goes, given the hole and the viewport.
+ *
+ * Pulled out as a pure function because it is arithmetic with edge cases,
+ * and edge cases in arithmetic are worth testing rather than eyeballing on
+ * one screen size.
+ *
+ * Centred under the target normally. But the "Add a lead" button sits hard
+ * against the right of the header, and a centred bubble there gets shoved
+ * back by the edge clamp until the arrow is nowhere near the button it is
+ * supposed to be indicating.
+ *
+ * So a target in the right third has its bubble's right edge aligned to the
+ * target's, which reads as hanging off the button. Left-aligning was the
+ * first attempt and the tests threw it out: a 340px bubble starting at a
+ * button 190px from the edge does not fit, so the clamp dragged it back to
+ * exactly where centring had put it, and nothing changed.
+ */
+export function placeBubble(
+  hole: Box,
+  viewport: { width: number; height: number }
+): { left: number; top: number; width: number; below: boolean; arrowLeft: number } {
+  const margin = 16;
+  const width = Math.min(340, viewport.width - margin * 2);
+
+  const below = hole.top + hole.height + 190 < viewport.height;
+  const top = below ? hole.top + hole.height + 14 : hole.top - 14;
+
+  const centre = hole.left + hole.width / 2;
+  const rightThird = centre > viewport.width * 0.62;
+
+  // Right-hand targets hang off the target's right edge; everything else
+  // centres underneath.
+  const raw = rightThird
+    ? hole.left + hole.width - width
+    : centre - width / 2;
+  const left = Math.max(margin, Math.min(raw, viewport.width - width - margin));
+
+  // The arrow tracks the target even after the bubble has been clamped, so
+  // it always points at the thing rather than at the middle of the bubble.
+  const arrowLeft = Math.max(18, Math.min(centre - left - 8, width - 34));
+
+  return { left, top, width, below, arrowLeft };
 }
 
 export function CoachMarks({ enabled }: { enabled: boolean }) {
@@ -98,14 +145,17 @@ export function CoachMarks({ enabled }: { enabled: boolean }) {
   }, [step]);
 
   /**
-   * Bring the target into view, then measure where it landed.
+   * Bring the target into view, then keep measuring until it stops moving.
    *
-   * Measured straight away as well as after the scroll settles. Waiting
-   * only for the settle left the overlay with nothing to draw for most of a
-   * second on every step change, and the previous version cleared the box
-   * first, so the whole thing blinked out and back. It read as the tour
-   * crashing. Now the old rectangle stays put until the new one is known
-   * and the spotlight slides between them.
+   * The scroll is instant rather than smooth, and the measuring runs every
+   * frame for up to a second instead of at two fixed moments. Both changes
+   * are for the same reason: the board scrolls horizontally inside its own
+   * container, and a smooth scroll measured on a 350ms timer is a race. Land
+   * early and the rectangle describes where the target was passing through,
+   * which is how a spotlight ends up over empty board.
+   *
+   * The overlay keeps its CSS transition, so the highlight still glides
+   * between steps. It just glides to somewhere correct.
    */
   useEffect(() => {
     if (!running) return;
@@ -115,18 +165,29 @@ export function CoachMarks({ enabled }: { enabled: boolean }) {
     const first = document.querySelector<HTMLElement>(
       `[data-coach="${current.target}"]`
     );
-    first?.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+    first?.scrollIntoView({ behavior: "auto", block: "center", inline: "center" });
 
-    // Next frame rather than inline: measuring inside the effect body sets
-    // state during the effect, and reading layout before paint would give
-    // the position the target is leaving rather than the one it is taking.
-    const raf = requestAnimationFrame(measure);
-    const settled = setTimeout(measure, 350);
-    return () => {
-      cancelAnimationFrame(raf);
-      clearTimeout(settled);
+    let raf = 0;
+    let stable = 0;
+    let last = "";
+    const started = Date.now();
+
+    const tick = () => {
+      const box = boxFor(current.target);
+      const key = box ? `${box.top},${box.left},${box.width},${box.height}` : "";
+      if (box) setBox(box);
+
+      // Three identical frames is settled. Give up after a second rather
+      // than spin forever on something genuinely animating.
+      stable = key && key === last ? stable + 1 : 0;
+      last = key;
+      if (stable < 3 && Date.now() - started < 1000) {
+        raf = requestAnimationFrame(tick);
+      }
     };
-  }, [running, step, measure]);
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [running, step]);
 
   useEffect(() => {
     if (!running) return;
@@ -181,16 +242,20 @@ export function CoachMarks({ enabled }: { enabled: boolean }) {
     height: box.height + pad * 2,
   };
 
-  // Below the target where there is room underneath, above it otherwise.
-  const bubbleW = Math.min(340, window.innerWidth - 32);
-  const below = hole.top + hole.height + 190 < window.innerHeight;
-  const bubbleTop = below ? hole.top + hole.height + 14 : hole.top - 14;
-  const rawLeft = hole.left + hole.width / 2 - bubbleW / 2;
-  const bubbleLeft = Math.max(16, Math.min(rawLeft, window.innerWidth - bubbleW - 16));
-  const arrowLeft = Math.max(
-    18,
-    Math.min(hole.left + hole.width / 2 - bubbleLeft - 8, bubbleW - 34)
-  );
+  // The visual viewport where the browser exposes it: on a phone that is
+  // the area actually visible above the keyboard and below the URL bar,
+  // which is what the bubble has to fit inside.
+  const vv = window.visualViewport;
+  const {
+    left: bubbleLeft,
+    top: bubbleTop,
+    width: bubbleW,
+    below,
+    arrowLeft,
+  } = placeBubble(hole, {
+    width: vv?.width ?? window.innerWidth,
+    height: vv?.height ?? window.innerHeight,
+  });
 
   return (
     <div className="fixed inset-0 z-[70]" role="dialog" aria-modal="true">

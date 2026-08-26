@@ -65,9 +65,9 @@ export default async function BillingSettingsPage() {
           </Card>
         )}
 
-        {billing.billingLive && !sub && <TestModeNotice />}
+        {billing.canSubscribe && <TestModeNotice />}
 
-        {billing.billingLive && !sub && current.email && (
+        {billing.canSubscribe && current.email && (
           <>
             <Checkout
               orgId={current.org.id}
