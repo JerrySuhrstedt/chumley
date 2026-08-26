@@ -5,11 +5,13 @@ import { StatusPill } from "./status-pill";
 import { Giveaway } from "./giveaway";
 import { EnvLine } from "./env-line";
 import { Reports } from "./reports";
+import { Sparkline, Delta, WeeklyGrowth, Funnel } from "./charts";
 import { requireAdmin } from "@/lib/admin";
 import {
   getAdminAccounts,
   getAdminMetrics,
   getAdminReports,
+  getAdminTrends,
   getAdminUsers,
 } from "@/lib/admin-data";
 
@@ -34,27 +36,45 @@ function Stat({
   value,
   note,
   alert = false,
+  delta,
+  spark,
 }: {
   label: string;
   value: string;
   note?: string;
   /** Draws the eye when the number is one that needs acting on. */
   alert?: boolean;
+  /** Which way the number moved this week, rendered as a chip. */
+  delta?: React.ReactNode;
+  /** Twelve weekly values, rendered as a line under the number. */
+  spark?: number[];
 }) {
   return (
     <div
-      className={`rounded-lg border p-4 ${
+      className={`rounded-xl border p-4 shadow-sm ${
         alert
           ? "border-[var(--brand)]/40 bg-[var(--brand-tint)]"
           : "border-slate-200 bg-white"
       }`}
     >
       <p
-        className={`text-2xl font-bold ${alert ? "text-[var(--brand)]" : "text-slate-900"}`}
+        className={`text-[10.5px] font-semibold tracking-wider uppercase ${
+          alert ? "text-[var(--brand)]" : "text-slate-500"
+        }`}
       >
-        {value}
+        {label}
       </p>
-      <p className="text-xs font-medium text-slate-600">{label}</p>
+      <div className="mt-0.5 flex items-end justify-between gap-2">
+        <p
+          className={`text-2xl font-bold tabular-nums ${
+            alert ? "text-[var(--brand)]" : "text-slate-900"
+          }`}
+        >
+          {value}
+        </p>
+        {delta}
+      </div>
+      {spark && <Sparkline points={spark} />}
       {note && <p className="mt-0.5 text-xs text-slate-400">{note}</p>}
     </div>
   );
@@ -64,16 +84,23 @@ export default async function AdminPage() {
   // Gate first, before a single row is read.
   await requireAdmin();
 
-  const [metrics, accounts, users, reports] = await Promise.all([
+  const [metrics, accounts, users, reports, trends] = await Promise.all([
     getAdminMetrics(),
     getAdminAccounts(),
     getAdminUsers(),
     getAdminReports(),
+    getAdminTrends(),
   ]);
 
   const activation = metrics.teams
     ? Math.round((metrics.activatedTeams / metrics.teams) * 100)
     : 0;
+  const activationWasPct = trends.teams7dAgo
+    ? Math.round((trends.activatedTeams7dAgo / trends.teams7dAgo) * 100)
+    : null;
+  const trialTeams = accounts.filter(
+    (a) => a.status === "trial" || a.status === "trialing"
+  ).length;
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
@@ -90,15 +117,35 @@ export default async function AdminPage() {
 
         <EnvLine />
 
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Stat
             label="New reports"
             value={String(metrics.newReports)}
             note={metrics.newReports > 0 ? "waiting on you" : "nothing waiting"}
             alert={metrics.newReports > 0}
           />
-          <Stat label="Users" value={String(metrics.users)} />
-          <Stat label="Teams" value={String(metrics.teams)} />
+          <Stat
+            label="Users"
+            value={String(metrics.users)}
+            delta={
+              <Delta
+                value={`+${metrics.newUsers7d}`}
+                direction={metrics.newUsers7d > 0 ? "up" : "flat"}
+              />
+            }
+            spark={trends.weeks.map((w) => w.users)}
+          />
+          <Stat
+            label="Teams"
+            value={String(metrics.teams)}
+            delta={
+              <Delta
+                value={`+${trends.teams7d}`}
+                direction={trends.teams7d > 0 ? "up" : "flat"}
+              />
+            }
+            spark={trends.weeks.map((w) => w.teams)}
+          />
           <Stat
             label="New this week"
             value={String(metrics.newUsers7d)}
@@ -108,13 +155,76 @@ export default async function AdminPage() {
             label="Activated"
             value={`${activation}%`}
             note={`${metrics.activatedTeams} of ${metrics.teams} added a real deal`}
+            delta={
+              activationWasPct !== null && activationWasPct !== activation ? (
+                <Delta
+                  value={`was ${activationWasPct}%`}
+                  suffix=""
+                  direction={activation > activationWasPct ? "up" : "down"}
+                />
+              ) : undefined
+            }
           />
           <Stat
             label="Real deals"
             value={metrics.realLeads.toLocaleString()}
             note="samples excluded"
+            delta={
+              <Delta
+                value={`+${trends.realLeads7d}`}
+                direction={trends.realLeads7d > 0 ? "up" : "flat"}
+              />
+            }
+            spark={trends.weeks.map((w) => w.realLeads)}
           />
-          <Stat label="Logged actions" value={metrics.activities.toLocaleString()} />
+          <Stat
+            label="Paying teams"
+            value={String(trends.payingTeams)}
+            note={
+              trends.payingTeams === 0
+                ? trialTeams > 0
+                  ? `none yet, ${trialTeams} in trial`
+                  : "none yet"
+                : "live subscriptions"
+            }
+          />
+          <Stat
+            label="Logged actions"
+            value={metrics.activities.toLocaleString()}
+          />
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-[1.4fr_1fr]">
+          <WeeklyGrowth weeks={trends.weeks} />
+          <Funnel
+            steps={[
+              { label: "Signed up", count: metrics.users, drop: "" },
+              {
+                label: "Created or joined a team",
+                count: trends.usersWithTeam,
+                drop:
+                  metrics.users - trends.usersWithTeam > 0
+                    ? `${metrics.users - trends.usersWithTeam} never made or joined one`
+                    : "",
+              },
+              {
+                label: "Added a real deal",
+                count: metrics.activatedTeams,
+                drop:
+                  metrics.teams - metrics.activatedTeams > 0
+                    ? `${metrics.teams - metrics.activatedTeams} teams still on samples only`
+                    : "",
+              },
+              {
+                label: "Paying",
+                count: trends.payingTeams,
+                drop:
+                  trends.payingTeams === 0 && trialTeams > 0
+                    ? `${trialTeams} trial${trialTeams === 1 ? "" : "s"} open`
+                    : "",
+              },
+            ]}
+          />
         </div>
 
         <section>
@@ -134,13 +244,14 @@ export default async function AdminPage() {
             </h2>
             <Giveaway />
           </div>
-          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
             <table className="w-full min-w-[54rem] text-left text-sm">
               <thead className="bg-slate-50 text-xs text-slate-600">
                 <tr>
                   {[
                     "Team",
                     "Status",
+                    "Last active",
                     "Owner",
                     "Members",
                     "Real deals",
@@ -148,7 +259,6 @@ export default async function AdminPage() {
                     "Samples left",
                     "Actions",
                     "Joined",
-                    "Last active",
                     "",
                   ].map((h) => (
                     <th key={h} className="px-3 py-2 font-semibold whitespace-nowrap">
@@ -167,7 +277,7 @@ export default async function AdminPage() {
                       {a.customPriceCents !== null && (
                         <span
                           title={a.customPriceReason ?? undefined}
-                          className="mt-0.5 block text-[11px] font-semibold text-sky-700"
+                          className="mt-0.5 block text-[11px] font-semibold text-[var(--brand-dark)]"
                         >
                           ${(a.customPriceCents / 100).toFixed(2)}/seat/mo
                         </span>
@@ -175,7 +285,7 @@ export default async function AdminPage() {
                       {a.comped && a.compedReason && (
                         <span
                           title={a.compedReason}
-                          className="mt-0.5 block max-w-44 truncate text-[11px] font-normal text-violet-700"
+                          className="mt-0.5 block max-w-44 truncate text-[11px] font-normal text-orange-700"
                         >
                           {a.compedReason}
                         </span>
@@ -190,9 +300,18 @@ export default async function AdminPage() {
                         trialDaysLeft={a.trialDaysLeft}
                       />
                     </td>
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      <span
+                        className={
+                          a.lastActivityAt ? "text-slate-600" : "font-semibold text-red-600"
+                        }
+                      >
+                        {ago(a.lastActivityAt)}
+                      </span>
+                    </td>
                     <td className="px-3 py-2 text-slate-600">{a.ownerEmail ?? "—"}</td>
-                    <td className="px-3 py-2 text-slate-600">{a.members}</td>
-                    <td className="px-3 py-2">
+                    <td className="px-3 py-2 text-slate-600 tabular-nums">{a.members}</td>
+                    <td className="px-3 py-2 tabular-nums">
                       <span
                         className={
                           a.realLeads > 0
@@ -203,22 +322,13 @@ export default async function AdminPage() {
                         {a.realLeads}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-slate-600">
+                    <td className="px-3 py-2 text-slate-600 tabular-nums">
                       {a.contacts.toLocaleString()}
                     </td>
-                    <td className="px-3 py-2 text-slate-600">{a.sampleLeads}</td>
-                    <td className="px-3 py-2 text-slate-600">{a.activities}</td>
+                    <td className="px-3 py-2 text-slate-600 tabular-nums">{a.sampleLeads}</td>
+                    <td className="px-3 py-2 text-slate-600 tabular-nums">{a.activities}</td>
                     <td className="px-3 py-2 whitespace-nowrap text-slate-600">
                       {date(a.createdAt)}
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap">
-                      <span
-                        className={
-                          a.lastActivityAt ? "text-slate-600" : "text-red-600"
-                        }
-                      >
-                        {ago(a.lastActivityAt)}
-                      </span>
                     </td>
                     <td className="px-3 py-2 text-right">
                       <AccountControls account={a} />
@@ -234,7 +344,7 @@ export default async function AdminPage() {
           <h2 className="mb-2 text-sm font-semibold text-slate-900">
             Users ({users.length})
           </h2>
-          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
             <table className="w-full min-w-[48rem] text-left text-sm">
               <thead className="bg-slate-50 text-xs text-slate-600">
                 <tr>
@@ -280,22 +390,50 @@ export default async function AdminPage() {
           </div>
         </section>
 
-        <section className="rounded-lg border border-dashed border-slate-300 bg-white p-5">
-          <div className="flex items-start gap-3">
-            <CreditCard className="mt-0.5 size-5 shrink-0 text-slate-400" />
-            <div>
-              <h2 className="text-sm font-semibold text-slate-900">
-                Billing
-              </h2>
+        <BillingNote />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Which Paddle this deployment charges through, in prose.
+ *
+ * Rendered from PADDLE_ENV rather than written by hand, because the
+ * hand-written version said "sandbox" for a week after the flip to live
+ * while the strip at the top said the opposite. A page that can disagree
+ * with itself about money is worse than no page.
+ */
+function BillingNote() {
+  const live = process.env.PADDLE_ENV === "production";
+  return (
+    <section className="rounded-xl border border-dashed border-slate-300 bg-white p-5 shadow-sm">
+      <div className="flex items-start gap-3">
+        <CreditCard className="mt-0.5 size-5 shrink-0 text-slate-400" />
+        <div>
+          <h2 className="text-sm font-semibold text-slate-900">
+            Billing ·{" "}
+            <span className={live ? "text-emerald-700" : "text-amber-700"}>
+              {live ? "live" : "sandbox"}
+            </span>
+          </h2>
+          {live ? (
+            <p className="mt-1 max-w-[70ch] text-sm text-slate-600">
+              Paddle is connected in{" "}
+              <strong className="font-semibold text-slate-900">production</strong>.
+              Real cards charge real money. Status per team is in the column
+              above, read from the subscription mirrored back by the webhook
+              rather than asked of Paddle on every page load.
+            </p>
+          ) : (
+            <>
               <p className="mt-1 max-w-[70ch] text-sm text-slate-600">
                 Paddle is connected in{" "}
-                <strong className="font-semibold text-slate-900">
-                  sandbox
-                </strong>
-                . Nothing charges a real card, and the test number 4242 4242
-                4242 4242 is the only one that works. Status per team is in
-                the column above, read from the subscription mirrored back by
-                the webhook rather than asked of Paddle on every page load.
+                <strong className="font-semibold text-slate-900">sandbox</strong>.
+                Nothing charges a real card, and the test number 4242 4242 4242
+                4242 is the only one that works. Status per team is in the
+                column above, read from the subscription mirrored back by the
+                webhook rather than asked of Paddle on every page load.
               </p>
               <p className="mt-2 max-w-[70ch] text-sm text-slate-600">
                 Going live means three things: flip PADDLE_ENV and
@@ -304,10 +442,10 @@ export default async function AdminPage() {
                 approved by Paddle. The test-card notice on the pricing page
                 disappears by itself the moment that first variable changes.
               </p>
-            </div>
-          </div>
-        </section>
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </section>
   );
 }

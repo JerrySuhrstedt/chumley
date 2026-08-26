@@ -17,9 +17,41 @@ import { setReportStatus } from "../_report/actions";
 const KIND: Record<AdminReport["kind"], { label: string; className: string }> = {
   broke: { label: "Broke", className: "bg-red-100 text-red-800" },
   confusing: { label: "Confusing", className: "bg-amber-100 text-amber-900" },
-  idea: { label: "Idea", className: "bg-indigo-100 text-indigo-800" },
+  idea: { label: "Idea", className: "bg-orange-100 text-orange-800" },
   praise: { label: "Nice work", className: "bg-emerald-100 text-emerald-800" },
 };
+
+/**
+ * "Chrome · Mac" instead of a full user-agent string on every card.
+ *
+ * The raw string is one hover away in the title attribute; it earns a
+ * whole line roughly once per hundred reports.
+ */
+function describeAgent(ua: string): string {
+  const browser = /Edg\//.test(ua)
+    ? "Edge"
+    : /OPR\//.test(ua)
+      ? "Opera"
+      : /Firefox\//.test(ua)
+        ? "Firefox"
+        : /Chrome\//.test(ua)
+          ? "Chrome"
+          : /Safari\//.test(ua)
+            ? "Safari"
+            : "Browser";
+  const os = /iPhone|iPad/.test(ua)
+    ? "iOS"
+    : /Android/.test(ua)
+      ? "Android"
+      : /Macintosh/.test(ua)
+        ? "Mac"
+        : /Windows/.test(ua)
+          ? "Windows"
+          : /Linux/.test(ua)
+            ? "Linux"
+            : "unknown OS";
+  return `${browser} · ${os}`;
+}
 
 export function Reports({ reports }: { reports: AdminReport[] }) {
   const [busy, start] = useTransition();
@@ -101,13 +133,15 @@ export function Reports({ reports }: { reports: AdminReport[] }) {
             {r.pageUrl && (
               <span className="font-mono text-[11px]">{r.pageUrl}</span>
             )}
+            {r.userAgent && (
+              <span
+                title={r.userAgent}
+                className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-500"
+              >
+                {describeAgent(r.userAgent)}
+              </span>
+            )}
           </div>
-
-          {r.userAgent && (
-            <p className="mt-1 truncate font-mono text-[11px] text-slate-400">
-              {r.userAgent}
-            </p>
-          )}
         </li>
       ))}
     </ul>

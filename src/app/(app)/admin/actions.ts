@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { organizations, subscriptions } from "@/db/schema";
-import { requireAdmin } from "@/lib/admin";
+import { isAdminEmail, requireAdmin } from "@/lib/admin";
 import { alert } from "@/lib/alert";
 import { getCurrentOrg, getCurrentUser } from "@/lib/org";
 import { paddle, isBillingConfigured } from "@/lib/paddle/server";
@@ -44,6 +44,24 @@ function isMissingInPaddle(e: unknown): boolean {
   );
 }
 
+
+
+/**
+ * The owner's email when the team belongs to a listed administrator.
+ *
+ * The back office must not be able to destroy the account its own
+ * operator depends on. Null for every ordinary team.
+ */
+async function adminOwnerOf(orgId: string): Promise<string | null> {
+  const rows = (await db.execute(sql`
+    SELECT u.email FROM memberships m
+    JOIN auth.users u ON u.id = m.user_id
+    WHERE m.org_id = ${orgId} AND m.role = 'owner'
+    ORDER BY m.created_at
+  `)) as unknown as { email: string | null }[];
+  const hit = rows.find((r) => isAdminEmail(r.email));
+  return hit?.email ?? null;
+}
 
 /** Cancel a team's plan at the end of the period they have paid for. */
 export async function adminCancelSubscription(
@@ -129,6 +147,16 @@ export async function adminDeleteAccount(
 
   if (typedName.trim() !== org.name) {
     return { error: `Type "${org.name}" exactly to confirm.` };
+  }
+
+  // An administrator's own team is off limits, from any account. The way
+  // to delete it is to remove the owner from ADMIN_EMAILS first, which
+  // makes the decision explicit instead of one misclick deep.
+  const adminOwner = await adminOwnerOf(orgId);
+  if (adminOwner) {
+    return {
+      error: `"${org.name}" belongs to administrator ${adminOwner}. Remove them from ADMIN_EMAILS first if you really mean it.`,
+    };
   }
 
   // Deleting the team you are signed in with would log you out of the
@@ -240,6 +268,15 @@ export async function adminSetActive(
   const current = await getCurrentOrg();
   if (!active && current?.org.id === orgId) {
     return { error: "That is your own team. You would lock yourself out." };
+  }
+
+  if (!active) {
+    const adminOwner = await adminOwnerOf(orgId);
+    if (adminOwner) {
+      return {
+        error: `"${org.name}" belongs to administrator ${adminOwner} and stays on.`,
+      };
+    }
   }
 
   await db

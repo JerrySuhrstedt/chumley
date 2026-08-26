@@ -305,3 +305,94 @@ export async function getAdminReports(limit = 50): Promise<AdminReport[]> {
     createdAt: new Date(String(r.created_at)),
   }));
 }
+
+export type AdminWeek = {
+  /** Monday of the ISO week the counts fall in. */
+  week: Date;
+  users: number;
+  teams: number;
+  realLeads: number;
+};
+
+export type AdminTrends = {
+  /** Twelve weeks ending with the current one, zero-filled. */
+  weeks: AdminWeek[];
+  teams7d: number;
+  realLeads7d: number;
+  /** Users who belong to at least one team. Funnel step two. */
+  usersWithTeam: number;
+  /** Teams whose latest subscription still carries a live status. */
+  payingTeams: number;
+  /** The activation rate a week ago, so the tile can say which way it moved. */
+  activatedTeams7dAgo: number;
+  teams7dAgo: number;
+};
+
+/**
+ * Direction, where the metrics above are position.
+ *
+ * Twelve weeks of signups, teams and real deals in week buckets, zero-filled
+ * from generate_series so a quiet week shows as a gap rather than vanishing.
+ * The 7-days-ago pair exists for one sentence on the Activated tile: the
+ * rate falls when new teams arrive faster than they activate, and without
+ * the comparison that reads as something breaking.
+ */
+export async function getAdminTrends(): Promise<AdminTrends> {
+  const [weekRows, scalarRows] = await Promise.all([
+    db.execute(sql`
+      WITH weeks AS (
+        SELECT generate_series(
+          date_trunc('week', now()) - interval '11 weeks',
+          date_trunc('week', now()),
+          interval '1 week'
+        ) AS w
+      )
+      SELECT
+        weeks.w AS week,
+        (SELECT count(*) FROM auth.users u
+          WHERE date_trunc('week', u.created_at) = weeks.w)::int AS users,
+        (SELECT count(*) FROM organizations o
+          WHERE date_trunc('week', o.created_at) = weeks.w)::int AS teams,
+        (SELECT count(*) FROM leads l
+          WHERE l.is_sample = false
+            AND date_trunc('week', l.created_at) = weeks.w)::int AS real_leads
+      FROM weeks
+      ORDER BY weeks.w
+    `) as unknown as Promise<Record<string, unknown>[]>,
+    db.execute(sql`
+      SELECT
+        (SELECT count(*) FROM organizations
+          WHERE created_at > now() - interval '7 days')::int AS teams_7d,
+        (SELECT count(*) FROM leads
+          WHERE is_sample = false
+            AND created_at > now() - interval '7 days')::int AS real_leads_7d,
+        (SELECT count(DISTINCT m.user_id) FROM memberships m)::int
+          AS users_with_team,
+        (SELECT count(DISTINCT s.org_id) FROM subscriptions s
+          WHERE s.status IN ('active', 'trialing', 'past_due'))::int
+          AS paying_teams,
+        (SELECT count(DISTINCT org_id) FROM leads
+          WHERE is_sample = false
+            AND created_at < now() - interval '7 days')::int
+          AS activated_7d_ago,
+        (SELECT count(*) FROM organizations
+          WHERE created_at < now() - interval '7 days')::int AS teams_7d_ago
+    `) as unknown as Promise<Record<string, unknown>[]>,
+  ]);
+
+  const s = scalarRows[0];
+  return {
+    weeks: weekRows.map((r) => ({
+      week: new Date(String(r.week)),
+      users: Number(r.users),
+      teams: Number(r.teams),
+      realLeads: Number(r.real_leads),
+    })),
+    teams7d: Number(s.teams_7d),
+    realLeads7d: Number(s.real_leads_7d),
+    usersWithTeam: Number(s.users_with_team),
+    payingTeams: Number(s.paying_teams),
+    activatedTeams7dAgo: Number(s.activated_7d_ago),
+    teams7dAgo: Number(s.teams_7d_ago),
+  };
+}

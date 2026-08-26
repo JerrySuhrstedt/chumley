@@ -18,14 +18,20 @@ import type { AccountStatus } from "@/lib/admin-data";
  */
 const LOOK: Record<AccountStatus, { label: string; className: string }> = {
   off: { label: "Switched off", className: "bg-slate-800 text-white" },
-  // Violet, so a gift does not read as a fault or as a sale.
-  comped: { label: "Free", className: "bg-violet-100 text-violet-800" },
-  trial: { label: "Trial", className: "bg-sky-100 text-sky-800" },
+  // A stronger orange than trial, so a gift does not read as a sale.
+  comped: { label: "Free", className: "bg-orange-200 text-orange-900" },
+  trial: {
+    label: "Trial",
+    className: "bg-[var(--brand-tint)] text-[var(--brand-dark)]",
+  },
   trial_ended: {
     label: "Trial ended",
     className: "bg-slate-200 text-slate-700",
   },
-  trialing: { label: "Trial", className: "bg-indigo-100 text-indigo-800" },
+  trialing: {
+    label: "Trial",
+    className: "bg-[var(--brand-tint)] text-[var(--brand-dark)]",
+  },
   active: { label: "Active", className: "bg-emerald-100 text-emerald-800" },
   past_due: { label: "Payment failed", className: "bg-red-100 text-red-800" },
   paused: { label: "Paused", className: "bg-amber-100 text-amber-900" },

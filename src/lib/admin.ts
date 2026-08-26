@@ -15,6 +15,18 @@ function adminEmails(): string[] {
     .filter(Boolean);
 }
 
+/**
+ * Whether an email address belongs to a listed administrator.
+ *
+ * Exists so admin actions can refuse to destroy an administrator's own
+ * team: the access list is the closest thing Chumley has to an owner
+ * account, so the accounts behind it get the protection.
+ */
+export function isAdminEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return adminEmails().includes(email.toLowerCase());
+}
+
 export async function isAdmin(): Promise<boolean> {
   const allowed = adminEmails();
   if (allowed.length === 0) return false;
