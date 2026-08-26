@@ -13,7 +13,8 @@ export type FieldKey =
   | "value"
   | "stage"
   | "nextActionText"
-  | "nextActionDue";
+  | "nextActionDue"
+  | "notes";
 
 export const IMPORT_FIELDS: {
   key: FieldKey;
@@ -61,6 +62,12 @@ export const IMPORT_FIELDS: {
     key: "nextActionDue",
     label: "Next step due",
     aliases: ["due", "due date", "next step due", "follow up date", "next action date"],
+  },
+  {
+    key: "notes",
+    label: "Notes",
+    hint: "Lands as the first entry in the lead's activity log",
+    aliases: ["notes", "note", "comments", "comment", "description", "remarks", "details", "background", "history"],
   },
 ];
 

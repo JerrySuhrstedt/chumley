@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { leads } from "@/db/schema";
+import { activities, leads } from "@/db/schema";
 import { getWritableOrg } from "@/lib/gate";
 import { normalizePhone } from "@/lib/phone";
 import { defaultStageKey, getStages } from "@/lib/stages";
@@ -20,6 +20,7 @@ export type ImportRow = {
   stage: LeadStage;
   nextActionText: string | null;
   nextActionDue: string | null;
+  notes: string | null;
 };
 
 export type ImportResult = {
@@ -92,20 +93,45 @@ export async function importLeads(
     const valid = new Set((await getStages(current.org.id)).map((s) => s.key));
     const fallback = await defaultStageKey(current.org.id);
 
-    await db.insert(leads).values(
-      toInsert.map((row) => ({
-        orgId: current.org.id,
-        name: row.name.trim(),
-        companyName: row.companyName,
-        email: row.email,
-        phone: normalizePhone(row.phone),
-        title: row.title,
-        value: row.value,
-        stage: valid.has(row.stage) ? row.stage : fallback,
-        nextActionText: row.nextActionText,
-        nextActionDue: row.nextActionDue,
-      }))
-    );
+    const created = await db
+      .insert(leads)
+      .values(
+        toInsert.map((row) => ({
+          orgId: current.org.id,
+          name: row.name.trim(),
+          companyName: row.companyName,
+          email: row.email,
+          phone: normalizePhone(row.phone),
+          title: row.title,
+          value: row.value,
+          stage: valid.has(row.stage) ? row.stage : fallback,
+          nextActionText: row.nextActionText,
+          nextActionDue: row.nextActionDue,
+        }))
+      )
+      .returning({ id: leads.id });
+
+    // A notes column becomes the lead's first log entry, because notes
+    // live in the timeline here, not in a static field. RETURNING keeps
+    // insertion order, so rows pair with their new ids by index.
+    const noteRows = toInsert
+      .map((row, i) => ({ note: row.notes?.trim(), leadId: created[i]?.id }))
+      .filter(
+        (r): r is { note: string; leadId: string } =>
+          Boolean(r.note) && Boolean(r.leadId)
+      );
+
+    if (noteRows.length > 0) {
+      await db.insert(activities).values(
+        noteRows.map((r) => ({
+          orgId: current.org.id,
+          leadId: r.leadId,
+          type: "note" as const,
+          body: r.note.slice(0, 4000),
+          createdBy: current.userId,
+        }))
+      );
+    }
   }
 
   revalidatePath("/pipeline");

@@ -119,6 +119,7 @@ export function CsvImporter() {
       stage: parseStage(get("stage"), intoPipeline ? "new_lead" : "contact"),
       nextActionText: textOrNull(get("nextActionText")),
       nextActionDue: parseDate(get("nextActionDue")),
+      notes: textOrNull(get("notes")),
     };
   }
 
