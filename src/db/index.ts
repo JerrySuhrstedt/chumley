@@ -40,11 +40,35 @@ if (!connectionString) {
  * `max_lifetime` recycles connections so a single long-lived instance
  * cannot sit on the same backend indefinitely.
  */
-const client = postgres(connectionString, {
+/**
+ * `connect_timeout` turns a dead pooler into a fast failure. The default
+ * is 30 seconds, which during the Supabase incident of 08-25-2026 meant
+ * every page hung for half a minute before erroring. Ten seconds is far
+ * longer than a healthy connection ever takes and short enough that the
+ * error boundary appears while the user is still looking at the page.
+ */
+const options = {
   prepare: false,
   max: 5,
   idle_timeout: 20,
   max_lifetime: 60 * 30,
-});
+  connect_timeout: 10,
+} as const;
+
+/**
+ * In dev, hot reload re-evaluates this module and would build a new pool
+ * each time, stranding the old one's connections until they idle out.
+ * Caching the client on globalThis keeps one pool per process, which is
+ * also why the cache is skipped in production: serverless gets a fresh
+ * process anyway, and the global would only hide that assumption.
+ */
+const globalForDb = globalThis as unknown as {
+  __chumleyDb?: ReturnType<typeof postgres>;
+};
+
+const client =
+  process.env.NODE_ENV === "development"
+    ? (globalForDb.__chumleyDb ??= postgres(connectionString, options))
+    : postgres(connectionString, options);
 
 export const db = drizzle(client, { schema });
