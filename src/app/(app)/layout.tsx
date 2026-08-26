@@ -12,6 +12,16 @@ import { ReadOnlyBanner } from "./_shell/read-only-banner";
 import { getBillingState } from "@/lib/paddle/access";
 import { getStages } from "@/lib/stages";
 
+/**
+ * No page in the app is allowed to work on a request for more than a
+ * minute. The platform default is five, and during the pooler incident a
+ * hung /admin sat the full three hundred seconds before dying, which the
+ * browser experienced as the app being frozen. A minute is far beyond
+ * any legitimate render and short enough that the error boundary and its
+ * Try again button appear while the person is still at the keyboard.
+ */
+export const maxDuration = 60;
+
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const current = await getCurrentOrg();
 

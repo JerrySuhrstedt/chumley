@@ -47,12 +47,23 @@ if (!connectionString) {
  * longer than a healthy connection ever takes and short enough that the
  * error boundary appears while the user is still looking at the page.
  */
+/**
+ * `keep_alive`, the short `idle_timeout` and the short `max_lifetime` are
+ * one defence in three parts, added after warm instances kept reusing
+ * connections the pooler had silently dropped during its 08-25-2026
+ * degradation. A query written to a dead socket waits on nothing, and
+ * neither connect_timeout (connection already exists) nor the server's
+ * own 2-minute statement_timeout (the statement never arrived) can save
+ * it. Keepalive probes surface dead peers; recycling connections after
+ * ten idle seconds or five minutes of life keeps the stale window small.
+ */
 const options = {
   prepare: false,
   max: 5,
-  idle_timeout: 20,
-  max_lifetime: 60 * 30,
+  idle_timeout: 10,
+  max_lifetime: 60 * 5,
   connect_timeout: 10,
+  keep_alive: 20,
 } as const;
 
 /**
