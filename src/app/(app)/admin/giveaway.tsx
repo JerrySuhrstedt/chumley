@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Dices, X } from "lucide-react";
@@ -23,6 +24,7 @@ type Pick = { orgId: string; name: string; ownerEmail: string | null };
  * somewhere the operator cannot re-roll it.
  */
 export function Giveaway() {
+  const router = useRouter();
   const [pick, setPick] = useState<Pick | null>(null);
   const [granting, setGranting] = useState(false);
   const [drawing, start] = useTransition();
@@ -79,7 +81,11 @@ export function Giveaway() {
           onOpenChange={setGranting}
           teamName={pick.name}
           ownerEmail={pick.ownerEmail}
-          onGrant={(reason, days) => adminGrantComp(pick.orgId, reason, days)}
+          onGrant={async (reason, days) => {
+            const r = await adminGrantComp(pick.orgId, reason, days);
+            if (!r.error) router.refresh();
+            return r;
+          }}
           onGranted={() => setPick(null)}
         />
       )}

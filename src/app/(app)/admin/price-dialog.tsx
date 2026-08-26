@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ export function PriceDialog({
   /** Cents, when they already have one. */
   current: number | null;
 }) {
+  const router = useRouter();
   const [amount, setAmount] = useState(
     current !== null ? (current / 100).toFixed(2) : ""
   );
@@ -134,6 +136,7 @@ export function PriceDialog({
                 setReason("");
                 onOpenChange(false);
                 toast.success(r.message ?? "Done.");
+                router.refresh();
               })
             }
           >

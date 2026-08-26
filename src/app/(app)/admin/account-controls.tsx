@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Gift, MoreHorizontal, Power, Tag, Trash2, Undo2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,13 @@ import { PriceDialog } from "./price-dialog";
  * is the only mistake that actually happens here.
  */
 export function AccountControls({ account }: { account: AdminAccount }) {
+  /**
+   * Refreshed by hand after every action that lands. revalidatePath in
+   * the action is supposed to repaint this table on its own; in practice
+   * the deleted row kept sitting there looking alive, which for a button
+   * called "Delete for good" is not an acceptable look.
+   */
+  const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [comping, setComping] = useState(false);
   const [pricing, setPricing] = useState(false);
@@ -64,7 +72,10 @@ export function AccountControls({ account }: { account: AdminAccount }) {
               start(async () => {
                 const r = await adminCancelSubscription(account.orgId);
                 if (r.error) toast.error(r.error);
-                else toast.success(r.message ?? "Cancelled.");
+                else {
+                  toast.success(r.message ?? "Cancelled.");
+                  router.refresh();
+                }
               })
             }
           >
@@ -79,7 +90,10 @@ export function AccountControls({ account }: { account: AdminAccount }) {
                   account.deactivated
                 );
                 if (r.error) toast.error(r.error);
-                else toast.success(r.message ?? "Done.");
+                else {
+                  toast.success(r.message ?? "Done.");
+                  router.refresh();
+                }
               })
             }
           >
@@ -99,7 +113,10 @@ export function AccountControls({ account }: { account: AdminAccount }) {
                 start(async () => {
                   const r = await adminClearCustomPrice(account.orgId);
                   if (r.error) toast.error(r.error);
-                  else toast.success(r.message ?? "Done.");
+                  else {
+                    toast.success(r.message ?? "Done.");
+                    router.refresh();
+                  }
                 })
               }
             >
@@ -114,7 +131,10 @@ export function AccountControls({ account }: { account: AdminAccount }) {
                 start(async () => {
                   const r = await adminRevokeComp(account.orgId);
                   if (r.error) toast.error(r.error);
-                  else toast.success(r.message ?? "Done.");
+                  else {
+                    toast.success(r.message ?? "Done.");
+                    router.refresh();
+                  }
                 })
               }
             >
@@ -146,7 +166,11 @@ export function AccountControls({ account }: { account: AdminAccount }) {
         onOpenChange={setComping}
         teamName={account.name}
         ownerEmail={account.ownerEmail}
-        onGrant={(reason, days) => adminGrantComp(account.orgId, reason, days)}
+        onGrant={async (reason, days) => {
+          const r = await adminGrantComp(account.orgId, reason, days);
+          if (!r.error) router.refresh();
+          return r;
+        }}
       />
 
       <PriceDialog
@@ -225,6 +249,7 @@ export function AccountControls({ account }: { account: AdminAccount }) {
                   }
                   setConfirming(false);
                   toast.success(r.message ?? "Deleted.");
+                  router.refresh();
                 })
               }
             >
