@@ -1,14 +1,12 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { leads, memberships, organizations, templates } from "@/db/schema";
-import { createClient } from "@/lib/supabase/server";
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
 
 export async function getCurrentUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user;
+  const session = await auth.api.getSession({ headers: await headers() });
+  return session?.user ?? null;
 }
 
 export async function getCurrentOrg() {
@@ -22,12 +20,10 @@ export async function getCurrentOrg() {
 
   if (!membership) return null;
 
-  // Google (and any other OAuth provider) hands back a photo at sign-in.
-  // A photo saved on the profile wins; otherwise fall back to that one.
-  const providerPhoto =
-    (user.user_metadata?.avatar_url as string | undefined) ??
-    (user.user_metadata?.picture as string | undefined) ??
-    null;
+  // Google and LinkedIn hand back a photo at sign-in, which Better Auth
+  // stores on the user. A photo saved on the profile wins; otherwise
+  // fall back to that one.
+  const providerPhoto = user.image ?? null;
 
   return {
     org: membership.org,

@@ -6,7 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { db } from "@/db";
 import { memberships } from "@/db/schema";
-import { authUsers } from "@/db/auth-schema";
+import { users as authUsers } from "@/db/auth-schema";
 import { getCurrentOrg } from "@/lib/org";
 import { CopyLinkButton } from "../copy-link-button";
 import { getOrCreateInviteToken } from "./actions";

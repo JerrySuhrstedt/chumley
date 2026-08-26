@@ -55,7 +55,7 @@ function isMissingInPaddle(e: unknown): boolean {
 async function adminOwnerOf(orgId: string): Promise<string | null> {
   const rows = (await db.execute(sql`
     SELECT u.email FROM memberships m
-    JOIN auth.users u ON u.id = m.user_id
+    JOIN users u ON u.id = m.user_id
     WHERE m.org_id = ${orgId} AND m.role = 'owner'
     ORDER BY m.created_at
   `)) as unknown as { email: string | null }[];
@@ -227,7 +227,7 @@ export async function adminDeleteAccount(
   for (const row of orphaned) {
     try {
       await db.execute(
-        sql`DELETE FROM auth.users WHERE id = ${row.user_id}::uuid`
+        sql`DELETE FROM users WHERE id = ${row.user_id}::uuid`
       );
       removed += 1;
     } catch {
@@ -487,7 +487,7 @@ export async function adminPickRandomForComp(): Promise<{
   const rows = (await db.execute(sql`
     SELECT o.id, o.name,
            (SELECT u.email FROM memberships m
-              JOIN auth.users u ON u.id = m.user_id
+              JOIN users u ON u.id = m.user_id
              WHERE m.org_id = o.id AND m.role = 'owner'
              ORDER BY m.created_at LIMIT 1) AS owner_email
     FROM organizations o
