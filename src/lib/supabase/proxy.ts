@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import { fetchWithTimeout } from "./fetch-timeout";
 import { NextResponse, type NextRequest } from "next/server";
 
 /** The live brand. Anything arriving on an old host is sent here. */
@@ -40,6 +41,7 @@ export async function updateSession(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      global: { fetch: fetchWithTimeout },
       cookies: {
         getAll() {
           return request.cookies.getAll();
