@@ -1,6 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
+import { useRouter } from "next/navigation";
+import { FileSpreadsheet } from "lucide-react";
+import { fireConfetti } from "@/lib/confetti";
 import {
   Dialog,
   DialogContent,
@@ -34,14 +37,66 @@ export function NameStep({
   defaultFirst?: string;
   defaultLast?: string;
 }) {
+  const router = useRouter();
+  // Null until the name has saved; then the dialog turns into the
+  // celebration, and this carries the name they just typed into it.
+  const [savedName, setSavedName] = useState<string | null>(null);
+
   const [state, formAction, pending] = useActionState<NameState, FormData>(
     async (prev, formData) => {
       const result = await saveName(prev, formData);
-      if (!result.error) onOpenChange(false);
+      if (!result.error) {
+        // The dialog stays open and celebrates instead of closing.
+        // Reduced motion skips the confetti; the message still lands.
+        setSavedName(String(formData.get("firstName") ?? "").trim());
+        fireConfetti();
+      }
       return result;
     },
     { error: null }
   );
+
+  if (savedName !== null) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">
+              Congratulations{savedName ? `, ${savedName}` : ""}. You&apos;re
+              set up.
+            </DialogTitle>
+          </DialogHeader>
+
+          <p className="-mt-2 text-[15px] text-slate-600">
+            Your first deal is on the board and your name is on the door. If
+            the rest of your leads live in a spreadsheet, bring them over.
+            Takes about a minute.
+          </p>
+
+          <div className="mt-2 flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                onOpenChange(false);
+                router.push("/settings/import");
+              }}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--brand)] text-base font-bold text-white transition-colors hover:bg-[var(--brand-dark)]"
+            >
+              <FileSpreadsheet className="size-5" />
+              Import my leads
+            </button>
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="text-sm font-medium text-slate-500 hover:underline"
+            >
+              I&apos;ll add them as I go
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
