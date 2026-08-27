@@ -3,6 +3,7 @@ import { Check, Eye, PlayCircle, Rocket, Star, BellRing } from "lucide-react";
 import Image from "next/image";
 import { BoardPreview } from "./_components/board-preview";
 import { CtaButton } from "./_components/cta";
+import { FeatureShowcase } from "./_components/feature-showcase";
 import { FaqList } from "./_components/faq-list";
 import { PlatformMarquee } from "./_components/platform-marquee";
 import { TRIAL_DAYS } from "./pricing/plans";
@@ -347,26 +348,38 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl px-5 py-20 lg:px-8 lg:py-28">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-extrabold tracking-tight text-[var(--ink)] sm:text-4xl">
-              Everything that comes with it
+              The five things that change your week
             </h2>
             <p className="mt-4 text-lg text-[var(--ink-soft)]">
-              No tiers, no add-ons, no upsell at the point you need something.
+              Everything is included at every size. These are the parts you
+              will feel by Friday.
             </p>
           </div>
 
-          <div className="mt-14 grid gap-x-12 gap-y-5 sm:grid-cols-2">
-            {FEATURES.map(([name, detail]) => (
-              <div key={name} className="flex items-start gap-3">
-                <Check
-                  className="mt-1 size-5 shrink-0 text-[var(--label-upcoming)]"
-                  strokeWidth={3}
-                />
-                <p className="text-[15px] leading-relaxed">
-                  <span className="font-bold text-[var(--ink)]">{name}</span>
-                  <span className="text-[var(--ink-soft)]"> · {detail}</span>
-                </p>
-              </div>
-            ))}
+          <div className="mt-16 lg:mt-20">
+            <FeatureShowcase />
+          </div>
+
+          {/* The rest of the list, compact. The five above are the sale;
+              this is the reassurance that nothing else is missing. */}
+          <div className="mt-20 border-t border-[var(--rule)] pt-10 lg:mt-24">
+            <p className="text-center text-sm font-bold tracking-widest text-[var(--ink-muted)] uppercase">
+              And the rest, all included
+            </p>
+            <div className="mt-6 grid gap-x-12 gap-y-3 sm:grid-cols-2">
+              {FEATURES.map(([name, detail]) => (
+                <div key={name} className="flex items-start gap-3">
+                  <Check
+                    className="mt-1 size-4 shrink-0 text-[var(--label-upcoming)]"
+                    strokeWidth={3}
+                  />
+                  <p className="text-[14px] leading-relaxed">
+                    <span className="font-bold text-[var(--ink)]">{name}</span>
+                    <span className="text-[var(--ink-soft)]"> · {detail}</span>
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
