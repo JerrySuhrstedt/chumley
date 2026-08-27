@@ -50,6 +50,10 @@ export function gate(request: NextRequest) {
     pathname === "/privacy" ||
     pathname === "/terms" ||
     pathname === "/refunds" ||
+    // Crawler plumbing. A robots.txt that redirects to a login page is
+    // how a site tells Google it has nothing worth indexing.
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml" ||
     // The embeddable website form is public by definition.
     pathname.startsWith("/f/") ||
     pathname.startsWith("/auth/") ||

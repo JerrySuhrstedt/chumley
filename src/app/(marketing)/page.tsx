@@ -9,7 +9,7 @@ import { PlatformMarquee } from "./_components/platform-marquee";
 import { TRIAL_DAYS } from "./pricing/plans";
 
 export const metadata: Metadata = {
-  title: "Chumley | Finally, a sales CRM you'll actually want to use",
+  title: "Chumley | Ridiculously Simple Sales CRM",
   description:
     "Ridiculously simple sales CRM for independent sales reps and small sales teams. Nothing to set up, nothing to learn.",
 };
