@@ -288,6 +288,38 @@ export default function HomePage() {
 
       <PlatformMarquee />
 
+      {/* ------------------------------------------------- 3b. IN THE FIELD */}
+      <section className="bg-white">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-20 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-24">
+          <Image
+            src="/rep-in-the-field.jpg"
+            alt="A sales rep on a call, walking between appointments, phone in hand"
+            width={1600}
+            height={1067}
+            sizes="(min-width: 1024px) 44rem, 92vw"
+            className="h-auto w-full rounded-3xl object-cover shadow-[0_18px_44px_-18px_rgba(9,30,66,0.35)]"
+          />
+          <div>
+            <p className="text-xs font-bold tracking-widest text-[var(--brand)] uppercase">
+              In the field
+            </p>
+            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-balance text-[var(--ink)] sm:text-4xl">
+              Built for people who sell standing up
+            </h2>
+            <p className="mt-5 max-w-[52ch] text-[17px] leading-relaxed text-[var(--ink-soft)]">
+              Your office is the truck, the job site, the parking lot between
+              appointments. Chumley was built phone-first for exactly that:
+              check the board while you walk, move the deal while the
+              conversation is still warm, and the call you just made is
+              already on the record.
+            </p>
+            <p className="mt-4 max-w-[52ch] text-[17px] leading-relaxed font-semibold text-[var(--ink)]">
+              The CRM fits your day. Not the other way around.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ------------------------------------------------------- 4. TESTIMONIALS */}
       <section className="bg-white">
         <div className="mx-auto max-w-6xl px-5 py-20 lg:px-8 lg:py-28">
@@ -402,6 +434,40 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ------------------------------------------------- 5b. FOR THE MANAGER */}
+      <section className="bg-white">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-20 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-24">
+          <div className="lg:order-last">
+            <Image
+              src="/manager-with-coffee.jpg"
+              alt="A sales manager checking the team's numbers on his phone, coffee in hand"
+              width={1600}
+              height={1067}
+              sizes="(min-width: 1024px) 44rem, 92vw"
+              className="h-auto w-full rounded-3xl object-cover shadow-[0_18px_44px_-18px_rgba(9,30,66,0.35)]"
+            />
+          </div>
+          <div>
+            <p className="text-xs font-bold tracking-widest text-[var(--brand)] uppercase">
+              For the manager
+            </p>
+            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-balance text-[var(--ink)] sm:text-4xl">
+              Know where every deal stands before you ask
+            </h2>
+            <p className="mt-5 max-w-[52ch] text-[17px] leading-relaxed text-[var(--ink-soft)]">
+              The whole team works one board, so the answer to &ldquo;where
+              are we on the Hendersons?&rdquo; is a glance, not a meeting.
+              Every call and text your reps make logs itself, which means the
+              pipeline you are looking at is the real one, not the one
+              somebody tidied up on Friday afternoon.
+            </p>
+            <p className="mt-4 max-w-[52ch] text-[17px] leading-relaxed font-semibold text-[var(--ink)]">
+              The Monday meeting, without the homework.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* --------------------------------------------------------------- 6. FAQs */}
       <section id="faqs" className="bg-white">
         <div className="mx-auto max-w-4xl px-5 py-20 lg:px-8 lg:py-28">
@@ -416,6 +482,38 @@ export default function HomePage() {
 
           <div className="mt-12">
             <FaqList />
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------ 6b. WORKING SOLO */}
+      <section className="border-t border-[var(--rule)] bg-[var(--surface-alt)]">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-20 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-24">
+          <Image
+            src="/solo-rep-at-home.jpg"
+            alt="An independent salesperson on a call at her home office desk"
+            width={1600}
+            height={1067}
+            sizes="(min-width: 1024px) 44rem, 92vw"
+            className="h-auto w-full rounded-3xl object-cover shadow-[0_18px_44px_-18px_rgba(9,30,66,0.35)]"
+          />
+          <div>
+            <p className="text-xs font-bold tracking-widest text-[var(--brand)] uppercase">
+              Working solo
+            </p>
+            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-balance text-[var(--ink)] sm:text-4xl">
+              When you are the whole sales team
+            </h2>
+            <p className="mt-5 max-w-[52ch] text-[17px] leading-relaxed text-[var(--ink-soft)]">
+              No manager, no meetings, nobody to remind you who promised to
+              call whom. Just you, a phone, and every deal you are working
+              held in one place instead of across a notebook, a call log and
+              your memory. Fourteen dollars a month, one seat, the whole
+              product.
+            </p>
+            <p className="mt-4 max-w-[52ch] text-[17px] leading-relaxed font-semibold text-[var(--ink)]">
+              The notebook can retire. It earned it.
+            </p>
           </div>
         </div>
       </section>
