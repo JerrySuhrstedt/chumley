@@ -86,9 +86,9 @@ export default function HomePage() {
                 claim on top, what it is underneath. Sizes are the previous
                 2.6/3.1/4rem plus 30%. */}
             <h1 className="mt-6 text-[3.38rem] leading-[1.02] font-extrabold tracking-tight text-[var(--ink)] sm:text-[4.03rem] xl:text-[5.2rem]">
-              Ridiculously simple
+              Ridiculously Simple
               <br />
-              sales&nbsp;CRM.
+              Sales&nbsp;CRM.
             </h1>
 
             {/* Names who it is for, which is the question the headline
