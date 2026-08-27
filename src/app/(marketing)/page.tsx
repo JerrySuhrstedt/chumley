@@ -138,8 +138,8 @@ export default function HomePage() {
             <Image
               src="/chumley-hero-phone.png"
               alt="Chumley open on a phone, a deal being moved into Won"
-              width={1111}
-              height={1600}
+              width={833}
+              height={1200}
               priority
               sizes="88vw"
               className="ml-auto h-auto w-[88%] max-w-none sm:w-[64%]"
@@ -158,8 +158,8 @@ export default function HomePage() {
           src="/chumley-hero-phone.png"
           alt=""
           aria-hidden
-          width={1111}
-          height={1600}
+          width={833}
+          height={1200}
           priority
           sizes="55vw"
           // Flush to the right edge rather than bleeding past it, and 15%
