@@ -25,19 +25,19 @@ const BENEFITS = [
     icon: Eye,
     title: "Up and running in five minutes",
     feature:
-      "No setup wizard, no fields to design, no administrator to call. Sign up, name your team, start adding deals. There is no second screen to discover later and no advanced mode. What you see on day one is the entire product.",
+      "No setup wizard. No admin to call. Sign up, name your team, add deals. What you see on day one is the entire product.",
   },
   {
     icon: BellRing,
     title: "Adding a lead takes about ten seconds",
     feature:
-      "A name and a phone number is all we require. No company record to create first, no required dropdowns, no fields with a red asterisk stopping you from saving. Everything else is optional, forever.",
+      "A name and a phone number. Everything else is optional, forever.",
   },
   {
     icon: Rocket,
     title: "You can run your whole day from your phone",
     feature:
-      "It opens in your phone browser with nothing to install. Tap a card to call, text, or email, and your phone does what it always does. Log how it went in one tap, from the truck, between appointments.",
+      "Opens in your phone browser, nothing to install. Tap to call, text, or email. Log it in one tap from the truck.",
   },
 ];
 
@@ -196,34 +196,23 @@ export default function HomePage() {
             </p>
 
             <p className="mt-5 max-w-[68ch] text-[17px] leading-relaxed text-[var(--ink-soft)]">
-              It wanted a company record, then a contact, then an opportunity,
-              before it would let you write down that Dale wants a quote. Eleven
-              required fields. A dropdown nobody explained.
+              Eleven required fields before you could write down that Dale
+              wants a quote. So you went back to your notebook.
             </p>
 
             <p className="mt-5 max-w-[68ch] text-[17px] leading-relaxed text-[var(--ink-soft)]">
-              So you went back to your notebook. And the CRM became one more
-              thing you get asked about in the Monday meeting.
-            </p>
-
-            <p className="mt-5 max-w-[68ch] text-[17px] leading-relaxed text-[var(--ink-soft)]">
-              That was not your fault. Those tools were built for somebody who
-              sits at a desk all day and gets paid to keep records. You get
-              paid to sell. Every minute the software takes is a minute you
-              are not on the phone.
+              That was not your fault. Those tools were built for people paid
+              to keep records. You get paid to sell.
             </p>
 
             <p className="mt-5 max-w-[68ch] text-[17px] leading-relaxed font-semibold text-[var(--ink)]">
-              Chumley is one screen. Your deals are cards. Move a card when the
-              deal moves. Tap a card to call, text, or email.
+              Chumley is one screen. Deals are cards. Move a card when the
+              deal moves. Tap it to call, text, or email. Nothing to set
+              up.
             </p>
 
             <p className="mt-5 max-w-[68ch] text-[17px] leading-relaxed font-semibold text-[var(--ink)]">
-              No required fields. Nothing to set up.
-            </p>
-
-            <p className="mt-5 max-w-[68ch] text-[17px] leading-relaxed font-semibold text-[var(--ink)]">
-              You&rsquo;ll be working leads two minutes after you sign up.
+              You&rsquo;re working leads two minutes after signup.
             </p>
 
             <div className="mt-8">
@@ -247,8 +236,7 @@ export default function HomePage() {
               Why this one sticks
             </h2>
             <p className="mt-4 text-lg text-[var(--ink-soft)]">
-              Every CRM promises you a pipeline. This is the one you will still
-              be using in ninety days.
+              The one you will still be using in ninety days.
             </p>
           </div>
 
@@ -308,10 +296,8 @@ export default function HomePage() {
             </h2>
             <p className="mt-5 max-w-[52ch] text-[17px] leading-relaxed text-[var(--ink-soft)]">
               Your office is the truck, the job site, the parking lot between
-              appointments. Chumley was built phone-first for exactly that:
-              check the board while you walk, move the deal while the
-              conversation is still warm, and the call you just made is
-              already on the record.
+              appointments. Move the deal while the conversation is still
+              warm. The call you just made is already on the record.
             </p>
             <p className="mt-4 max-w-[52ch] text-[17px] leading-relaxed font-semibold text-[var(--ink)]">
               The CRM fits your day. Not the other way around.
@@ -411,10 +397,9 @@ export default function HomePage() {
               The CRM for contractors who hate CRMs
             </h2>
             <p className="mt-5 max-w-[52ch] text-[17px] leading-relaxed text-[var(--ink-soft)]">
-              Every estimate you send is a deal card. The follow-up call that
-              wins the job is one tap from the bench, and it logs itself while
-              you get back to work. No office hours, no admin night, no bid
-              lost because the sticky note fell off the dash.
+              Every estimate is a deal card. The follow-up that wins the job
+              is one tap from the bench, and it logs itself. No admin night.
+              No bid lost because the sticky note fell off the dash.
             </p>
             <p className="mt-4 max-w-[52ch] text-[17px] leading-relaxed font-semibold text-[var(--ink)]">
               You bid the work. Chumley remembers the rest.
@@ -434,8 +419,8 @@ export default function HomePage() {
               The five things that change your week
             </h2>
             <p className="mt-4 text-lg text-[var(--ink-soft)]">
-              Everything is included at every size. These are the parts you
-              will feel by Friday.
+              All of it included, at every size. These five you will feel by
+              Friday.
             </p>
           </div>
 
@@ -488,11 +473,10 @@ export default function HomePage() {
               Know where every deal stands before you ask
             </h2>
             <p className="mt-5 max-w-[52ch] text-[17px] leading-relaxed text-[var(--ink-soft)]">
-              The whole team works one board, so the answer to &ldquo;where
-              are we on the Hendersons?&rdquo; is a glance, not a meeting.
-              Every call and text your reps make logs itself, which means the
-              pipeline you are looking at is the real one, not the one
-              somebody tidied up on Friday afternoon.
+              One board, whole team. &ldquo;Where are we on the
+              Hendersons?&rdquo; is a glance, not a meeting. Every call your
+              reps make logs itself, so the pipeline you see is the real one,
+              not the one tidied up on Friday afternoon.
             </p>
             <p className="mt-4 max-w-[52ch] text-[17px] leading-relaxed font-semibold text-[var(--ink)]">
               The Monday meeting, without the homework.
@@ -540,11 +524,9 @@ export default function HomePage() {
               When you are the whole sales team
             </h2>
             <p className="mt-5 max-w-[52ch] text-[17px] leading-relaxed text-[var(--ink-soft)]">
-              No manager, no meetings, nobody to remind you who promised to
-              call whom. Just you, a phone, and every deal you are working
-              held in one place instead of across a notebook, a call log and
-              your memory. Fourteen dollars a month, one seat, the whole
-              product.
+              No manager. No meetings. Nobody to remind you who promised to
+              call whom. Just you, a phone, and every deal in one place.
+              Fourteen dollars, one seat, the whole product.
             </p>
             <p className="mt-4 max-w-[52ch] text-[17px] leading-relaxed font-semibold text-[var(--ink)]">
               The notebook can retire. It earned it.
@@ -560,8 +542,7 @@ export default function HomePage() {
             Nothing to set up. Nothing to learn.
           </h2>
           <p className="mx-auto mt-5 max-w-[46ch] text-lg text-white/70">
-            Sign up, name your team, and put your first deal on the board in the
-            next five minutes. If it takes longer than that, we did something
+            First deal on the board in five minutes, or we did something
             wrong.
           </p>
           <div className="mt-10">
