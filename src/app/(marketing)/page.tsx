@@ -390,6 +390,39 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ------------------------------------------------- 4b. FOR THE TRADES */}
+      <section className="bg-white">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-20 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-24">
+          <div className="lg:order-last">
+            <Image
+              src="/contractor-in-the-shop.jpg"
+              alt="A contractor at his workbench following up on a bid from his laptop"
+              width={1600}
+              height={1067}
+              sizes="(min-width: 1024px) 44rem, 92vw"
+              className="h-auto w-full rounded-3xl object-cover shadow-[0_18px_44px_-18px_rgba(9,30,66,0.35)]"
+            />
+          </div>
+          <div>
+            <p className="text-xs font-bold tracking-widest text-[var(--brand)] uppercase">
+              For the trades
+            </p>
+            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-balance text-[var(--ink)] sm:text-4xl">
+              The CRM for contractors who hate CRMs
+            </h2>
+            <p className="mt-5 max-w-[52ch] text-[17px] leading-relaxed text-[var(--ink-soft)]">
+              Every estimate you send is a deal card. The follow-up call that
+              wins the job is one tap from the bench, and it logs itself while
+              you get back to work. No office hours, no admin night, no bid
+              lost because the sticky note fell off the dash.
+            </p>
+            <p className="mt-4 max-w-[52ch] text-[17px] leading-relaxed font-semibold text-[var(--ink)]">
+              You bid the work. Chumley remembers the rest.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ----------------------------------------------------------- 5. FEATURES */}
       <section
         id="features"
@@ -437,7 +470,7 @@ export default function HomePage() {
       {/* ------------------------------------------------- 5b. FOR THE MANAGER */}
       <section className="bg-white">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-20 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-24">
-          <div className="lg:order-last">
+          <div>
             <Image
               src="/manager-with-coffee.jpg"
               alt="A sales manager checking the team's numbers on his phone, coffee in hand"
@@ -489,6 +522,7 @@ export default function HomePage() {
       {/* ------------------------------------------------ 6b. WORKING SOLO */}
       <section className="border-t border-[var(--rule)] bg-[var(--surface-alt)]">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-20 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-24">
+          <div className="lg:order-last">
           <Image
             src="/solo-rep-at-home.jpg"
             alt="An independent salesperson on a call at her home office desk"
@@ -497,6 +531,7 @@ export default function HomePage() {
             sizes="(min-width: 1024px) 44rem, 92vw"
             className="h-auto w-full rounded-3xl object-cover shadow-[0_18px_44px_-18px_rgba(9,30,66,0.35)]"
           />
+          </div>
           <div>
             <p className="text-xs font-bold tracking-widest text-[var(--brand)] uppercase">
               Working solo
