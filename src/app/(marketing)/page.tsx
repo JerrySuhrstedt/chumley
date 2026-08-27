@@ -285,58 +285,68 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl px-5 py-20 lg:px-8 lg:py-28">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-extrabold tracking-tight text-[var(--ink)] sm:text-4xl">
-              Testimonials
+              What the first teams say
             </h2>
             <p className="mt-4 text-lg text-[var(--ink-soft)]">
-              Three short quotes from real customers go here, each one settling
-              a different objection.
+              From people already running their pipeline on Chumley.
             </p>
           </div>
 
           <div className="mt-14 grid gap-6 md:grid-cols-3">
             {[
-              "Answers the objection: I am not a computer person.",
-              "Answers the objection: we tried a CRM and nobody stuck with it.",
-              "Answers the objection: it is too simple to matter.",
-            ].map((hint, i) => (
-              <div
-                key={hint}
-                className="flex flex-col rounded-2xl border-2 border-dashed border-[var(--rule)] bg-[var(--surface-alt)] p-7"
+              {
+                quote:
+                  "Honestly, my non-technical sales team hated CRMs... Chumley changed that.",
+                name: "Joe Pascua",
+                org: "Front Door Custom Homes",
+                initials: "JP",
+              },
+              {
+                quote:
+                  "Love this sales CRM... spend more time managing leads, less time managing software.",
+                name: "Alex Synkevych",
+                org: "Revbit Air",
+                initials: "AS",
+              },
+              {
+                quote:
+                  "Finally, a simple but super effective CRM my sales team will actually use. Everything is easy!",
+                name: "Petar Cale",
+                org: "Sales Manager",
+                initials: "PC",
+              },
+            ].map((t) => (
+              <figure
+                key={t.name}
+                className="flex flex-col rounded-2xl border border-[var(--rule)] bg-[var(--surface-alt)] p-7"
               >
-                <div className="flex gap-0.5">
+                <div className="flex gap-0.5" aria-label="5 out of 5 stars">
                   {Array.from({ length: 5 }).map((_, s) => (
                     <Star
                       key={s}
-                      className="size-4 fill-[var(--label-none)] text-[var(--label-none)]"
+                      className="size-4 fill-[var(--brand)] text-[var(--brand)]"
                     />
                   ))}
                 </div>
-                <p className="mt-4 flex-1 text-[15px] leading-relaxed text-[var(--ink-muted)] italic">
-                  &ldquo;Customer quote {i + 1}. {hint}&rdquo;
-                </p>
-                <div className="mt-6 flex items-center gap-3">
-                  <span className="size-10 rounded-full bg-[var(--rule)]" />
+                <blockquote className="mt-4 flex-1 text-[15px] leading-relaxed text-[var(--ink)]">
+                  &ldquo;{t.quote}&rdquo;
+                </blockquote>
+                <figcaption className="mt-6 flex items-center gap-3">
+                  <span className="flex size-10 items-center justify-center rounded-full bg-[var(--brand-tint)] text-sm font-bold text-[var(--brand-dark,var(--brand))]">
+                    {t.initials}
+                  </span>
                   <span className="text-sm">
-                    <span className="block font-semibold text-[var(--ink-soft)]">
-                      Name, title
+                    <span className="block font-semibold text-[var(--ink)]">
+                      {t.name}
                     </span>
                     <span className="block text-[var(--ink-muted)]">
-                      Company, city
+                      {t.org}
                     </span>
                   </span>
-                </div>
-              </div>
+                </figcaption>
+              </figure>
             ))}
           </div>
-
-          <p className="mx-auto mt-10 max-w-[60ch] rounded-xl border border-[var(--brand)]/20 bg-[var(--brand-tint)] px-5 py-4 text-center text-sm text-[var(--ink-soft)]">
-            <strong className="font-semibold text-[var(--ink)]">
-              Placeholder, on purpose.
-            </strong>{" "}
-            Chumley has no customers yet, so there are no real testimonials to
-            print. Invented ones would be a fake review. Replace these three
-            after your first users, and add a review-site line underneath.
-          </p>
         </div>
       </section>
 
