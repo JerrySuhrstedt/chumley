@@ -192,31 +192,38 @@ export default function HomePage() {
 
           <div>
             <p className="text-xl leading-snug font-bold text-[var(--ink)] sm:text-2xl">
-              You have been handed a CRM before. You quit using it by week
-              three.
+              You had a CRM. You quit by week three.
             </p>
 
             <p className="mt-5 max-w-[68ch] text-[17px] leading-relaxed text-[var(--ink-soft)]">
-              It wanted a company record, then a contact record, then an
-              opportunity record, all before it would let you write down that
-              Dale wants a quote. Eleven required fields. A dropdown nobody ever
-              explained. So you went back to your notebook, and the CRM turned
-              into one more thing you get asked about in the Monday meeting.
+              It wanted a company record, then a contact, then an opportunity,
+              before it would let you write down that Dale wants a quote. Eleven
+              required fields. A dropdown nobody explained.
+            </p>
+
+            <p className="mt-5 max-w-[68ch] text-[17px] leading-relaxed text-[var(--ink-soft)]">
+              So you went back to your notebook. And the CRM became one more
+              thing you get asked about in the Monday meeting.
             </p>
 
             <p className="mt-5 max-w-[68ch] text-[17px] leading-relaxed text-[var(--ink-soft)]">
               That was not your fault. Those tools were built for somebody who
-              sits at a desk all day and gets paid to keep records. You get paid
-              to sell. Every minute the software takes is a minute you are not
-              on the phone.
+              sits at a desk all day and gets paid to keep records. You get
+              paid to sell. Every minute the software takes is a minute you
+              are not on the phone.
             </p>
 
             <p className="mt-5 max-w-[68ch] text-[17px] leading-relaxed font-semibold text-[var(--ink)]">
               Chumley is one screen. Your deals are cards. Move a card when the
-              deal moves. Tap a card to call, text, or email. There are no
-              required fields, no records to create first, and no settings to
-              figure out. Most people are running it about two minutes after
-              they sign up. That is the whole product.
+              deal moves. Tap a card to call, text, or email.
+            </p>
+
+            <p className="mt-5 max-w-[68ch] text-[17px] leading-relaxed font-semibold text-[var(--ink)]">
+              No required fields. Nothing to set up.
+            </p>
+
+            <p className="mt-5 max-w-[68ch] text-[17px] leading-relaxed font-semibold text-[var(--ink)]">
+              You&rsquo;ll be working leads two minutes after you sign up.
             </p>
 
             <div className="mt-8">
