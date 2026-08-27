@@ -4,6 +4,7 @@ import Image from "next/image";
 import { BoardPreview } from "./_components/board-preview";
 import { CtaButton } from "./_components/cta";
 import { FeatureShowcase } from "./_components/feature-showcase";
+import { getPublishedReviews } from "@/lib/reviews";
 import { FaqList } from "./_components/faq-list";
 import { PlatformMarquee } from "./_components/platform-marquee";
 import { TRIAL_DAYS } from "./pricing/plans";
@@ -62,7 +63,14 @@ const FEATURES = [
   ["Company logos pulled in", "Cards look like the businesses they represent"],
 ];
 
-export default function HomePage() {
+/**
+ * Revalidated hourly, and immediately whenever a review is published
+ * from the back office. Static speed, living testimonials.
+ */
+export const revalidate = 3600;
+
+export default async function HomePage() {
+  const published = await getPublishedReviews(3);
   return (
     <>
       {/* ---------------------------------------------------------------- 1. HERO */}
@@ -319,35 +327,16 @@ export default function HomePage() {
           </div>
 
           <div className="mt-14 grid gap-6 md:grid-cols-3">
-            {[
-              {
-                quote:
-                  "Honestly, my non-technical sales team hated CRMs... Chumley changed that.",
-                name: "Joe Pascua",
-                org: "Front Door Custom Homes",
-                initials: "JP",
-              },
-              {
-                quote:
-                  "Love this sales CRM... spend more time managing leads, less time managing software.",
-                name: "Alex Synkevych",
-                org: "Revbit Air",
-                initials: "AS",
-              },
-              {
-                quote:
-                  "Finally, a simple but super effective CRM my sales team will actually use. Everything is easy!",
-                name: "Petar Cale",
-                org: "Sales Manager",
-                initials: "PC",
-              },
-            ].map((t) => (
-              <figure
+            {published.map((t) => (
+<figure
                 key={t.name}
                 className="flex flex-col rounded-2xl border border-[var(--rule)] bg-[var(--surface-alt)] p-7"
               >
-                <div className="flex gap-0.5" aria-label="5 out of 5 stars">
-                  {Array.from({ length: 5 }).map((_, s) => (
+                <div
+                  className="flex gap-0.5"
+                  aria-label={`${t.rating} out of 5 stars`}
+                >
+                  {Array.from({ length: t.rating }).map((_, s) => (
                     <Star
                       key={s}
                       className="size-4 fill-[var(--brand)] text-[var(--brand)]"
@@ -359,14 +348,19 @@ export default function HomePage() {
                 </blockquote>
                 <figcaption className="mt-6 flex items-center gap-3">
                   <span className="flex size-10 items-center justify-center rounded-full bg-[var(--brand-tint)] text-sm font-bold text-[var(--brand-dark,var(--brand))]">
-                    {t.initials}
+                    {t.name
+                      .split(" ")
+                      .map((w) => w[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase()}
                   </span>
                   <span className="text-sm">
                     <span className="block font-semibold text-[var(--ink)]">
                       {t.name}
                     </span>
                     <span className="block text-[var(--ink-muted)]">
-                      {t.org}
+                      {t.company}
                     </span>
                   </span>
                 </figcaption>

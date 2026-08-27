@@ -570,3 +570,39 @@ export const promoRedemptions = pgTable(
   },
   (t) => [uniqueIndex("promo_once_per_org").on(t.codeId, t.orgId)]
 );
+
+/**
+ * Reviews users leave from Settings, and eventually imports from Google
+ * and Trustpilot (the source column is their seat at the table).
+ *
+ * Nothing publishes itself. Every row parks in the back office as "new"
+ * and a human decides where it goes, which is both the FTC-safe shape
+ * and the only defense against the first joker with five stars and a
+ * keyboard. org/user are nullable so imported or pre-launch testimonials
+ * can live here too.
+ */
+export const reviewStatusEnum = pgEnum("review_status", [
+  "new",
+  "published",
+  "archived",
+]);
+
+export const reviews = pgTable("reviews", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orgId: uuid("org_id").references(() => organizations.id, {
+    onDelete: "set null",
+  }),
+  userId: uuid("user_id"),
+  rating: integer("rating").notNull(),
+  quote: text("quote").notNull(),
+  /** Name and company as the reviewer wants them shown. */
+  name: text("name").notNull(),
+  company: text("company"),
+  consentPublic: boolean("consent_public").notNull().default(false),
+  status: reviewStatusEnum("status").notNull().default("new"),
+  source: text("source").notNull().default("in_app"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+});

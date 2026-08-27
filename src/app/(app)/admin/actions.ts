@@ -689,3 +689,47 @@ export async function adminSendTestAlert(): Promise<AdminActionResult> {
     message: "Sent. Check info@sumolab.co, including the spam folder.",
   };
 }
+
+/**
+ * Where a review goes: the homepage, the archive, or back to new.
+ *
+ * Publishing revalidates the homepage so the testimonials refresh, and
+ * refuses without the reviewer's consent box: their words, their call.
+ */
+export async function adminSetReviewStatus(
+  id: string,
+  status: "new" | "published" | "archived"
+): Promise<AdminActionResult> {
+  await requireAdmin();
+
+  const { reviews } = await import("@/db/schema");
+  const row = await db.query.reviews.findFirst({ where: eq(reviews.id, id) });
+  if (!row) return { error: "That review is gone." };
+
+  if (status === "published" && !row.consentPublic) {
+    return {
+      error: "They did not tick the consent box, so this one stays private.",
+    };
+  }
+
+  await db
+    .update(reviews)
+    .set({
+      status,
+      publishedAt: status === "published" ? new Date() : null,
+    })
+    .where(eq(reviews.id, id));
+
+  revalidatePath("/admin");
+  // The homepage caches statically; publishing is what refreshes it.
+  revalidatePath("/");
+  return {
+    error: null,
+    message:
+      status === "published"
+        ? `"${row.name}" is on the homepage.`
+        : status === "archived"
+          ? "Archived."
+          : "Back in the queue.",
+  };
+}

@@ -11,6 +11,8 @@ import {
 import { getCurrentOrg } from "@/lib/org";
 import { InstallCard } from "@/components/install-card";
 import { ReportButton } from "../_report/report-button";
+import { getMyReview } from "@/lib/reviews";
+import { ReviewCard } from "./review-card";
 
 const SECTIONS = [
   {
@@ -55,6 +57,7 @@ const SECTIONS = [
 export default async function SettingsPage() {
   const current = await getCurrentOrg();
   if (!current) return null;
+  const myReview = await getMyReview(current.userId);
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
@@ -96,7 +99,18 @@ export default async function SettingsPage() {
             on a phone, and a phone is where most of the going wrong
             happens. */}
         <div className="mt-4 overflow-hidden rounded-lg border border-slate-200 bg-white md:hidden">
+
           <ReportButton variant="row" />
+        </div>
+
+        <div className="mt-4">
+          <ReviewCard
+            hadReview={Boolean(myReview)}
+            defaultRating={myReview?.rating ?? 5}
+            defaultQuote={myReview?.quote ?? ""}
+            defaultName={myReview?.name ?? current.displayName ?? ""}
+            defaultCompany={myReview?.company ?? current.org.name ?? ""}
+          />
         </div>
       </div>
     </div>

@@ -441,3 +441,40 @@ export async function getAdminPromoCodes(): Promise<AdminPromoCode[]> {
     createdAt: new Date(String(r.created_at)),
   }));
 }
+
+export type AdminReview = {
+  id: string;
+  rating: number;
+  quote: string;
+  name: string;
+  company: string | null;
+  orgName: string | null;
+  consentPublic: boolean;
+  status: "new" | "published" | "archived";
+  source: string;
+  createdAt: Date;
+};
+
+/** Every review, newest unhandled first. */
+export async function getAdminReviews(): Promise<AdminReview[]> {
+  const rows = (await db.execute(sql`
+    SELECT r.id, r.rating, r.quote, r.name, r.company, r.consent_public,
+           r.status, r.source, r.created_at, o.name AS org_name
+    FROM reviews r
+    LEFT JOIN organizations o ON o.id = r.org_id
+    ORDER BY (r.status = 'new') DESC, r.created_at DESC
+  `)) as unknown as Record<string, unknown>[];
+
+  return rows.map((r) => ({
+    id: String(r.id),
+    rating: Number(r.rating),
+    quote: String(r.quote),
+    name: String(r.name),
+    company: r.company ? String(r.company) : null,
+    orgName: r.org_name ? String(r.org_name) : null,
+    consentPublic: Boolean(r.consent_public),
+    status: r.status as AdminReview["status"],
+    source: String(r.source),
+    createdAt: new Date(String(r.created_at)),
+  }));
+}
