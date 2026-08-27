@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Check, Eye, PlayCircle, Rocket, Star, BellRing } from "lucide-react";
+import { Check, Eye, Rocket, Star, BellRing } from "lucide-react";
 import Image from "next/image";
 import { BoardPreview } from "./_components/board-preview";
 import { CtaButton } from "./_components/cta";
@@ -175,19 +175,20 @@ export default function HomePage() {
       {/* ------------------------------------------------ 2. PROBLEM / SOLUTION */}
       <section id="how-it-works" className="bg-white">
         <div className="mx-auto grid max-w-6xl gap-12 px-5 py-20 lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-8 lg:py-28">
-          {/* Best spot on the page for a video. Placeholder until Jerry records one. */}
-          <div className="flex aspect-video items-center justify-center rounded-2xl border-2 border-dashed border-[var(--rule)] bg-[var(--surface-alt)]">
-            <div className="px-6 text-center">
-              <PlayCircle className="mx-auto size-14 text-[var(--brand)]/45" />
-              <p className="mt-3 text-sm font-semibold text-[var(--ink-soft)]">
-                Video slot
-              </p>
-              <p className="mx-auto mt-1 max-w-[34ch] text-xs text-[var(--ink-muted)]">
-                A 60 to 90 second walkthrough goes here. Pages with video
-                convert markedly better, and this is the strongest spot for it.
-              </p>
-            </div>
-          </div>
+          {/* The intro video, self-hosted: no third-party chrome, and no
+              "related videos" leading a visitor off the page. Poster shows
+              until they choose to play; nothing autoplays at anybody. */}
+          <video
+            controls
+            playsInline
+            preload="metadata"
+            poster="/chumley-intro-poster.jpg"
+            className="aspect-video w-full rounded-2xl border border-[var(--rule)] bg-black shadow-[0_18px_44px_-18px_rgba(9,30,66,0.4)]"
+          >
+            <source src="/chumley-intro.mp4" type="video/mp4" />
+            Your browser cannot play this video.
+            <a href="/chumley-intro.mp4">Download it instead.</a>
+          </video>
 
           <div>
             <p className="text-xl leading-snug font-bold text-[var(--ink)] sm:text-2xl">
