@@ -5,7 +5,6 @@ import { alertAsync } from "@/lib/alert";
 import { organizations, subscriptions } from "@/db/schema";
 import { priceFor } from "@/lib/paddle/catalog";
 import { paddle } from "@/lib/paddle/server";
-import { PRICES } from "@/lib/paddle/catalog";
 
 const date = (v: string | null | undefined) => (v ? new Date(v) : null);
 
@@ -44,24 +43,13 @@ async function orgIdByCustomer(customerId: string): Promise<string | null> {
 }
 
 
-const YEARLY_IDS: string[] = [
-  PRICES.solo.yearly,
-  PRICES.team["3to4"].yearly,
-  PRICES.team["5to9"].yearly,
-  PRICES.team["10plus"].yearly,
-];
-
 /**
- * Put a subscription onto the price its seat count has earned.
+ * Put a subscription onto the one flat price.
  *
- * Paddle will not let the price change while a subscription is trialing,
- * so a team that grew during their trial sits on the single-seat price
- * with the wrong number of seats attached. This is the first moment that
- * can be fixed, and it only ever moves the bill down.
- *
- * It is deliberately driven off state rather than off a particular event.
- * Any subscription webhook re-checks it, so a correction that failed once
- * is retried on the next one instead of being lost.
+ * The volume ladder is gone (flat pricing, 08-27-2026), but Paddle will
+ * not swap the price on a trialing subscription, so anything created on
+ * a legacy price heals here the first webhook after its trial ends. A
+ * negotiated custom price is a deal a human made and is never touched.
  */
 async function correctTier(
   subId: string,
@@ -71,11 +59,8 @@ async function correctTier(
   customPriceId: string | null
 ): Promise<string> {
   if (status !== "active") return "";
-  // A negotiated price is not a tier. Moving somebody off the number they
-  // were promised because the ladder says otherwise would rewrite a deal
-  // a human made, and it would do it silently, on a webhook.
   if (customPriceId && priceId === customPriceId) return "";
-  const wanted = priceFor(quantity, YEARLY_IDS.includes(priceId));
+  const wanted = priceFor();
   if (wanted === priceId) return "";
 
   try {
@@ -83,12 +68,11 @@ async function correctTier(
       items: [{ priceId: wanted, quantity }],
       prorationBillingMode: "prorated_immediately",
     });
-    return ` (moved onto the ${quantity}-seat price)`;
+    return " (moved onto the flat price)";
   } catch (error) {
-    // Not fatal. The customer is on the price they were quoted, which is
-    // the higher one, and the next webhook tries again.
-    console.error("tier correction failed", subId, error);
-    return " (tier correction failed, will retry)";
+    // Not fatal. The next webhook tries again.
+    console.error("flat-price correction failed", subId, error);
+    return " (price correction failed, will retry)";
   }
 }
 

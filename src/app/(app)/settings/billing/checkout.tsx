@@ -8,12 +8,7 @@ import { subscriptionLanded } from "./actions";
 import { Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { priceFor } from "@/lib/paddle/catalog";
-import {
-  SOLO,
-  TEAM_MIN,
-  TRIAL_DAYS,
-  tierFor,
-} from "@/app/(marketing)/pricing/plans";
+import { PRICE, TRIAL_DAYS } from "@/app/(marketing)/pricing/plans";
 
 /**
  * The checkout, opened as a Paddle overlay over our own page.
@@ -35,11 +30,7 @@ export function Checkout({
   email: string;
   /** Seats cannot be bought below the headcount already in the team. */
   membersNow: number;
-  /**
-   * A price negotiated for this team. When set it replaces the ladder
-   * entirely, and the yearly toggle goes with it: a bespoke price is a
-   * monthly number somebody agreed to, not a second ladder to climb.
-   */
+  /** A price negotiated for this team; when set it replaces the flat price. */
   customPriceId: string | null;
   customPriceCents: number | null;
 }) {
@@ -49,7 +40,6 @@ export function Checkout({
   /** Set between the payment succeeding and the webhook landing. */
   const [settling, setSettling] = useState(false);
   const [slow, setSlow] = useState(false);
-  const [yearly, setYearly] = useState(false);
   const [seats, setSeats] = useState(Math.max(1, membersNow));
 
   const token = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN;
@@ -110,35 +100,20 @@ export function Checkout({
   if (!token) return null;
 
   const custom = customPriceId !== null && customPriceCents !== null;
-  const solo = seats <= 1;
-  const rate = custom
-    ? customPriceCents / 100
-    : solo
-      ? yearly
-        ? SOLO.yearly
-        : SOLO.monthly
-      : yearly
-        ? tierFor(seats).yearly
-        : tierFor(seats).monthly;
+  // Flat pricing: one rate for every seat, negotiated prices excepted.
+  const rate = custom ? customPriceCents / 100 : PRICE;
   const total = rate * seats;
-  const period = custom ? "month" : yearly ? "year" : "month";
+  const period = "month";
 
-  // Below the team minimum there is no team price, so the stepper skips the
-  // gap rather than showing a number nobody can buy.
   const step = (by: number) => {
-    setSeats((s) => {
-      const next = s + by;
-      if (next < 1) return 1;
-      if (next > 1 && next < TEAM_MIN) return by > 0 ? TEAM_MIN : 1;
-      return Math.min(200, next);
-    });
+    setSeats((s) => Math.max(1, Math.min(200, s + by)));
   };
 
   const open = () => {
     paddleRef.current?.Checkout.open({
       items: [
         {
-          priceId: custom ? customPriceId : priceFor(seats, yearly),
+          priceId: custom ? customPriceId : priceFor(),
           quantity: seats,
         },
       ],
@@ -182,31 +157,11 @@ export function Checkout({
         </p>
       </div>
 
-      {custom ? (
-        // No toggle. A negotiated price is one monthly number somebody
-        // agreed to, and offering a yearly variant of it would be offering
-        // a price that does not exist.
-        <p className="self-start rounded-full bg-violet-50 px-3 py-1.5 text-sm font-semibold text-violet-800">
-          Your price: ${(customPriceCents! / 100).toFixed(2)} per person, per month
-        </p>
-      ) : (
-        <div className="inline-flex self-start rounded-full bg-slate-100 p-1">
-          {([false, true] as const).map((opt) => (
-            <button
-              key={String(opt)}
-              type="button"
-              onClick={() => setYearly(opt)}
-              className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
-                yearly === opt
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-500"
-              }`}
-            >
-              {opt ? "Yearly" : "Monthly"}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* One flat price needs no toggle; a negotiated one is shown as
+          the single number somebody agreed to. */}
+      <p className="self-start rounded-full bg-[var(--brand-tint)] px-3 py-1.5 text-sm font-semibold text-[var(--brand-dark)]">
+        ${custom ? (customPriceCents! / 100).toFixed(2) : PRICE} per person, per month
+      </p>
 
       <div className="flex items-center justify-between rounded-lg bg-slate-50 p-4">
         <div>
@@ -248,7 +203,7 @@ export function Checkout({
           ${total.toLocaleString()}
         </span>{" "}
         a {period}
-        {!solo && ` · $${rate} each`}
+        {seats > 1 && ` · $${rate} each`}
       </p>
 
       <Button onClick={open} disabled={!ready} size="lg">

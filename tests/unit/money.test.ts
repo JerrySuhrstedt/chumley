@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { centsToDollars, dollarsToCents } from "@/lib/paddle/custom-price";
-import { SOLO, TEAM_MIN, TEAM_TIERS, tierFor, tierLabel } from "@/app/(marketing)/pricing/plans";
+import { PRICE } from "@/app/(marketing)/pricing/plans";
+import { PRICES, priceFor } from "@/lib/paddle/catalog";
 
 /**
  * Money in a float is a bug waiting for a decimal, and this is the input an
@@ -36,36 +37,15 @@ describe("dollarsToCents", () => {
   });
 });
 
-describe("the volume ladder", () => {
-  it("puts each seat count on the tier the pricing page shows", () => {
-    expect(tierFor(3).monthly).toBe(15);
-    expect(tierFor(4).monthly).toBe(15);
-    expect(tierFor(5).monthly).toBe(13);
-    expect(tierFor(9).monthly).toBe(13);
-    expect(tierFor(10).monthly).toBe(11);
-    expect(tierFor(250).monthly).toBe(11);
+describe("flat pricing", () => {
+  it("is one price, which is the entire model", () => {
+    expect(PRICE).toBe(14);
   });
 
-  it("never returns a cheaper tier than a larger team would get", () => {
-    let previous = Infinity;
-    for (let seats = TEAM_MIN; seats <= 40; seats++) {
-      const rate = tierFor(seats).monthly;
-      expect(rate).toBeLessThanOrEqual(previous);
-      previous = rate;
-    }
-  });
-
-  it("prices a team below any solo rate, which is the whole promise", () => {
-    for (const t of TEAM_TIERS) expect(t.monthly).toBeLessThan(SOLO.monthly);
-  });
-
-  it("bills yearly at ten months for twelve", () => {
-    expect(SOLO.yearly).toBe(SOLO.monthly * 10);
-    for (const t of TEAM_TIERS) expect(t.yearly).toBe(t.monthly * 10);
-  });
-
-  it("labels the open-ended tier without an upper bound", () => {
-    expect(tierLabel(TEAM_TIERS[0])).toBe("3 to 4");
-    expect(tierLabel(TEAM_TIERS[TEAM_TIERS.length - 1])).toBe("10 or more");
+  it("charges every seat count the same single Paddle price", () => {
+    // priceFor takes no arguments any more: there is exactly one answer,
+    // and this test exists so a future second answer has to come here
+    // and explain itself.
+    expect(priceFor()).toBe(PRICES.flat.monthly);
   });
 });

@@ -9,13 +9,7 @@ import {
   MERCHANT,
   Section,
 } from "../_components/legal";
-import {
-  SOLO,
-  TEAM_MIN,
-  TEAM_TIERS,
-  TRIAL_DAYS,
-  tierLabel,
-} from "../pricing/plans";
+import { PRICE, TRIAL_DAYS } from "../pricing/plans";
 
 export const metadata: Metadata = {
   title: "Terms of Service | Chumley",
@@ -62,27 +56,13 @@ export default function TermsPage() {
           checkout based on your location. Current list prices are:
         </p>
         <DataTable
-          head={["Plan", "People", "Per person, monthly", "Per person, yearly"]}
-          rows={[
-            [
-              SOLO.name,
-              "1",
-              `$${SOLO.monthly}`,
-              `$${SOLO.yearly}`,
-            ],
-            ...TEAM_TIERS.map((t) => [
-              "Sales team",
-              `${tierLabel(t)}`,
-              `$${t.monthly}`,
-              `$${t.yearly}`,
-            ]),
-          ]}
+          head={["Plan", "Price"]}
+          rows={[["Chumley", `$${PRICE} per user, per month`]]}
         />
         <p>
-          The team plan requires a minimum of {TEAM_MIN} people. Yearly plans
-          are billed once for the full year in advance. The prices shown on our{" "}
-          <Link href="/pricing">pricing page</Link> at the time you subscribe
-          are the prices that apply to you.
+          That is the only plan. Billing is monthly per user, and the price
+          shown on our <Link href="/pricing">pricing page</Link> at the time
+          you subscribe is the price that applies to you.
         </p>
         <p>
           <strong>Free trial.</strong> New accounts get {TRIAL_DAYS} days of

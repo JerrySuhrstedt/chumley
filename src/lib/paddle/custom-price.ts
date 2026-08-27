@@ -27,7 +27,7 @@ import { PRICES } from "@/lib/paddle/catalog";
  */
 
 /** The bill this covers. Solo product, because a bespoke price is per seat. */
-const PRODUCT_HINT = PRICES.solo.monthly;
+const PRODUCT_HINT = PRICES.flat.monthly;
 
 const marker = (cents: number, trialDays: number) =>
   trialDays > 0

@@ -13,15 +13,12 @@ const rows = await sql`
   left join subscriptions s on s.org_id = o.id
   group by o.id, o.name order by o.name`;
 
-const YEARLY = [PRICES.solo.yearly, PRICES.team["3to4"].yearly,
-                PRICES.team["5to9"].yearly, PRICES.team["10plus"].yearly];
-
 for (const r of rows) {
   if (!r.status) { console.log(`${String(r.name).padEnd(22)} members=${r.members}  (no subscription, ungated)`); continue; }
   const notes: string[] = [];
   if (r.members > r.seats_paid) notes.push("OVER SEATS, invites blocked");
   // A team on the wrong rung of the volume ladder is overpaying.
-  const want = priceFor(r.seats_paid, YEARLY.includes(r.price_id));
+  const want = priceFor();
   if (r.status === "active" && want !== r.price_id) notes.push("WRONG TIER PRICE, overpaying");
   if (r.status === "trialing" && want !== r.price_id) notes.push("tier corrects at trial end");
   console.log(`${String(r.name).padEnd(22)} members=${r.members}  paid=${r.seats_paid}  ${r.status}${notes.length ? "  <-- " + notes.join("; ") : ""}`);

@@ -5,7 +5,6 @@ import { Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { changeSeats, previewSeats } from "./actions";
-import { TEAM_MIN } from "@/app/(marketing)/pricing/plans";
 
 type Quote = {
   seats: number;
@@ -68,7 +67,6 @@ export function Seats({
     setWant((s) => {
       const next = s + by;
       if (next < floor) return floor;
-      if (next > 1 && next < TEAM_MIN) return by > 0 ? TEAM_MIN : Math.max(floor, 1);
       return Math.min(200, next);
     });
 

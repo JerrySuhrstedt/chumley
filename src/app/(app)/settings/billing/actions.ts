@@ -9,7 +9,7 @@ import { redeemFreeTimeCode, type RedeemResult } from "@/lib/promo";
 import { paddle } from "@/lib/paddle/server";
 import { priceFor } from "@/lib/paddle/catalog";
 import { countMembers } from "@/lib/paddle/access";
-import { TEAM_MIN } from "@/app/(marketing)/pricing/plans";
+import {  } from "@/app/(marketing)/pricing/plans";
 
 /**
  * Changing the number of seats.
@@ -25,7 +25,6 @@ function clamp(want: number, members: number) {
   const floor = Math.max(1, members);
   const n = Math.max(floor, Math.min(200, Math.round(want)));
   // There is no team price for two, so two is not a number anyone can buy.
-  if (n > 1 && n < TEAM_MIN) return TEAM_MIN;
   return n;
 }
 
@@ -105,23 +104,17 @@ export async function previewSeats(want: number) {
 /**
  * What Paddle will actually accept for this subscription.
  *
- * Paddle forbids swapping the price on a trialing subscription, and
- * insists quantity changes on one bill nothing. So a solo trialer who
- * adds two teammates stays on the single-seat price and is quoted three
- * times $19 rather than three times $15.
- *
- * That quote is honest, just unflattering, and it is the safe direction
- * to be wrong in: they are told the higher number and later charged the
- * lower one. tierCorrection in sync.ts drops them onto the team price the
- * moment the trial ends and Paddle allows it.
+ * Flat pricing has one price, but Paddle forbids swapping the price on a
+ * trialing subscription, so anything still on a legacy price keeps it
+ * until the trial ends and sync.ts heals it. Quantity changes go through
+ * regardless.
  */
 async function planFor(
   sub: { status: string; priceId: string },
   seats: number
 ) {
   const trialing = sub.status === "trialing";
-  const yearly = await isYearly(sub.priceId);
-  const wanted = priceFor(seats, yearly);
+  const wanted = priceFor();
 
   if (trialing) {
     return {
@@ -136,18 +129,6 @@ async function planFor(
     proration: "prorated_immediately" as const,
     deferred: false,
   };
-}
-
-/** Whether the current price is one of the yearly ones. */
-async function isYearly(priceId: string) {
-  const { PRICES } = await import("@/lib/paddle/catalog");
-  const yearlyIds = [
-    PRICES.solo.yearly,
-    PRICES.team["3to4"].yearly,
-    PRICES.team["5to9"].yearly,
-    PRICES.team["10plus"].yearly,
-  ];
-  return yearlyIds.includes(priceId as (typeof yearlyIds)[number]);
 }
 
 export async function changeSeats(want: number) {

@@ -8,29 +8,29 @@ import { PlanCards } from "./plan-cards";
 export const metadata: Metadata = {
   title: "Pricing | Chumley",
   description:
-    "$19 a month for one person, from $15 each for a sales team, and less again as the team grows. Everything included, and 14 days free before you pay anything.",
+    "$14 per user per month. That's it: no tiers, no annual contract, no volume ladder. Everything included, and 14 days free before you pay anything.",
 };
 
 const FAQS: { q: string; a: string }[] = [
   {
     q: "What does it cost?",
-    a: "Nineteen dollars a month for one person. From fifteen dollars each for a team, dropping to thirteen at five people and eleven at ten. Yearly works out at ten months for twelve. You get 14 days free before any of that starts, and we do not ask for a card to begin.",
+    a: "Fourteen dollars per user, per month. That is the whole answer: one rep pays fourteen, a team of six pays fourteen each. There are no tiers, no annual contract and no volume math. You get 14 days free before any of that starts, and we do not ask for a card to begin.",
   },
   {
     q: "Do I have to put a card in to try it?",
     a: "No. The trial runs for 14 days without a payment method, so nothing can charge you by accident at the end of it. If you decide not to subscribe, your board simply goes read-only and your data stays put.",
   },
   {
-    q: "What is the difference between the two plans?",
-    a: "How many people are using it, and nothing else. Both are the entire product. The team price is lower per person because a manager buying six seats is a different sale from one rep buying one, and it drops again at five and at ten. Nothing is ever withheld to sell you an upgrade later.",
+    q: "Which plan should I pick?",
+    a: "There is only one, on purpose. Every account is the entire product at the same price per person, whether that is one rep or a whole team. Nothing is ever withheld to sell you an upgrade later.",
   },
   {
     q: "What if my team grows?",
-    a: "Add them and the bill follows, prorated from the day they start, and if the new person takes you past five or ten, everybody's price drops with them automatically. You pay for the people actually using it. Nobody has to ration logins to keep the bill down, which is how half a pipeline ends up off the board.",
+    a: "Add them and the bill follows, prorated from the day they start, at the same fourteen dollars as everyone else. Growing never changes the per-person price in either direction. Nobody has to ration logins to keep the bill down, which is how half a pipeline ends up off the board.",
   },
   {
-    q: "Why does the team plan start at three?",
-    a: "Because otherwise it is not a team plan, it is just a discount with extra steps. Below three people the single price is the honest one.",
+    q: "Is there a discount for paying yearly, or for bigger teams?",
+    a: "No, and that is deliberate. A yearly discount is a contract wearing a bow, and a volume ladder means the price on the page is not the price you pay. One number, always true, feels better to us and, we suspect, to you.",
   },
   {
     q: "Can I cancel?",
@@ -64,12 +64,12 @@ export default function PricingPage() {
           </span>
 
           <h1 className="mt-6 text-[2.4rem] leading-[1.05] font-extrabold tracking-tight text-balance text-[var(--ink)] sm:text-5xl">
-            Simple pricing. Everything included.
+            The price is the whole pricing page
           </h1>
 
           <p className="mx-auto mt-5 max-w-[54ch] text-lg leading-relaxed text-[var(--ink-soft)] sm:text-xl">
-            One person or a whole team. Nothing is held back on either, and
-            the price per person falls as more of you use it.
+            One person or a whole team, everyone pays the same and everyone
+            gets everything. No tiers, no contracts, no asterisks.
           </p>
 
           <PlanCards />
