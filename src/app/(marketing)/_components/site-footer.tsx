@@ -34,16 +34,13 @@ export function SiteFooter() {
               people who would rather be selling than typing.
             </p>
 
-            {/* The registered address. Card networks want a buyer to be able
-                to find who charged them without having to email first. */}
+            {/* Email stays: Paddle is the merchant of record, so the card
+                networks' find-who-charged-you duty is theirs, but a buyer
+                should still be able to reach a human without hunting. */}
             <address className="mt-5 text-[15px] leading-relaxed text-white/70 not-italic">
               <span className="font-semibold text-white/90">
                 {COMPANY.legalName}
               </span>
-              <br />
-              {COMPANY.street}
-              <br />
-              {COMPANY.city}, {COMPANY.stateCode} {COMPANY.postal}, USA
               <br />
               <a
                 href={`mailto:${COMPANY.email}`}
@@ -52,12 +49,7 @@ export function SiteFooter() {
                 {COMPANY.email}
               </a>
               <br />
-              <a
-                href={`tel:${COMPANY.phoneHref}`}
-                className="transition-colors hover:text-[var(--brand)]"
-              >
-                {COMPANY.phone}
-              </a>
+              Developed in Chandler, Arizona, USA
             </address>
           </div>
 
