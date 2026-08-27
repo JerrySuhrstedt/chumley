@@ -97,8 +97,10 @@ export default function PrivacyPage() {
 
         <p className="mt-2">
           <strong>What we do not collect.</strong> We do not run advertising
-          networks, third-party analytics, session recording, or cross-site
-          tracking on the Service. We do not connect to your email inbox and we
+          networks, session recording, or cross-site tracking. Inside the
+          signed-in Service there is no third-party analytics of any kind;
+          our public marketing pages use Google Analytics, as described in
+          section 6. We do not connect to your email inbox and we
           do not read your email. We do not knowingly collect information from
           anyone under 18.
         </p>
@@ -205,13 +207,20 @@ export default function PrivacyPage() {
 
       <Section heading="6. Cookies and similar technologies">
         <p>
-          We use strictly necessary cookies only. These store your
-          authentication session so you stay signed in and remain secure while
-          moving between pages, and they retain small interface preferences such
-          as whether your sidebar is collapsed. We do not use advertising,
-          analytics, or tracking cookies, which is why the Service does not
-          display a cookie consent banner. Blocking essential cookies will
-          prevent you from signing in.
+          Inside the application we use strictly necessary cookies only.
+          These store your authentication session so you stay signed in and
+          remain secure while moving between pages, and they retain small
+          interface preferences such as whether your sidebar is collapsed.
+          Blocking essential cookies will prevent you from signing in.
+        </p>
+        <p>
+          On our public marketing pages we use Google Analytics to understand
+          how visitors find and use the site, which sets Google's analytics
+          cookies in your browser. This applies only to the public website:
+          once you sign in, nothing about your use of the product is sent to
+          Google Analytics. You can block analytics cookies with any standard
+          content blocker without affecting the Service, or opt out directly
+          via Google's browser add-on at tools.google.com/dlpage/gaoptout.
         </p>
       </Section>
 
