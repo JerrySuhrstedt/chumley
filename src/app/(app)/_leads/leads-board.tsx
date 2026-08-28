@@ -92,6 +92,7 @@ export function LeadsBoard({
   const [logType, setLogType] = useState<ActivityType>("note");
   const [temp, setTemp] = useState<LeadTemperature | null>(null);
   const [due, setDue] = useState<DueFilter | null>(null);
+  const [ownerFilter, setOwnerFilter] = useState<string | null>(null);
   const dragStartStage = useRef<LeadStage | null>(null);
   const [, startTransition] = useTransition();
   const router = useRouter();
@@ -154,13 +155,13 @@ export function LeadsBoard({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return localLeads.filter((lead) => {
-      if (!matchesFilters(lead, temp, due)) return false;
+      if (!matchesFilters(lead, temp, due, ownerFilter)) return false;
       if (!q) return true;
       return [lead.name, lead.companyName, lead.phone]
         .filter(Boolean)
         .some((field) => field!.toLowerCase().includes(q));
     });
-  }, [localLeads, query, temp, due]);
+  }, [localLeads, query, temp, due, ownerFilter]);
 
   /**
    * Swipe right: one bucket forward. Swipe left: off the board.
@@ -445,7 +446,9 @@ export function LeadsBoard({
         <BoardFilters
           temp={temp}
           due={due}
+          owner={ownerFilter}
           onTemp={setTemp}
+          onOwner={setOwnerFilter}
           onDue={setDue}
           showing={filtered.length}
           total={localLeads.length}
