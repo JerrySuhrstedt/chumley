@@ -67,6 +67,22 @@ export async function createUatTester(
   return { error: null };
 }
 
+/**
+ * A link with nobody attached: for communities where the owner has no
+ * name or email to enter. The first tester to open it claims it with
+ * their own details (see claimUatTester in the uat actions).
+ */
+export async function createBlankUatTester(): Promise<void> {
+  await requireAdmin();
+  await db.insert(uatTesters).values({
+    token: randomBytes(8).toString("base64url"),
+    name: "",
+    email: "",
+  });
+  revalidatePath("/admin");
+  revalidatePath("/admin/testing");
+}
+
 export async function deleteUatTester(id: string): Promise<void> {
   await requireAdmin();
   // Reports survive: tester_id is ON DELETE SET NULL, so their submitted

@@ -3,7 +3,12 @@
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { Bug, Check as CheckIcon, Loader2 } from "lucide-react";
 import { ChumleyLogo } from "@/components/chumley-logo";
-import { saveUatDraft, submitUatReport, type UatSubmitState } from "./actions";
+import {
+  claimUatTester,
+  saveUatDraft,
+  submitUatReport,
+  type UatSubmitState,
+} from "./actions";
 import { ALL_CHECKS, SECTIONS, SEVERITIES } from "./checks";
 
 type ItemState = {
@@ -78,6 +83,9 @@ function loadDraft(tester: UatTesterInfo | null): Draft {
  */
 export function UatClient({ tester = null }: { tester?: UatTesterInfo | null }) {
   const [draft, setDraft] = useState<Draft | null>(null);
+  // A blank link handed out in a community arrives with no name on it;
+  // whoever opens it first introduces themselves and it becomes theirs.
+  const claimed = Boolean(tester?.name);
   const [state, formAction, pending] = useActionState(submitUatReport, INITIAL);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hydrated = useRef(false);
@@ -175,19 +183,32 @@ export function UatClient({ tester = null }: { tester?: UatTesterInfo | null }) 
           </div>
           {tester && (
             <p className="mt-6 text-sm text-slate-600">
-              This is your personal link, {draft.first}. Your progress saves
-              as you go, so you can switch between your laptop and your phone
-              and pick up where you left off. Just open the same link.
+              This is your personal link{claimed ? `, ${draft.first}` : ""}.
+              Your progress saves as you go, so you can switch between your
+              laptop and your phone and pick up where you left off. Just open
+              the same link.
             </p>
           )}
           <form
             className="mt-8 flex flex-col gap-4"
             onSubmit={(e) => {
               e.preventDefault();
+              // Introducing yourself on a blank link makes it yours: the
+              // name sticks to the link server-side, so every device after
+              // this one greets you instead of asking again.
+              if (tester && !claimed) {
+                void claimUatTester(
+                  tester.token,
+                  `${draft.first} ${draft.last}`.trim(),
+                  draft.email
+                ).catch(() => {
+                  // The run still works; the submit carries the typed name.
+                });
+              }
               setDraft({ ...draft, started: true });
             }}
           >
-            {!tester && (
+            {!claimed && (
             <div className="grid grid-cols-2 gap-4">
               <label className="flex flex-col gap-1.5 text-sm font-medium text-slate-700">
                 First name
@@ -209,7 +230,7 @@ export function UatClient({ tester = null }: { tester?: UatTesterInfo | null }) 
               </label>
             </div>
             )}
-            {!tester && (
+            {!claimed && (
             <label className="flex flex-col gap-1.5 text-sm font-medium text-slate-700">
               Email
               <input

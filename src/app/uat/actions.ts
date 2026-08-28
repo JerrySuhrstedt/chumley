@@ -1,7 +1,7 @@
 "use server";
 
 import { after } from "next/server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { backlogItems, uatReports, uatTesters } from "@/db/schema";
 import { scopeBacklogItems } from "@/lib/backlog/scope";
@@ -113,6 +113,29 @@ export async function submitUatReport(
   }
 
   return { error: null, sent: true };
+}
+
+/**
+ * A blank link introducing itself. Links can be created with no name or
+ * email for handing out in communities where the owner has neither; the
+ * first person to open one fills in who they are, and the link is theirs
+ * from then on. Only an unclaimed link accepts a claim, so a forwarded
+ * link cannot be renamed out from under its tester.
+ */
+export async function claimUatTester(
+  token: string,
+  name: string,
+  email: string
+): Promise<void> {
+  const cleanToken = String(token ?? "").trim().slice(0, 64);
+  const cleanName = String(name ?? "").trim().slice(0, 120);
+  const cleanEmail = String(email ?? "").trim().slice(0, 200);
+  if (!cleanToken || !cleanName || !cleanEmail.includes("@")) return;
+
+  await db
+    .update(uatTesters)
+    .set({ name: cleanName, email: cleanEmail })
+    .where(and(eq(uatTesters.token, cleanToken), eq(uatTesters.name, "")));
 }
 
 /**

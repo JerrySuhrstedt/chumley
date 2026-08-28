@@ -6,6 +6,7 @@ import { Loader2, Trash2 } from "lucide-react";
 import { CopiedChip } from "@/components/copied-chip";
 import type { AdminUatTester } from "@/lib/admin-data";
 import {
+  createBlankUatTester,
   createUatTester,
   deleteUatTester,
   type CreateTesterResult,
@@ -65,6 +66,15 @@ export function Testers({
           )}
           Create link
         </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => start(async () => void (await createBlankUatTester()))}
+          title="No name or email needed. Whoever opens it first claims it as theirs."
+          className="rounded-md border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+        >
+          Blank link
+        </button>
         {state.error && (
           <p className="w-full text-sm text-red-700">{state.error}</p>
         )}
@@ -81,9 +91,11 @@ export function Testers({
               >
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-slate-900">
-                    {t.name}
+                    {t.name || "Unclaimed link"}
                   </p>
-                  <p className="truncate text-xs text-slate-500">{t.email}</p>
+                  <p className="truncate text-xs text-slate-500">
+                    {t.email || "whoever opens it first makes it theirs"}
+                  </p>
                 </div>
                 <p className="text-xs text-slate-500">
                   {t.reports} {t.reports === 1 ? "run sent" : "runs sent"}
@@ -118,10 +130,10 @@ export function Testers({
                   <button
                     type="button"
                     disabled={busy}
-                    aria-label={`Remove ${t.name}`}
+                    aria-label={`Remove ${t.name || "this unclaimed link"}`}
                     onClick={() => {
                       // Their sent reports survive; only the link dies.
-                      if (confirm(`Remove ${t.name}'s link? Their sent reports stay.`))
+                      if (confirm(t.name ? `Remove ${t.name}'s link? Their sent reports stay.` : "Remove this unclaimed link?"))
                         start(async () => void (await deleteUatTester(t.id)));
                     }}
                     className="rounded-md border border-slate-300 bg-white p-1.5 text-slate-500 hover:bg-slate-50 hover:text-red-700 disabled:opacity-50"
