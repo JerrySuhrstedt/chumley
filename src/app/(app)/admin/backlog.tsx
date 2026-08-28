@@ -1,8 +1,8 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { ClipboardList, Loader2, RefreshCw } from "lucide-react";
+import { ChevronRight, ClipboardList, Loader2, RefreshCw } from "lucide-react";
 import type { AdminBacklogItem } from "@/lib/admin-data";
 import { ALL_CHECKS } from "@/app/uat/checks";
 import { rescopeBacklogItem, setBacklogStatus } from "./uat-actions";
@@ -33,6 +33,16 @@ const SIZE_LABEL: Record<string, string> = {
  */
 export function Backlog({ items }: { items: AdminBacklogItem[] }) {
   const [busy, start] = useTransition();
+  // Closed accordion by default: a long backlog should scan as one line
+  // per item, and open only where a decision is being made.
+  const [open, setOpen] = useState<Set<string>>(new Set());
+  const toggle = (id: string) =>
+    setOpen((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   if (items.length === 0) {
     return (
@@ -56,16 +66,41 @@ export function Backlog({ items }: { items: AdminBacklogItem[] }) {
       {items.map((item) => {
         const s = STATUS[item.status];
         const scope = item.scope;
+        const isOpen = open.has(item.id);
         return (
           <li
             key={item.id}
-            className={`rounded-lg border p-4 ${
+            className={`rounded-lg border ${
               item.status === "new"
                 ? "border-[var(--brand)]/40 bg-[var(--brand-tint)]"
                 : "border-slate-200 bg-white"
             }`}
           >
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            {/* Closed is one line: a chevron and the headline. Everything
+                else waits inside; the brand tint alone marks needs-review. */}
+            <button
+              type="button"
+              onClick={() => toggle(item.id)}
+              aria-expanded={isOpen}
+              className="flex w-full items-center gap-2.5 p-4 text-left"
+            >
+              <ChevronRight
+                className={`size-4 shrink-0 text-slate-400 transition-transform ${
+                  isOpen ? "rotate-90" : ""
+                }`}
+              />
+              <span
+                className={`min-w-0 flex-1 text-sm font-semibold text-slate-900 ${
+                  isOpen ? "" : "truncate"
+                }`}
+              >
+                {scope?.summary ?? titleById.get(item.checkId) ?? item.checkId}
+              </span>
+            </button>
+
+            {isOpen && (
+            <div className="px-4 pb-4">
+            <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1">
               <span
                 className={`inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-bold tracking-wide uppercase ${s.className}`}
               >
@@ -80,10 +115,7 @@ export function Backlog({ items }: { items: AdminBacklogItem[] }) {
                 </span>
               )}
               {scope?.size && (
-                <span
-                  className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600"
-                  title={SIZE_LABEL[scope.size]}
-                >
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
                   {SIZE_LABEL[scope.size] ?? scope.size}
                 </span>
               )}
@@ -92,11 +124,7 @@ export function Backlog({ items }: { items: AdminBacklogItem[] }) {
                 {formatDistanceToNow(item.createdAt, { addSuffix: true })}
               </span>
             </div>
-
-            <p className="mt-2 font-semibold text-slate-900">
-              {scope?.summary ?? titleById.get(item.checkId) ?? item.checkId}
-            </p>
-            <p className="mt-1 border-l-2 border-slate-200 pl-3 text-sm whitespace-pre-wrap text-slate-600">
+            <p className="border-l-2 border-slate-200 pl-3 text-sm whitespace-pre-wrap text-slate-600">
               {item.note}
             </p>
 
@@ -217,6 +245,8 @@ export function Backlog({ items }: { items: AdminBacklogItem[] }) {
                 </button>
               )}
             </div>
+            </div>
+            )}
           </li>
         );
       })}
