@@ -299,6 +299,8 @@ export function BoardFilters({
 
       <DueMenu due={due} onDue={onDue} />
 
+      <span className="mx-1 h-5 w-px shrink-0 bg-black/15" />
+
       <OwnerFilter owner={owner} onOwner={onOwner} />
 
       <span className="mx-1 hidden h-5 w-px bg-black/15 sm:block" />
