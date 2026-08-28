@@ -184,6 +184,28 @@ export function UatClient({
             pace, tick what you tried, and write up anything that felt wrong.
             Your progress saves on this device until you press Send.
           </p>
+          <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+            <p className="font-semibold text-slate-900">What you are testing</p>
+            <p className="mt-1.5">
+              Chumley is a dead-simple CRM for small sales teams: a board of
+              deals you drag from new lead to won, with one-tap call, text,
+              and email logging. The whole pitch is nothing to set up,
+              nothing to learn.
+            </p>
+            <p className="mt-3 font-semibold text-slate-900">
+              Who you are pretending to be
+            </p>
+            <p className="mt-1.5">
+              Picture a roofing or HVAC salesperson standing next to their
+              truck between appointments: phone in one hand, sixty seconds
+              until the next call, deals living on sticky notes and memory.
+              They have already quit two CRMs because logging a call took too
+              many taps, they are often over fifty, and they will go straight
+              back to their spreadsheet the moment this feels like work. Test
+              like that person: hurried, one-handed, standing in the sun. If
+              something would annoy them, it is a bug worth writing up.
+            </p>
+          </div>
           <div className="mt-6 rounded-lg border border-orange-200 bg-orange-50 p-4 text-sm text-orange-950">
             <p className="font-semibold">Three things not to touch</p>
             <ul className="mt-1.5 list-disc pl-5">
