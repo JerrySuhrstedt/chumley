@@ -11,14 +11,68 @@ import {
   submitUatReport,
   type UatSubmitState,
 } from "./actions";
-import { ALL_CHECKS, SECTIONS, SEVERITIES } from "./checks";
+import {
+  ALL_CHECKS,
+  PUNCH_LIST_VERSION,
+  SECTIONS,
+  SEVERITIES,
+} from "./checks";
 
 type ItemState = {
   tried: boolean;
   flagged: boolean;
-  note: string;
+  /** The structured write-up: did / expected / actual / browser / extra. */
+  did: string;
+  expected: string;
+  actual: string;
+  browser: string;
+  extra: string;
   severity: string | null;
 };
+
+/**
+ * Items as they may arrive from storage: any field optional, and `note`
+ * carried by drafts saved before the write-up was split into fields.
+ */
+export type SavedItems = Record<
+  string,
+  Partial<Omit<ItemState, "severity">> & {
+    severity?: string | null;
+    note?: string;
+  }
+>;
+
+/** Whether the tester has written anything at all about this check. */
+function hasText(it: ItemState | undefined): boolean {
+  if (!it) return false;
+  return [it.did, it.expected, it.actual, it.browser, it.extra].some((s) =>
+    s.trim()
+  );
+}
+
+/** Old single-note drafts land in Additional notes rather than vanishing. */
+function normalizeItems(raw: SavedItems | undefined | null): Draft["items"] {
+  const items: Draft["items"] = {};
+  for (const [id, v] of Object.entries(raw ?? {})) {
+    if (!v || typeof v !== "object") continue;
+    items[id] = {
+      tried: v.tried === true,
+      flagged: v.flagged === true,
+      did: typeof v.did === "string" ? v.did : "",
+      expected: typeof v.expected === "string" ? v.expected : "",
+      actual: typeof v.actual === "string" ? v.actual : "",
+      browser: typeof v.browser === "string" ? v.browser : "",
+      extra:
+        typeof v.extra === "string" && v.extra
+          ? v.extra
+          : typeof v.note === "string"
+            ? v.note
+            : "",
+      severity: typeof v.severity === "string" ? v.severity : null,
+    };
+  }
+  return items;
+}
 
 type Draft = {
   first: string;
@@ -34,11 +88,20 @@ export type UatTesterInfo = {
   name: string;
   email: string;
   /** Their run as last saved from any device, or null for a fresh one. */
-  savedItems: Record<string, ItemState> | null;
+  savedItems: SavedItems | null;
 };
 
 const DRAFT_KEY = "chumley-uat-draft-v1";
-const EMPTY_ITEM: ItemState = { tried: false, flagged: false, note: "", severity: null };
+const EMPTY_ITEM: ItemState = {
+  tried: false,
+  flagged: false,
+  did: "",
+  expected: "",
+  actual: "",
+  browser: "",
+  extra: "",
+  severity: null,
+};
 const INITIAL: UatSubmitState = { error: null, sent: false };
 
 function loadDraft(tester: UatTesterInfo | null): Draft {
@@ -63,7 +126,7 @@ function loadDraft(tester: UatTesterInfo | null): Draft {
         last: typeof parsed.last === "string" && parsed.last ? parsed.last : empty.last,
         email: typeof parsed.email === "string" && parsed.email ? parsed.email : empty.email,
         started: parsed.started === true,
-        items: parsed.items && typeof parsed.items === "object" ? (parsed.items as Draft["items"]) : {},
+        items: normalizeItems(parsed.items as SavedItems | undefined),
       };
     }
   } catch {
@@ -72,7 +135,7 @@ function loadDraft(tester: UatTesterInfo | null): Draft {
   // The server copy wins for a personal link: it is what the tester last
   // did on *any* device, while localStorage only knows about this one.
   if (tester?.savedItems && Object.keys(tester.savedItems).length > 0) {
-    return { ...local, items: tester.savedItems };
+    return { ...local, items: normalizeItems(tester.savedItems) };
   }
   return local;
 }
@@ -143,7 +206,7 @@ export function UatClient({
     [draft]
   );
   const flagged = useMemo(
-    () => ALL_CHECKS.filter((c) => draft?.items[c.id]?.note.trim()).length,
+    () => ALL_CHECKS.filter((c) => hasText(draft?.items[c.id])).length,
     [draft]
   );
 
@@ -155,10 +218,22 @@ export function UatClient({
       items: { ...draft.items, [id]: { ...(draft.items[id] ?? EMPTY_ITEM), ...part } },
     });
 
+  // The structured fields fold into one readable note on the wire, so the
+  // submit action, the scoping prompt, and the admin display all keep
+  // working on a single string.
   const findingsJson = JSON.stringify(
     ALL_CHECKS.map((c) => {
       const it = draft.items[c.id] ?? EMPTY_ITEM;
-      return { id: c.id, tried: it.tried, note: it.note, severity: it.severity };
+      const note = [
+        it.did.trim() && `What I did: ${it.did.trim()}`,
+        it.expected.trim() && `Expected: ${it.expected.trim()}`,
+        it.actual.trim() && `What happened: ${it.actual.trim()}`,
+        it.browser.trim() && `Device/browser: ${it.browser.trim()}`,
+        it.extra.trim() && `Notes: ${it.extra.trim()}`,
+      ]
+        .filter(Boolean)
+        .join("\n");
+      return { id: c.id, tried: it.tried, note, severity: it.severity };
     })
   );
 
@@ -350,7 +425,10 @@ export function UatClient({
 
       <div className="mx-auto max-w-3xl py-10">
         <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
-          Punch list
+          Punch list{" "}
+          <span className="align-middle text-sm font-semibold tracking-normal text-slate-400">
+            {PUNCH_LIST_VERSION}
+          </span>
         </h1>
         <p className="mt-2 max-w-2xl text-slate-600">
           Tick each check once you have tried it. If anything surprised you,
@@ -388,7 +466,7 @@ export function UatClient({
             <ul className="mt-4 divide-y divide-slate-200 border-t border-slate-200">
               {section.checks.map((check) => {
                 const it = draft.items[check.id] ?? EMPTY_ITEM;
-                const open = it.flagged || it.note.trim().length > 0;
+                const open = it.flagged || hasText(it);
                 return (
                   <li key={check.id} className="py-4">
                     <div className="flex items-start gap-3.5">
@@ -426,16 +504,66 @@ export function UatClient({
                         </p>
 
                         {open ? (
-                          <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                            <textarea
-                              value={it.note}
-                              onChange={(e) => patch(check.id, { note: e.target.value })}
-                              placeholder="What you did, what you expected, what actually happened. Which device and browser."
-                              rows={3}
-                              maxLength={2000}
-                              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
-                            />
-                            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                          <div className="mt-3 flex flex-col gap-2.5 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                            <p className="text-xs text-slate-500">
+                              Fill in what you can. No field is required, and
+                              even one line helps.
+                            </p>
+                            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+                              What you did
+                              <textarea
+                                value={it.did}
+                                onChange={(e) => patch(check.id, { did: e.target.value })}
+                                placeholder="The steps, in your own words."
+                                rows={2}
+                                maxLength={2000}
+                                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-900"
+                              />
+                            </label>
+                            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+                              What you expected
+                              <textarea
+                                value={it.expected}
+                                onChange={(e) => patch(check.id, { expected: e.target.value })}
+                                placeholder="What you thought would happen."
+                                rows={2}
+                                maxLength={2000}
+                                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-900"
+                              />
+                            </label>
+                            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+                              What actually happened
+                              <textarea
+                                value={it.actual}
+                                onChange={(e) => patch(check.id, { actual: e.target.value })}
+                                placeholder="What it did instead."
+                                rows={2}
+                                maxLength={2000}
+                                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-900"
+                              />
+                            </label>
+                            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+                              Device and browser
+                              <input
+                                value={it.browser}
+                                onChange={(e) => patch(check.id, { browser: e.target.value })}
+                                placeholder="iPhone 15, Safari"
+                                maxLength={200}
+                                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-900"
+                              />
+                            </label>
+                            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+                              Additional notes
+                              <textarea
+                                value={it.extra}
+                                onChange={(e) => patch(check.id, { extra: e.target.value })}
+                                placeholder="Anything else worth knowing."
+                                rows={2}
+                                maxLength={2000}
+                                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-900"
+                              />
+                            </label>
+                            <div className="flex flex-wrap items-center gap-1.5">
                               <span className="mr-1 text-xs text-slate-500">
                                 How bad did it feel?
                               </span>
@@ -460,7 +588,15 @@ export function UatClient({
                               <button
                                 type="button"
                                 onClick={() =>
-                                  patch(check.id, { flagged: false, note: "", severity: null })
+                                  patch(check.id, {
+                                    flagged: false,
+                                    did: "",
+                                    expected: "",
+                                    actual: "",
+                                    browser: "",
+                                    extra: "",
+                                    severity: null,
+                                  })
                                 }
                                 className="ml-auto text-xs font-medium text-slate-500 hover:underline"
                               >

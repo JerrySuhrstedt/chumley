@@ -453,6 +453,8 @@ export type AdminUatReport = {
   id: string;
   testerName: string;
   testerEmail: string;
+  /** Which punch list the run was against, e.g. "Beta 1.0". */
+  listVersion: string | null;
   findings: AdminUatFinding[];
   triedCount: number;
   totalCount: number;
@@ -462,8 +464,8 @@ export type AdminUatReport = {
 /** Submissions from the hidden /uat tester page, newest first. */
 export async function getAdminUatReports(): Promise<AdminUatReport[]> {
   const rows = (await db.execute(sql`
-    SELECT id, tester_name, tester_email, findings, tried_count, total_count,
-           created_at
+    SELECT id, tester_name, tester_email, list_version, findings, tried_count,
+           total_count, created_at
     FROM uat_reports
     ORDER BY created_at DESC
     LIMIT 50
@@ -473,6 +475,7 @@ export async function getAdminUatReports(): Promise<AdminUatReport[]> {
     id: String(r.id),
     testerName: String(r.tester_name),
     testerEmail: String(r.tester_email),
+    listVersion: r.list_version ? String(r.list_version) : null,
     findings: (Array.isArray(r.findings) ? r.findings : []) as AdminUatFinding[],
     triedCount: Number(r.tried_count),
     totalCount: Number(r.total_count),

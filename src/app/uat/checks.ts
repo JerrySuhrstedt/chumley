@@ -5,6 +5,12 @@
  * do, "should" is what correct looks like, in plain English.
  */
 
+/**
+ * Which punch list this is. Bump it when the checks change materially,
+ * so runs in the back office say which list they were run against.
+ */
+export const PUNCH_LIST_VERSION = "Beta 1.0";
+
 export type Check = {
   id: string;
   what: string;

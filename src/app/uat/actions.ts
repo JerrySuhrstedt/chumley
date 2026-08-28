@@ -5,7 +5,12 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { backlogItems, uatReports, uatTesters } from "@/db/schema";
 import { scopeBacklogItems } from "@/lib/backlog/scope";
-import { ALL_CHECKS, CHECK_IDS, SEVERITIES } from "./checks";
+import {
+  ALL_CHECKS,
+  CHECK_IDS,
+  PUNCH_LIST_VERSION,
+  SEVERITIES,
+} from "./checks";
 
 export type UatSubmitState = { error: string | null; sent: boolean };
 
@@ -85,6 +90,7 @@ export async function submitUatReport(
       testerId,
       testerName: name,
       testerEmail: email,
+      listVersion: PUNCH_LIST_VERSION,
       findings,
       triedCount,
       totalCount: ALL_CHECKS.length,
@@ -188,9 +194,20 @@ export async function saveUatDraft(
   }
   if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return;
 
+  const cap = (v: unknown, n: number) =>
+    typeof v === "string" ? v.slice(0, n) : "";
   const items: Record<
     string,
-    { tried: boolean; flagged: boolean; note: string; severity: string | null }
+    {
+      tried: boolean;
+      flagged: boolean;
+      did: string;
+      expected: string;
+      actual: string;
+      browser: string;
+      extra: string;
+      severity: string | null;
+    }
   > = {};
   for (const [id, value] of Object.entries(raw as Record<string, unknown>)) {
     if (!CHECK_IDS.has(id)) continue;
@@ -199,8 +216,13 @@ export async function saveUatDraft(
     items[id] = {
       tried: v.tried === true,
       flagged: v.flagged === true,
-      note:
-        typeof v.note === "string" ? v.note.slice(0, 2000) : "",
+      did: cap(v.did, 2000),
+      expected: cap(v.expected, 2000),
+      actual: cap(v.actual, 2000),
+      browser: cap(v.browser, 200),
+      // Drafts saved before the write-up split carried one `note`; it
+      // rides along in extra so nothing a tester wrote is dropped.
+      extra: cap(v.extra, 2000) || cap(v.note, 2000),
       severity:
         typeof v.severity === "string" &&
         (SEVERITIES as readonly string[]).includes(v.severity)

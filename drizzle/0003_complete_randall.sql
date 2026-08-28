@@ -1,0 +1,1 @@
+ALTER TABLE "uat_reports" ADD COLUMN "list_version" text;

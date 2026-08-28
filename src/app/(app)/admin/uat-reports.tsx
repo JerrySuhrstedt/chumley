@@ -33,6 +33,7 @@ export function UatReports({ items }: { items: AdminUatReport[] }) {
               </span>
               <span className="text-xs text-slate-500">{report.testerEmail}</span>
               <span className="ml-auto text-xs text-slate-500">
+                {report.listVersion && `${report.listVersion} · `}
                 {report.createdAt.toLocaleDateString(undefined, {
                   month: "short",
                   day: "numeric",

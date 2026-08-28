@@ -346,10 +346,24 @@ export const uatTesters = pgTable("uat_testers", {
   token: text("token").notNull().unique(),
   name: text("name").notNull(),
   email: text("email").notNull(),
-  /** The punch list exactly as the tester last left it, any device. */
+  /**
+   * The punch list exactly as the tester last left it, any device. All
+   * fields optional because the shape has grown over time (`note` is the
+   * pre-split single write-up) and old drafts must stay readable.
+   */
   draft: jsonb("draft").$type<Record<
     string,
-    { tried: boolean; flagged: boolean; note: string; severity: string | null }
+    {
+      tried?: boolean;
+      flagged?: boolean;
+      note?: string;
+      did?: string;
+      expected?: string;
+      actual?: string;
+      browser?: string;
+      extra?: string;
+      severity?: string | null;
+    }
   > | null>(),
   draftUpdatedAt: timestamp("draft_updated_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -365,6 +379,8 @@ export const uatReports = pgTable("uat_reports", {
   }),
   testerName: text("tester_name").notNull(),
   testerEmail: text("tester_email").notNull(),
+  /** Which punch list this run was against, e.g. "Beta 1.0". */
+  listVersion: text("list_version"),
   findings: jsonb("findings")
     .$type<
       {
