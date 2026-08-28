@@ -482,6 +482,8 @@ export async function getAdminUatReports(): Promise<AdminUatReport[]> {
 
 export type AdminBacklogItem = {
   id: string;
+  /** Global sequence number behind the human ref, e.g. the 7 in BT-7. */
+  seq: number;
   checkId: string;
   testerName: string;
   note: string;
@@ -499,7 +501,7 @@ export type AdminBacklogItem = {
  */
 export async function getAdminBacklog(): Promise<AdminBacklogItem[]> {
   const rows = (await db.execute(sql`
-    SELECT id, check_id, tester_name, note, severity, scope, scope_status,
+    SELECT id, seq, check_id, tester_name, note, severity, scope, scope_status,
            status, created_at
     FROM backlog_items
     ORDER BY (status = 'new') DESC, (status = 'approved') DESC,
@@ -509,6 +511,7 @@ export async function getAdminBacklog(): Promise<AdminBacklogItem[]> {
 
   return rows.map((r) => ({
     id: String(r.id),
+    seq: Number(r.seq),
     checkId: String(r.check_id),
     testerName: String(r.tester_name),
     note: String(r.note),

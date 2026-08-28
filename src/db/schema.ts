@@ -413,6 +413,12 @@ export type BacklogScope = {
  */
 export const backlogItems = pgTable("backlog_items", {
   id: uuid("id").primaryKey().defaultRandom(),
+  /**
+   * One global sequence across all items, shown as the human ref
+   * "{tester initials}-{seq}" (BT-7). Global rather than per-tester so
+   * two testers sharing initials can never mint the same ref.
+   */
+  seq: integer("seq").generatedAlwaysAsIdentity(),
   reportId: uuid("report_id")
     .notNull()
     .references(() => uatReports.id, { onDelete: "cascade" }),

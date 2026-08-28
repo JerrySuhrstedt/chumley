@@ -29,18 +29,20 @@ if (mode === "done") {
 } else {
   const status = mode === "new" ? "new" : "approved";
   const items = await sql`
-    SELECT id, check_id, tester_name, severity, note, scope, scope_status,
+    SELECT id, seq, check_id, tester_name, severity, note, scope, scope_status,
            created_at
     FROM backlog_items
     WHERE status = ${status}
-    ORDER BY created_at`;
+    ORDER BY seq`;
 
   if (items.length === 0) {
     console.log(`Nothing with status "${status}".`);
   }
   for (const i of items) {
     const s = i.scope;
-    console.log(`## ${s?.summary ?? i.check_id}  [${i.id}]`);
+    const parts = i.tester_name.trim().split(/\s+/);
+    const ref = `${((parts[0]?.[0] ?? "") + (parts.length > 1 ? parts.at(-1)[0] : "")).toUpperCase() || "T"}-${i.seq}`;
+    console.log(`## ${ref} · ${s?.summary ?? i.check_id}  [${i.id}]`);
     console.log(`check: ${i.check_id} · tester: ${i.tester_name}` +
       (i.severity ? ` · severity: ${i.severity}` : ""));
     console.log(`tester's note: ${i.note}`);

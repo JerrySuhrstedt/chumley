@@ -26,6 +26,18 @@ const SIZE_LABEL: Record<string, string> = {
 };
 
 /**
+ * The human ref: tester initials plus the item's global sequence number,
+ * "BT-7". The number alone guarantees uniqueness; the initials are there
+ * so the ref carries who found it.
+ */
+function refOf(item: AdminBacklogItem): string {
+  const parts = item.testerName.trim().split(/\s+/);
+  const first = parts[0]?.[0] ?? "";
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
+  return `${(first + last).toUpperCase() || "T"}-${item.seq}`;
+}
+
+/**
  * The two-step loop, step one: every scoped finding waits here for a
  * decision. Approve is the signal a Claude Code session works from, so
  * the card has to carry enough to decide without opening the code: the
@@ -82,19 +94,32 @@ export function Backlog({ items }: { items: AdminBacklogItem[] }) {
               type="button"
               onClick={() => toggle(item.id)}
               aria-expanded={isOpen}
-              className="flex w-full items-center gap-2.5 p-4 text-left"
+              className="flex w-full items-start gap-2.5 p-4 text-left"
             >
               <ChevronRight
-                className={`size-4 shrink-0 text-slate-400 transition-transform ${
+                className={`mt-1 size-4 shrink-0 text-slate-400 transition-transform ${
                   isOpen ? "rotate-90" : ""
                 }`}
               />
-              <span
-                className={`min-w-0 flex-1 text-sm font-semibold text-slate-900 ${
-                  isOpen ? "" : "truncate"
-                }`}
-              >
-                {scope?.summary ?? titleById.get(item.checkId) ?? item.checkId}
+              <span className="min-w-0 flex-1">
+                {/* Green while the item still asks something of somebody;
+                    gray once it is done or rejected. */}
+                <span
+                  className={`block font-mono text-[11px] font-bold ${
+                    item.status === "done" || item.status === "rejected"
+                      ? "text-slate-400"
+                      : "text-emerald-600"
+                  }`}
+                >
+                  {refOf(item)}
+                </span>
+                <span
+                  className={`block text-sm font-semibold text-slate-900 ${
+                    isOpen ? "" : "truncate"
+                  }`}
+                >
+                  {scope?.summary ?? titleById.get(item.checkId) ?? item.checkId}
+                </span>
               </span>
             </button>
 

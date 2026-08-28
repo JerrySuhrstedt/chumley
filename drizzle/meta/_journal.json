@@ -15,6 +15,13 @@
       "when": 1787947812349,
       "tag": "0001_curved_metal_master",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787950912252,
+      "tag": "0002_wild_risque",
+      "breakpoints": true
     }
   ]
 }
