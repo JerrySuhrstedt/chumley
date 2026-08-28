@@ -154,7 +154,7 @@ function DueMenu({
             ? { backgroundColor: chosen.color, borderColor: chosen.color }
             : { borderColor: "rgba(35,31,32,0.28)" }
         }
-        className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors sm:hidden ${
+        className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
           chosen
             ? // "Due today" is yellow, and white on yellow cannot be read.
               chosen.value === "today"
@@ -304,19 +304,6 @@ export function BoardFilters({
       <OwnerFilter owner={owner} onOwner={onOwner} />
 
       <span className="mx-1 hidden h-5 w-px bg-black/15 sm:block" />
-
-      <div className="hidden items-center gap-1.5 sm:flex">
-        {DUE_FILTERS.map((d) => (
-          <Chip
-            key={d.value}
-            active={due === d.value}
-            color={d.color}
-            onClick={() => onDue(due === d.value ? null : d.value)}
-          >
-            {d.label}
-          </Chip>
-        ))}
-      </div>
 
       {filtering && (
         <button
