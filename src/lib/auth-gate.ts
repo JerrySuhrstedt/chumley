@@ -62,6 +62,8 @@ export function gate(request: NextRequest) {
     // the page is unlinked and noindexed, not secret, and stores nothing
     // sensitive.
     pathname === "/uat" ||
+    // Personal tester links: /uat/{token}. Same standing as /uat itself.
+    pathname.startsWith("/uat/") ||
     pathname.startsWith("/auth/") ||
     pathname.startsWith("/api/auth/") ||
     pathname.startsWith("/join/") ||

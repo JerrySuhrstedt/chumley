@@ -8,10 +8,14 @@ import { Reports } from "./reports";
 import { PromoCodes } from "./promo-codes";
 import { ReviewsQueue } from "./reviews-queue";
 import { UatReports } from "./uat-reports";
+import { Backlog } from "./backlog";
+import { Testers } from "./testers";
 import { Sparkline, Delta, WeeklyGrowth, Funnel } from "./charts";
 import { requireAdmin } from "@/lib/admin";
+import { getOrigin } from "@/lib/site-url";
 import {
   getAdminAccounts,
+  getAdminBacklog,
   getAdminMetrics,
   getAdminPromoCodes,
   getAdminReviews,
@@ -19,6 +23,7 @@ import {
   getAdminTrends,
   getAdminUsers,
   getAdminUatReports,
+  getAdminUatTesters,
 } from "@/lib/admin-data";
 
 export const metadata: Metadata = {
@@ -99,6 +104,9 @@ export default async function AdminPage() {
     promoCodes,
     adminReviews,
     uatReports,
+    backlog,
+    testers,
+    origin,
   ] =
     await Promise.all([
       getAdminMetrics(),
@@ -109,6 +117,9 @@ export default async function AdminPage() {
       getAdminPromoCodes(),
       getAdminReviews(),
       getAdminUatReports(),
+      getAdminBacklog(),
+      getAdminUatTesters(),
+      getOrigin(),
     ]);
 
   const activation = metrics.teams
@@ -255,6 +266,30 @@ export default async function AdminPage() {
             Trustpilot invite, or the archive.
           </p>
           <ReviewsQueue items={adminReviews} />
+        </section>
+
+        <section>
+          <h2 className="mb-2 text-sm font-semibold text-slate-900">
+            Backlog ({backlog.filter((b) => b.status === "new").length} to
+            review)
+          </h2>
+          <p className="mb-3 text-xs text-slate-500">
+            Every issue a tester wrote up, scoped by Claude into a proposed
+            fix. Approve the ones worth doing; a Claude Code session picks up
+            the approved list from here.
+          </p>
+          <Backlog items={backlog} />
+        </section>
+
+        <section>
+          <h2 className="mb-2 text-sm font-semibold text-slate-900">
+            Testers ({testers.length})
+          </h2>
+          <p className="mb-3 text-xs text-slate-500">
+            Personal punch-list links. A tester&apos;s progress follows the
+            link, so the same URL works on their laptop and their phone.
+          </p>
+          <Testers testers={testers} origin={origin} />
         </section>
 
         <section>

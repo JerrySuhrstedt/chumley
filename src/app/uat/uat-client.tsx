@@ -1,9 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { Bug, Check as CheckIcon, Loader2 } from "lucide-react";
 import { ChumleyLogo } from "@/components/chumley-logo";
-import { submitUatReport, type UatSubmitState } from "./actions";
+import { saveUatDraft, submitUatReport, type UatSubmitState } from "./actions";
 import { ALL_CHECKS, SECTIONS, SEVERITIES } from "./checks";
 
 type ItemState = {
@@ -21,50 +21,98 @@ type Draft = {
   items: Record<string, ItemState>;
 };
 
+/** A named tester arriving through their personal /uat/{token} link. */
+export type UatTesterInfo = {
+  token: string;
+  name: string;
+  email: string;
+  /** Their run as last saved from any device, or null for a fresh one. */
+  savedItems: Record<string, ItemState> | null;
+};
+
 const DRAFT_KEY = "chumley-uat-draft-v1";
 const EMPTY_ITEM: ItemState = { tried: false, flagged: false, note: "", severity: null };
 const INITIAL: UatSubmitState = { error: null, sent: false };
 
-function loadDraft(): Draft {
-  const empty: Draft = { first: "", last: "", email: "", started: false, items: {} };
+function loadDraft(tester: UatTesterInfo | null): Draft {
+  // A personal link keys its own browser copy, so two testers sharing a
+  // laptop cannot bleed into each other, or into the anonymous page.
+  const key = tester ? `${DRAFT_KEY}-${tester.token}` : DRAFT_KEY;
+  const [first = "", ...rest] = (tester?.name ?? "").split(" ");
+  const empty: Draft = {
+    first,
+    last: rest.join(" "),
+    email: tester?.email ?? "",
+    started: false,
+    items: {},
+  };
+  let local: Draft = empty;
   try {
-    const raw = localStorage.getItem(DRAFT_KEY);
-    if (!raw) return empty;
-    const parsed = JSON.parse(raw) as Partial<Draft>;
-    return {
-      first: typeof parsed.first === "string" ? parsed.first : "",
-      last: typeof parsed.last === "string" ? parsed.last : "",
-      email: typeof parsed.email === "string" ? parsed.email : "",
-      started: parsed.started === true,
-      items: parsed.items && typeof parsed.items === "object" ? (parsed.items as Draft["items"]) : {},
-    };
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<Draft>;
+      local = {
+        first: typeof parsed.first === "string" && parsed.first ? parsed.first : empty.first,
+        last: typeof parsed.last === "string" && parsed.last ? parsed.last : empty.last,
+        email: typeof parsed.email === "string" && parsed.email ? parsed.email : empty.email,
+        started: parsed.started === true,
+        items: parsed.items && typeof parsed.items === "object" ? (parsed.items as Draft["items"]) : {},
+      };
+    }
   } catch {
-    return empty;
+    // Fall through with what we have.
   }
+  // The server copy wins for a personal link: it is what the tester last
+  // did on *any* device, while localStorage only knows about this one.
+  if (tester?.savedItems && Object.keys(tester.savedItems).length > 0) {
+    return { ...local, items: tester.savedItems };
+  }
+  return local;
 }
 
 /**
  * The whole run lives in localStorage until the tester presses Send, so
- * closing the tab loses nothing. Only Send talks to the server.
+ * closing the tab loses nothing. Only Send talks to the server, except
+ * on a personal tester link, where the checklist also autosaves to the
+ * server so the same link resumes the run on another device.
  */
-export function UatClient() {
+export function UatClient({ tester = null }: { tester?: UatTesterInfo | null }) {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [state, formAction, pending] = useActionState(submitUatReport, INITIAL);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hydrated = useRef(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate the saved draft once, after mount, so the server render stays deterministic
-    setDraft(loadDraft());
+    setDraft(loadDraft(tester));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- hydrate once; the tester prop never changes after mount
   }, []);
 
   useEffect(() => {
-    if (draft) {
-      try {
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-      } catch {
-        // Private window. The list still works, it just will not survive the tab.
-      }
+    if (!draft) return;
+    try {
+      const key = tester ? `${DRAFT_KEY}-${tester.token}` : DRAFT_KEY;
+      localStorage.setItem(key, JSON.stringify(draft));
+    } catch {
+      // Private window. The list still works, it just will not survive the tab.
     }
-  }, [draft]);
+    // The server copy trails the keystrokes by a moment on purpose. The
+    // first run after hydration is skipped: it is the draft we just
+    // loaded, not something the tester did.
+    if (tester) {
+      if (!hydrated.current) {
+        hydrated.current = true;
+        return;
+      }
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      const items = draft.items;
+      saveTimer.current = setTimeout(() => {
+        void saveUatDraft(tester.token, JSON.stringify(items)).catch(() => {
+          // The browser copy still has it.
+        });
+      }, 1500);
+    }
+  }, [draft, tester]);
 
   const tried = useMemo(
     () => ALL_CHECKS.filter((c) => draft?.items[c.id]?.tried).length,
@@ -125,6 +173,13 @@ export function UatClient() {
               <li>Real customer names. Make people up.</li>
             </ul>
           </div>
+          {tester && (
+            <p className="mt-6 text-sm text-slate-600">
+              This is your personal link, {draft.first}. Your progress saves
+              as you go, so you can switch between your laptop and your phone
+              and pick up where you left off. Just open the same link.
+            </p>
+          )}
           <form
             className="mt-8 flex flex-col gap-4"
             onSubmit={(e) => {
@@ -132,6 +187,7 @@ export function UatClient() {
               setDraft({ ...draft, started: true });
             }}
           >
+            {!tester && (
             <div className="grid grid-cols-2 gap-4">
               <label className="flex flex-col gap-1.5 text-sm font-medium text-slate-700">
                 First name
@@ -152,6 +208,8 @@ export function UatClient() {
                 />
               </label>
             </div>
+            )}
+            {!tester && (
             <label className="flex flex-col gap-1.5 text-sm font-medium text-slate-700">
               Email
               <input
@@ -162,6 +220,7 @@ export function UatClient() {
                 className="rounded-md border border-slate-300 bg-white px-3 py-2 text-base text-slate-900"
               />
             </label>
+            )}
             <button
               type="submit"
               className="mt-2 rounded-lg bg-[var(--brand)] px-5 py-3 text-base font-bold text-white"
@@ -316,6 +375,7 @@ export function UatClient() {
         <form action={formAction} className="mt-14 border-t-2 border-slate-900 pt-6">
           <input type="hidden" name="testerName" value={`${draft.first} ${draft.last}`.trim()} />
           <input type="hidden" name="testerEmail" value={draft.email} />
+          {tester && <input type="hidden" name="testerToken" value={tester.token} />}
           <input type="hidden" name="findings" value={findingsJson} />
           <p className="text-sm text-slate-600">
             You do not have to finish everything. Send what you have; you can

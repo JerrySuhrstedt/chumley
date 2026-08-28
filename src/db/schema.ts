@@ -334,8 +334,35 @@ export const leads = pgTable("leads", {
  * normalized rows, because a test run is read once as a report and never
  * queried item by item.
  */
+/**
+ * A named tester with a personal link: chumley.app/uat/{token}. The link
+ * is the whole identity, no password, because the audience is a friend
+ * doing us a favor on two laptops and a phone. Their in-progress run is
+ * saved here so the same link resumes it on any device. The token is
+ * unguessable but treated like the page itself: unlinked, not secret.
+ */
+export const uatTesters = pgTable("uat_testers", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  token: text("token").notNull().unique(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  /** The punch list exactly as the tester last left it, any device. */
+  draft: jsonb("draft").$type<Record<
+    string,
+    { tried: boolean; flagged: boolean; note: string; severity: string | null }
+  > | null>(),
+  draftUpdatedAt: timestamp("draft_updated_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export const uatReports = pgTable("uat_reports", {
   id: uuid("id").primaryKey().defaultRandom(),
+  /** Set when the run came in through a personal tester link. */
+  testerId: uuid("tester_id").references(() => uatTesters.id, {
+    onDelete: "set null",
+  }),
   testerName: text("tester_name").notNull(),
   testerEmail: text("tester_email").notNull(),
   findings: jsonb("findings")
@@ -351,6 +378,57 @@ export const uatReports = pgTable("uat_reports", {
   triedCount: integer("tried_count").notNull(),
   totalCount: integer("total_count").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+/**
+ * What Claude proposes doing about one tester finding. Stored as one
+ * document because it is read as a card in the back office, never queried
+ * field by field.
+ */
+export type BacklogScope = {
+  /** One sentence naming the defect in plain terms. */
+  summary: string;
+  /** What is probably wrong and where, from the codebase map. */
+  likelyCause: string;
+  /** Repo-relative paths worth opening first. */
+  files: string[];
+  /** The proposed fix, concretely enough to approve or reject. */
+  proposedFix: string;
+  size: "S" | "M" | "L";
+  /** What the fix could break, said plainly. Null when genuinely nothing. */
+  risk: string | null;
+  /** Open backlog item this appears to duplicate, if any. */
+  duplicateOfId: string | null;
+};
+
+/**
+ * One actionable item distilled from a tester finding. Every /uat finding
+ * that carries a note lands here immediately on submission, before any
+ * scoping runs, so a missing API key or a failed call can lose the scope
+ * but never the finding. Claude fills in `scope` afterwards; the owner
+ * approves or rejects in the back office; a Claude Code session works the
+ * approved ones and marks them done once shipped.
+ */
+export const backlogItems = pgTable("backlog_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  reportId: uuid("report_id")
+    .notNull()
+    .references(() => uatReports.id, { onDelete: "cascade" }),
+  checkId: text("check_id").notNull(),
+  testerName: text("tester_name").notNull(),
+  note: text("note").notNull(),
+  severity: text("severity"),
+  scope: jsonb("scope").$type<BacklogScope>(),
+  /** pending → scoped | failed. Failed items keep a "Scope now" retry. */
+  scopeStatus: text("scope_status").notNull().default("pending"),
+  /** new → approved | rejected → done. The owner's call, never Claude's. */
+  status: text("status").notNull().default("new"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
 });

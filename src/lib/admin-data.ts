@@ -480,6 +480,86 @@ export async function getAdminUatReports(): Promise<AdminUatReport[]> {
   }));
 }
 
+export type AdminBacklogItem = {
+  id: string;
+  checkId: string;
+  testerName: string;
+  note: string;
+  severity: string | null;
+  scope: import("@/db/schema").BacklogScope | null;
+  scopeStatus: "pending" | "scoped" | "failed";
+  status: "new" | "approved" | "rejected" | "done";
+  createdAt: Date;
+};
+
+/**
+ * The reviewable backlog distilled from tester findings: needs-a-decision
+ * first, then approved work, then the archive. Within each band, newest
+ * first.
+ */
+export async function getAdminBacklog(): Promise<AdminBacklogItem[]> {
+  const rows = (await db.execute(sql`
+    SELECT id, check_id, tester_name, note, severity, scope, scope_status,
+           status, created_at
+    FROM backlog_items
+    ORDER BY (status = 'new') DESC, (status = 'approved') DESC,
+             created_at DESC
+    LIMIT 200
+  `)) as unknown as Record<string, unknown>[];
+
+  return rows.map((r) => ({
+    id: String(r.id),
+    checkId: String(r.check_id),
+    testerName: String(r.tester_name),
+    note: String(r.note),
+    severity: r.severity ? String(r.severity) : null,
+    scope: (r.scope ?? null) as AdminBacklogItem["scope"],
+    scopeStatus: r.scope_status as AdminBacklogItem["scopeStatus"],
+    status: r.status as AdminBacklogItem["status"],
+    createdAt: new Date(String(r.created_at)),
+  }));
+}
+
+export type AdminUatTester = {
+  id: string;
+  token: string;
+  name: string;
+  email: string;
+  /** How many checks their saved draft has ticked, for a glance at progress. */
+  draftTried: number;
+  draftUpdatedAt: Date | null;
+  reports: number;
+  createdAt: Date;
+};
+
+/** Personal tester links, most recently active first. */
+export async function getAdminUatTesters(): Promise<AdminUatTester[]> {
+  const rows = (await db.execute(sql`
+    SELECT t.id, t.token, t.name, t.email, t.draft, t.draft_updated_at,
+           t.created_at,
+           (SELECT count(*) FROM uat_reports r
+             WHERE r.tester_id = t.id)::int AS reports
+    FROM uat_testers t
+    ORDER BY t.draft_updated_at DESC NULLS LAST, t.created_at DESC
+  `)) as unknown as Record<string, unknown>[];
+
+  return rows.map((r) => {
+    const draft = (r.draft ?? {}) as Record<string, { tried?: boolean }>;
+    return {
+      id: String(r.id),
+      token: String(r.token),
+      name: String(r.name),
+      email: String(r.email),
+      draftTried: Object.values(draft).filter((i) => i?.tried === true).length,
+      draftUpdatedAt: r.draft_updated_at
+        ? new Date(String(r.draft_updated_at))
+        : null,
+      reports: Number(r.reports),
+      createdAt: new Date(String(r.created_at)),
+    };
+  });
+}
+
 export type AdminReview = {
   id: string;
   rating: number;

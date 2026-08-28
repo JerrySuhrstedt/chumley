@@ -1,7 +1,10 @@
 "use server";
 
+import { after } from "next/server";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { uatReports } from "@/db/schema";
+import { backlogItems, uatReports, uatTesters } from "@/db/schema";
+import { scopeBacklogItems } from "@/lib/backlog/scope";
 import { ALL_CHECKS, CHECK_IDS, SEVERITIES } from "./checks";
 
 export type UatSubmitState = { error: string | null; sent: boolean };
@@ -22,6 +25,21 @@ export async function submitUatReport(
   if (!name) return { error: "Your name is missing.", sent: false };
   if (!email.includes("@"))
     return { error: "That email does not look right.", sent: false };
+
+  // A personal link, if the run came through one. An unknown token is
+  // treated as no token: the report is still worth having.
+  const token = String(formData.get("testerToken") ?? "")
+    .trim()
+    .slice(0, 64);
+  let testerId: string | null = null;
+  if (token) {
+    const tester = await db
+      .select({ id: uatTesters.id })
+      .from(uatTesters)
+      .where(eq(uatTesters.token, token))
+      .limit(1);
+    testerId = tester[0]?.id ?? null;
+  }
 
   let raw: unknown;
   try {
@@ -61,13 +79,88 @@ export async function submitUatReport(
   if (triedCount === 0 && findings.every((f) => !f.note))
     return { error: "Nothing is filled in yet.", sent: false };
 
-  await db.insert(uatReports).values({
-    testerName: name,
-    testerEmail: email,
-    findings,
-    triedCount,
-    totalCount: ALL_CHECKS.length,
-  });
+  const [report] = await db
+    .insert(uatReports)
+    .values({
+      testerId,
+      testerName: name,
+      testerEmail: email,
+      findings,
+      triedCount,
+      totalCount: ALL_CHECKS.length,
+    })
+    .returning({ id: uatReports.id });
+
+  // Every finding with a note becomes a backlog item right now, so the
+  // backlog can never lose a finding to a scoping failure. Claude fills
+  // in the fix scope after the tester already has their confirmation.
+  const issues = findings.filter((f) => f.note);
+  if (issues.length > 0) {
+    const rows = await db
+      .insert(backlogItems)
+      .values(
+        issues.map((f) => ({
+          reportId: report.id,
+          checkId: f.id,
+          testerName: name,
+          note: f.note!,
+          severity: f.severity,
+        }))
+      )
+      .returning({ id: backlogItems.id });
+
+    after(() => scopeBacklogItems(rows.map((r) => r.id)));
+  }
 
   return { error: null, sent: true };
+}
+
+/**
+ * Autosave for personal tester links, so a run started on one laptop
+ * resumes on the phone. Same trust stance as the submit: the token is the
+ * only identity, the shape is rebuilt against the known check list, and
+ * free text is capped. Failures are silent by design; the browser copy
+ * in localStorage is the fallback, and a tester should never see an
+ * error for an autosave.
+ */
+export async function saveUatDraft(
+  token: string,
+  itemsJson: string
+): Promise<void> {
+  const cleanToken = String(token ?? "").trim().slice(0, 64);
+  if (!cleanToken || itemsJson.length > 200_000) return;
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(itemsJson);
+  } catch {
+    return;
+  }
+  if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return;
+
+  const items: Record<
+    string,
+    { tried: boolean; flagged: boolean; note: string; severity: string | null }
+  > = {};
+  for (const [id, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (!CHECK_IDS.has(id)) continue;
+    if (value === null || typeof value !== "object") continue;
+    const v = value as Record<string, unknown>;
+    items[id] = {
+      tried: v.tried === true,
+      flagged: v.flagged === true,
+      note:
+        typeof v.note === "string" ? v.note.slice(0, 2000) : "",
+      severity:
+        typeof v.severity === "string" &&
+        (SEVERITIES as readonly string[]).includes(v.severity)
+          ? v.severity
+          : null,
+    };
+  }
+
+  await db
+    .update(uatTesters)
+    .set({ draft: items, draftUpdatedAt: new Date() })
+    .where(eq(uatTesters.token, cleanToken));
 }
