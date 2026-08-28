@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { Lead, Template } from "@/db/schema";
 import { LeadAvatar } from "./lead-avatar";
+import { initialsOf, useOwners } from "./owners-context";
 import { TapToContact } from "./tap-to-contact";
 import { nextActionStatus } from "./stages";
 import { useBoardStages } from "./stages-context";
@@ -112,7 +113,7 @@ export function LeadCardView({
 
         <div className="flex items-center gap-2">
           <LeadAvatar lead={lead} className="size-7 text-[11px]" />
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-[var(--board-ink)]">
               {lead.name}
             </p>
@@ -122,6 +123,7 @@ export function LeadCardView({
               </p>
             )}
           </div>
+          <OwnerBubble ownerId={lead.ownerId} />
         </div>
       </div>
 
@@ -180,6 +182,31 @@ export function LeadCardView({
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * Whose deal, at a glance. Rendered only on teams of more than one,
+ * where the answer is not a tautology. Photo when the owner has one,
+ * initials when they do not, name on hover either way.
+ */
+function OwnerBubble({ ownerId }: { ownerId: string | null }) {
+  const { byId, showOwners } = useOwners();
+  if (!showOwners || !ownerId) return null;
+  const owner = byId[ownerId];
+  if (!owner) return null;
+  return (
+    <span
+      title={owner.label}
+      className="flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-200 text-[10px] font-bold text-slate-600 ring-2 ring-white"
+    >
+      {owner.avatarUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={owner.avatarUrl} alt={owner.label} className="size-full object-cover" />
+      ) : (
+        initialsOf(owner.label)
+      )}
+    </span>
   );
 }
 

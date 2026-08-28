@@ -82,6 +82,8 @@ export async function createLead(
 
   await db.insert(leads).values({
     orgId: org.id,
+    // Whoever typed it in works it, until somebody says otherwise.
+    ownerId: current.userId,
     name,
     phone: normalizePhone(toNullable(formData.get("phone"))),
     email: toNullable(formData.get("email")),
@@ -622,4 +624,46 @@ export async function clearSamples() {
 
   revalidatePath("/pipeline");
   revalidatePath("/contacts");
+}
+
+
+/**
+ * Hand a deal to a teammate.
+ *
+ * The new owner must be on this team, checked here rather than trusted
+ * from the picker, because a server action is an API whether or not a
+ * dropdown was involved.
+ */
+export async function setLeadOwner(leadId: string, newOwnerId: string) {
+  const { org, userId, role } = await requireOrg();
+
+  // The team owner moves anything; everyone else hands off their own.
+  // Without this, a rep could quietly take a teammate's deal, which is
+  // how commission arguments get started.
+  if (role !== "owner") {
+    const [current] = await db
+      .select({ ownerId: leads.ownerId })
+      .from(leads)
+      .where(and(eq(leads.id, leadId), eq(leads.orgId, org.id)));
+    if (!current) throw new Error("That lead is gone.");
+    if (current.ownerId !== null && current.ownerId !== userId) {
+      throw new Error("Only the team owner can reassign someone else's lead.");
+    }
+  }
+
+  const { memberships } = await import("@/db/schema");
+  const member = await db.query.memberships.findFirst({
+    where: and(
+      eq(memberships.orgId, org.id),
+      eq(memberships.userId, newOwnerId)
+    ),
+  });
+  if (!member) throw new Error("That person is not on this team.");
+
+  await db
+    .update(leads)
+    .set({ ownerId: newOwnerId })
+    .where(and(eq(leads.id, leadId), eq(leads.orgId, org.id)));
+
+  revalidatePath("/pipeline");
 }

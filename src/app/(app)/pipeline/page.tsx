@@ -1,7 +1,7 @@
 import { and, eq, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { leads, templates } from "@/db/schema";
-import { getCurrentOrg } from "@/lib/org";
+import { getCurrentOrg, getTeamMembers } from "@/lib/org";
 import { EmptyBoard } from "../_leads/empty-board";
 import { LeadsBoard } from "../_leads/leads-board";
 
@@ -9,7 +9,7 @@ export default async function PipelinePage() {
   const current = await getCurrentOrg();
   if (!current) return null;
 
-  const [allLeads, allTemplates] = await Promise.all([
+  const [allLeads, allTemplates, members] = await Promise.all([
     // The board is the pipeline only — contacts live on the Contacts page
     // until they show interest.
     db.query.leads.findMany({
@@ -18,6 +18,7 @@ export default async function PipelinePage() {
       orderBy: (l, { asc }) => [asc(l.position), asc(l.createdAt)],
     }),
     db.select().from(templates).where(eq(templates.orgId, current.org.id)),
+    getTeamMembers(current.org.id),
   ]);
 
   // An empty five-column board explains nothing to somebody who just
@@ -32,7 +33,13 @@ export default async function PipelinePage() {
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <LeadsBoard leads={allLeads} templates={allTemplates} />
+      <LeadsBoard
+        leads={allLeads}
+        templates={allTemplates}
+        members={members}
+        currentUserId={current.userId}
+        isTeamOwner={current.role === "owner"}
+      />
     </div>
   );
 }

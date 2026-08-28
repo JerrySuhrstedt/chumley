@@ -22,6 +22,7 @@ import { ActivityItem } from "./activity-item";
 import { ActivityLogger } from "./activity-logger";
 import { LeadAvatar } from "./lead-avatar";
 import { TemperaturePicker } from "./temperature-picker";
+import { OwnerPicker } from "./owner-picker";
 import { LeadEditForm } from "./lead-edit-form";
 import { NextActionSection } from "./next-action-section";
 import { CONTACT_STAGE } from "./stages";
@@ -238,6 +239,7 @@ export function LeadDetailDialog({
 
                 {/* Above the destructive actions, so a rating people set
                     every day is not sitting under a Delete button. */}
+                <OwnerPicker leadId={lead.id} ownerId={lead.ownerId} />
                 <TemperaturePicker leadId={lead.id} value={lead.temperature} />
 
                 {lead.stage === CONTACT_STAGE ? (

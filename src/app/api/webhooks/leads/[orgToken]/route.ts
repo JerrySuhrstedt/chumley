@@ -6,6 +6,7 @@ import { defaultStageKey } from "@/lib/stages";
 import { activities, leads, organizations } from "@/db/schema";
 import { normalizePhone } from "@/lib/phone";
 import { overIngestCap } from "@/lib/ingest-guard";
+import { orgOwnerId } from "@/lib/org-owner";
 
 function toNullable(value: unknown) {
   if (typeof value !== "string") return null;
@@ -68,6 +69,7 @@ export async function POST(
   const [lead] = await db
     .insert(leads)
     .values({
+      ownerId: await orgOwnerId(org.id),
       orgId: org.id,
       name,
       email: cap(toNullable(body.email), 200),

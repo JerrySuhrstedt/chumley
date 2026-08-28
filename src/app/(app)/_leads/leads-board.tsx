@@ -39,6 +39,7 @@ import { LeadColumn } from "./lead-column";
 import { LeadDetailDialog } from "./lead-detail-dialog";
 import { QuickAddLeadDialog } from "./quick-add-lead-dialog";
 import { CoachMarks } from "../_onboarding/coach-marks";
+import { OwnersProvider, type OwnerInfo } from "./owners-context";
 import { SampleBanner } from "./sample-banner";
 import { Scorecard } from "./scorecard";
 import { nextStage, prevStage } from "./stages";
@@ -61,8 +62,14 @@ const collisionDetection: CollisionDetection = (args) => {
 export function LeadsBoard({
   leads,
   templates,
+  members,
+  currentUserId,
+  isTeamOwner,
 }: {
   leads: LeadWithActivities[];
+  members: OwnerInfo[];
+  currentUserId: string;
+  isTeamOwner: boolean;
   templates: Template[];
 }) {
   const boardStages = useBoardStages();
@@ -383,6 +390,7 @@ export function LeadsBoard({
     : null;
 
   return (
+    <OwnersProvider members={members} currentUserId={currentUserId} isTeamOwner={isTeamOwner}>
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* Tighter on a phone. Condensing the filters to two chips took a
           row out of this stack, and the point of that was to give the
@@ -539,5 +547,6 @@ export function LeadsBoard({
         />
       )}
     </div>
+    </OwnersProvider>
   );
 }

@@ -98,6 +98,7 @@ export async function importLeads(
       .values(
         toInsert.map((row) => ({
           orgId: current.org.id,
+          ownerId: current.userId,
           name: row.name.trim(),
           companyName: row.companyName,
           email: row.email,

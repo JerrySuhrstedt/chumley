@@ -7,6 +7,7 @@ import { defaultStageKey } from "@/lib/stages";
 import { activities, leads, organizations } from "@/db/schema";
 import { normalizePhone } from "@/lib/phone";
 import { overIngestCap } from "@/lib/ingest-guard";
+import { orgOwnerId } from "@/lib/org-owner";
 
 export type FormState = { error: string | null; done: boolean };
 
@@ -72,6 +73,7 @@ export async function submitPublicForm(
     .insert(leads)
     .values({
       orgId: org.id,
+      ownerId: await orgOwnerId(org.id),
       name: `${firstName} ${lastName}`,
       email,
       phone: normalizePhone(text(formData, "phone")),

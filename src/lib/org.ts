@@ -150,3 +150,34 @@ export async function createOrgForUser(userId: string, name: string) {
 
   return org;
 }
+
+export type TeamMember = {
+  userId: string;
+  label: string;
+  avatarUrl: string | null;
+};
+
+/**
+ * Everyone on the team, labelled the way the app talks about them:
+ * the profile display name first, the sign-in name as fallback, the
+ * email's front half as the last resort.
+ */
+export async function getTeamMembers(orgId: string): Promise<TeamMember[]> {
+  const { sql } = await import("drizzle-orm");
+  const rows = (await db.execute(sql`
+    SELECT m.user_id, m.display_name, m.avatar_url, u.name, u.email, u.image
+    FROM memberships m
+    LEFT JOIN users u ON u.id = m.user_id
+    WHERE m.org_id = ${orgId}::uuid
+    ORDER BY m.created_at
+  `)) as unknown as Record<string, string | null>[];
+
+  return rows.map((r) => ({
+    userId: String(r.user_id),
+    label:
+      r.display_name ??
+      r.name ??
+      String(r.email ?? "someone").split("@")[0],
+    avatarUrl: r.avatar_url ?? r.image ?? null,
+  }));
+}
