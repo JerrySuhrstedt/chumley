@@ -52,6 +52,8 @@ export function gate(request: NextRequest) {
     pathname === "/refunds" ||
     // Crawler plumbing. A robots.txt that redirects to a login page is
     // how a site tells Google it has nothing worth indexing.
+    // The outside uptime watcher must reach this without a session.
+    pathname === "/api/health" ||
     pathname === "/robots.txt" ||
     pathname === "/sitemap.xml" ||
     // The embeddable website form is public by definition.
