@@ -28,6 +28,7 @@ export async function setBacklogStatus(
     .set({ status, updatedAt: new Date() })
     .where(eq(backlogItems.id, id));
   revalidatePath("/admin");
+  revalidatePath("/admin/testing");
 }
 
 /**
@@ -39,6 +40,7 @@ export async function rescopeBacklogItem(id: string): Promise<void> {
   await requireAdmin();
   await scopeBacklogItems([id]);
   revalidatePath("/admin");
+  revalidatePath("/admin/testing");
 }
 
 export type CreateTesterResult = { error: string | null };
@@ -61,6 +63,7 @@ export async function createUatTester(
     email,
   });
   revalidatePath("/admin");
+  revalidatePath("/admin/testing");
   return { error: null };
 }
 
@@ -70,4 +73,5 @@ export async function deleteUatTester(id: string): Promise<void> {
   // runs stay in the archive under the name they typed.
   await db.delete(uatTesters).where(eq(uatTesters.id, id));
   revalidatePath("/admin");
+  revalidatePath("/admin/testing");
 }

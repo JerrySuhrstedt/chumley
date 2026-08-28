@@ -520,6 +520,18 @@ export async function getAdminBacklog(): Promise<AdminBacklogItem[]> {
   }));
 }
 
+/**
+ * How many backlog items await a decision. The back office proper only
+ * needs the number for its Testing button; the items themselves live on
+ * /admin/testing.
+ */
+export async function getBacklogNewCount(): Promise<number> {
+  const rows = (await db.execute(sql`
+    SELECT count(*)::int AS n FROM backlog_items WHERE status = 'new'
+  `)) as unknown as Record<string, number>[];
+  return Number(rows[0].n);
+}
+
 export type AdminUatTester = {
   id: string;
   token: string;

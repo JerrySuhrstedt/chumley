@@ -7,23 +7,18 @@ import { EnvLine } from "./env-line";
 import { Reports } from "./reports";
 import { PromoCodes } from "./promo-codes";
 import { ReviewsQueue } from "./reviews-queue";
-import { UatReports } from "./uat-reports";
-import { Backlog } from "./backlog";
-import { Testers } from "./testers";
+import Link from "next/link";
 import { Sparkline, Delta, WeeklyGrowth, Funnel } from "./charts";
 import { requireAdmin } from "@/lib/admin";
-import { getOrigin } from "@/lib/site-url";
 import {
   getAdminAccounts,
-  getAdminBacklog,
   getAdminMetrics,
   getAdminPromoCodes,
   getAdminReviews,
   getAdminReports,
   getAdminTrends,
   getAdminUsers,
-  getAdminUatReports,
-  getAdminUatTesters,
+  getBacklogNewCount,
 } from "@/lib/admin-data";
 
 export const metadata: Metadata = {
@@ -103,10 +98,7 @@ export default async function AdminPage() {
     trends,
     promoCodes,
     adminReviews,
-    uatReports,
-    backlog,
-    testers,
-    origin,
+    backlogNew,
   ] =
     await Promise.all([
       getAdminMetrics(),
@@ -116,10 +108,7 @@ export default async function AdminPage() {
       getAdminTrends(),
       getAdminPromoCodes(),
       getAdminReviews(),
-      getAdminUatReports(),
-      getAdminBacklog(),
-      getAdminUatTesters(),
-      getOrigin(),
+      getBacklogNewCount(),
     ]);
 
   const activation = metrics.teams
@@ -143,6 +132,21 @@ export default async function AdminPage() {
               Every account on Chumley. Visible only to listed administrators.
             </p>
           </div>
+          <Link
+            href="/admin/testing"
+            className={`ml-auto inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold ${
+              backlogNew > 0
+                ? "border-[var(--brand)]/40 bg-[var(--brand-tint)] text-[var(--brand)]"
+                : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+            }`}
+          >
+            Testing
+            {backlogNew > 0 && (
+              <span className="rounded-full bg-[var(--brand)] px-1.5 text-[11px] font-bold text-white">
+                {backlogNew}
+              </span>
+            )}
+          </Link>
         </div>
 
         <EnvLine />
@@ -266,41 +270,6 @@ export default async function AdminPage() {
             Trustpilot invite, or the archive.
           </p>
           <ReviewsQueue items={adminReviews} />
-        </section>
-
-        <section>
-          <h2 className="mb-2 text-sm font-semibold text-slate-900">
-            Backlog ({backlog.filter((b) => b.status === "new").length} to
-            review)
-          </h2>
-          <p className="mb-3 text-xs text-slate-500">
-            Every issue a tester wrote up, scoped by Claude into a proposed
-            fix. Approve the ones worth doing; a Claude Code session picks up
-            the approved list from here.
-          </p>
-          <Backlog items={backlog} />
-        </section>
-
-        <section>
-          <h2 className="mb-2 text-sm font-semibold text-slate-900">
-            Testers ({testers.length})
-          </h2>
-          <p className="mb-3 text-xs text-slate-500">
-            Personal punch-list links. A tester&apos;s progress follows the
-            link, so the same URL works on their laptop and their phone.
-          </p>
-          <Testers testers={testers} origin={origin} />
-        </section>
-
-        <section>
-          <h2 className="mb-2 text-sm font-semibold text-slate-900">
-            Tester runs ({uatReports.length})
-          </h2>
-          <p className="mb-3 text-xs text-slate-500">
-            Submissions from the hidden punch list at /uat. Issues shown in
-            full; ticked checks are counted only.
-          </p>
-          <UatReports items={uatReports} />
         </section>
 
         <PromoCodes codes={promoCodes} />
