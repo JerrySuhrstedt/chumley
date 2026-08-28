@@ -67,7 +67,7 @@ export function AddStageButton({ openCount }: { openCount: number }) {
     <button
       type="button"
       onClick={() => setAdding(true)}
-      className="flex w-72 shrink-0 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-white/25 px-4 py-3 text-sm font-semibold text-white/70 transition-colors hover:border-white/45 hover:bg-white/5 hover:text-white"
+      className="flex w-72 shrink-0 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[rgba(9,30,66,0.35)] px-4 py-3 text-sm font-semibold text-[var(--board-ink)] transition-colors hover:border-[rgba(9,30,66,0.6)] hover:bg-black/5"
     >
       <Plus className="size-4" />
       Add a bucket
