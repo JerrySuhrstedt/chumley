@@ -116,6 +116,33 @@ export async function submitUatReport(
 }
 
 /**
+ * A walk-in becoming a named tester. Somebody who lands on plain /uat
+ * and fills in who they are gets a personal link minted on the spot,
+ * exactly as if the owner had handed them a blank one: same table, same
+ * cross-device draft, same identity rules. The client then moves them
+ * onto /uat/{token}. On any failure the caller falls back to the old
+ * anonymous run, so this can only ever add, never block.
+ */
+export async function startUatRun(
+  name: string,
+  email: string
+): Promise<{ token: string } | { error: string }> {
+  const cleanName = String(name ?? "").trim().slice(0, 120);
+  const cleanEmail = String(email ?? "").trim().slice(0, 200);
+  if (!cleanName || !cleanEmail.includes("@"))
+    return { error: "Name and email are needed first." };
+
+  const { randomBytes } = await import("crypto");
+  const token = randomBytes(8).toString("base64url");
+  await db.insert(uatTesters).values({
+    token,
+    name: cleanName,
+    email: cleanEmail,
+  });
+  return { token };
+}
+
+/**
  * A blank link introducing itself. Links can be created with no name or
  * email for handing out in communities where the owner has neither; the
  * first person to open one fills in who they are, and the link is theirs

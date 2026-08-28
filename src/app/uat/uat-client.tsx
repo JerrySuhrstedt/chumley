@@ -1,11 +1,13 @@
 "use client";
 
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Bug, Check as CheckIcon, Loader2 } from "lucide-react";
 import { ChumleyLogo } from "@/components/chumley-logo";
 import {
   claimUatTester,
   saveUatDraft,
+  startUatRun,
   submitUatReport,
   type UatSubmitState,
 } from "./actions";
@@ -89,7 +91,10 @@ export function UatClient({
   /** Owner's read-through: intro skipped, nothing saves, nothing sends. */
   preview?: boolean;
 }) {
+  const router = useRouter();
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [starting, setStarting] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   // A blank link handed out in a community arrives with no name on it;
   // whoever opens it first introduces themselves and it becomes theirs.
   const claimed = Boolean(tester?.name);
@@ -131,7 +136,7 @@ export function UatClient({
         });
       }, 1500);
     }
-  }, [draft, tester]);
+  }, [draft, tester, preview]);
 
   const tried = useMemo(
     () => ALL_CHECKS.filter((c) => draft?.items[c.id]?.tried).length,
@@ -238,6 +243,36 @@ export function UatClient({
                   // The run still works; the submit carries the typed name.
                 });
               }
+              // A walk-in on plain /uat gets a personal link minted right
+              // here, then continues on it: their ticks ride along via the
+              // link-keyed localStorage draft, and the server copy starts
+              // saving from the first change. If minting fails for any
+              // reason, the old anonymous run still works.
+              if (!tester && !preview) {
+                setStarting(true);
+                startUatRun(`${draft.first} ${draft.last}`.trim(), draft.email)
+                  .then((res) => {
+                    if ("token" in res) {
+                      try {
+                        localStorage.setItem(
+                          `${DRAFT_KEY}-${res.token}`,
+                          JSON.stringify({ ...draft, started: true })
+                        );
+                      } catch {
+                        // Fine; the server draft takes over from here.
+                      }
+                      router.push(`/uat/${res.token}`);
+                    } else {
+                      setStarting(false);
+                      setDraft({ ...draft, started: true });
+                    }
+                  })
+                  .catch(() => {
+                    setStarting(false);
+                    setDraft({ ...draft, started: true });
+                  });
+                return;
+              }
               setDraft({ ...draft, started: true });
             }}
           >
@@ -277,9 +312,13 @@ export function UatClient({
             )}
             <button
               type="submit"
-              className="mt-2 rounded-lg bg-[var(--brand)] px-5 py-3 text-base font-bold text-white"
+              disabled={starting}
+              className="mt-2 rounded-lg bg-[var(--brand)] px-5 py-3 text-base font-bold text-white disabled:opacity-60"
             >
-              Open the punch list
+              {starting && (
+                <Loader2 className="mr-2 inline size-4 animate-spin align-[-2px]" />
+              )}
+              {starting ? "Setting up your link..." : "Open the punch list"}
             </button>
           </form>
         </div>
@@ -319,6 +358,28 @@ export function UatClient({
           what happened in your own words. Even the boring ones. Especially the
           boring ones.
         </p>
+        {tester && (
+          <p className="mt-3 text-xs text-slate-500">
+            Your personal link, good on any device:{" "}
+            <span className="font-mono text-[11px] text-slate-600">
+              {typeof location !== "undefined" ? location.origin : ""}/uat/
+              {tester.token}
+            </span>{" "}
+            <button
+              type="button"
+              onClick={async () => {
+                await navigator.clipboard.writeText(
+                  `${location.origin}/uat/${tester.token}`
+                );
+                setCopiedLink(true);
+                setTimeout(() => setCopiedLink(false), 2000);
+              }}
+              className="font-semibold text-[var(--brand)] hover:underline"
+            >
+              {copiedLink ? "Copied" : "Copy it"}
+            </button>
+          </p>
+        )}
 
         {SECTIONS.map((section) => (
           <section key={section.key} className="mt-12">
