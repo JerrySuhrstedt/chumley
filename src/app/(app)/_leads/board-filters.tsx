@@ -40,11 +40,13 @@ function Chip({
   active,
   color,
   onClick,
+  className = "border",
   children,
 }: {
   active: boolean;
   color: string;
   onClick: () => void;
+  className?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -57,7 +59,7 @@ function Chip({
           ? { backgroundColor: color, borderColor: color }
           : { borderColor: "rgba(35,31,32,0.28)" }
       }
-      className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+      className={`flex shrink-0 items-center gap-1.5 rounded-full ${className} px-3 py-1.5 text-xs font-semibold transition-colors ${
         active
           ? "text-white shadow-sm"
           : "bg-black/[0.06] text-[var(--board-ink)] hover:bg-black/[0.11]"
@@ -219,6 +221,7 @@ function OwnerFilter({
       <Chip
         active={mineActive}
         color="var(--brand)"
+        className="border-2"
         onClick={() => onOwner(mineActive ? null : currentUserId)}
       >
         Mine
@@ -297,13 +300,13 @@ export function BoardFilters({
           and with the owner controls beside them the row ran long. */}
       <TempMenu temp={temp} onTemp={onTemp} />
 
+      <span className="mx-1 h-5 w-px shrink-0 bg-black/15" />
+
       <DueMenu due={due} onDue={onDue} />
 
       <span className="mx-1 h-5 w-px shrink-0 bg-black/15" />
 
       <OwnerFilter owner={owner} onOwner={onOwner} />
-
-      <span className="mx-1 hidden h-5 w-px bg-black/15 sm:block" />
 
       {filtering && (
         <button
