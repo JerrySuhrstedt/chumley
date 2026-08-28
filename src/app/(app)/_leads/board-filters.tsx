@@ -92,7 +92,7 @@ function TempMenu({
             ? { backgroundColor: chosen.bg, borderColor: chosen.bg }
             : { borderColor: "rgba(35,31,32,0.28)" }
         }
-        className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors sm:hidden ${
+        className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
           chosen ? "text-white shadow-sm" : "bg-black/[0.06] text-[var(--board-ink)]"
         }`}
       >
@@ -293,21 +293,9 @@ export function BoardFilters({
       {/* Three chips on a phone pushed the board a whole row down. One
           chip that opens the three costs a tap and gives the row back. A
           desktop has the width, so it keeps them laid out. */}
+      {/* One menu at every size. Desktop used to lay the three out flat,
+          and with the owner controls beside them the row ran long. */}
       <TempMenu temp={temp} onTemp={onTemp} />
-
-      <div className="hidden items-center gap-1.5 sm:flex">
-        {TEMPERATURES.map((t) => (
-          <Chip
-            key={t.value}
-            active={temp === t.value}
-            color={t.bg}
-            onClick={() => onTemp(temp === t.value ? null : t.value)}
-          >
-            <t.icon className="size-3.5" strokeWidth={2.5} />
-            {t.label}
-          </Chip>
-        ))}
-      </div>
 
       <DueMenu due={due} onDue={onDue} />
 
