@@ -10,7 +10,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/pipeline", "/dashboard", "/contacts", "/calendar", "/settings", "/admin", "/login", "/api/", "/join/", "/f/"],
+      disallow: ["/pipeline", "/dashboard", "/contacts", "/calendar", "/settings", "/admin", "/login", "/api/", "/join/", "/f/", "/uat"],
     },
     sitemap: "https://chumley.app/sitemap.xml",
   };

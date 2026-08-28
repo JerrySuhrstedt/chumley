@@ -326,6 +326,35 @@ export const leads = pgTable("leads", {
     .defaultNow(),
 });
 
+/**
+ * One submitted test run from the hidden /uat page. No org, no user: the
+ * tester is an outsider identified only by the name and email they typed,
+ * and the page is reachable without a session on purpose. Findings is the
+ * whole checklist as the tester left it, kept as one document rather than
+ * normalized rows, because a test run is read once as a report and never
+ * queried item by item.
+ */
+export const uatReports = pgTable("uat_reports", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  testerName: text("tester_name").notNull(),
+  testerEmail: text("tester_email").notNull(),
+  findings: jsonb("findings")
+    .$type<
+      {
+        id: string;
+        tried: boolean;
+        note: string | null;
+        severity: string | null;
+      }[]
+    >()
+    .notNull(),
+  triedCount: integer("tried_count").notNull(),
+  totalCount: integer("total_count").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export const templates = pgTable("templates", {
   id: uuid("id").primaryKey().defaultRandom(),
   orgId: uuid("org_id")

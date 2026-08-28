@@ -7,6 +7,7 @@ import { EnvLine } from "./env-line";
 import { Reports } from "./reports";
 import { PromoCodes } from "./promo-codes";
 import { ReviewsQueue } from "./reviews-queue";
+import { UatReports } from "./uat-reports";
 import { Sparkline, Delta, WeeklyGrowth, Funnel } from "./charts";
 import { requireAdmin } from "@/lib/admin";
 import {
@@ -17,6 +18,7 @@ import {
   getAdminReports,
   getAdminTrends,
   getAdminUsers,
+  getAdminUatReports,
 } from "@/lib/admin-data";
 
 export const metadata: Metadata = {
@@ -88,7 +90,16 @@ export default async function AdminPage() {
   // Gate first, before a single row is read.
   await requireAdmin();
 
-  const [metrics, accounts, users, reports, trends, promoCodes, adminReviews] =
+  const [
+    metrics,
+    accounts,
+    users,
+    reports,
+    trends,
+    promoCodes,
+    adminReviews,
+    uatReports,
+  ] =
     await Promise.all([
       getAdminMetrics(),
       getAdminAccounts(),
@@ -97,6 +108,7 @@ export default async function AdminPage() {
       getAdminTrends(),
       getAdminPromoCodes(),
       getAdminReviews(),
+      getAdminUatReports(),
     ]);
 
   const activation = metrics.teams
@@ -243,6 +255,17 @@ export default async function AdminPage() {
             Trustpilot invite, or the archive.
           </p>
           <ReviewsQueue items={adminReviews} />
+        </section>
+
+        <section>
+          <h2 className="mb-2 text-sm font-semibold text-slate-900">
+            Tester runs ({uatReports.length})
+          </h2>
+          <p className="mb-3 text-xs text-slate-500">
+            Submissions from the hidden punch list at /uat. Issues shown in
+            full; ticked checks are counted only.
+          </p>
+          <UatReports items={uatReports} />
         </section>
 
         <PromoCodes codes={promoCodes} />

@@ -58,6 +58,10 @@ export function gate(request: NextRequest) {
     pathname === "/sitemap.xml" ||
     // The embeddable website form is public by definition.
     pathname.startsWith("/f/") ||
+    // The hidden tester punch list. Testers are outsiders with no account;
+    // the page is unlinked and noindexed, not secret, and stores nothing
+    // sensitive.
+    pathname === "/uat" ||
     pathname.startsWith("/auth/") ||
     pathname.startsWith("/api/auth/") ||
     pathname.startsWith("/join/") ||
