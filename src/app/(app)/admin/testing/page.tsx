@@ -44,13 +44,23 @@ export default async function TestingPage() {
               scoped from them.
             </p>
           </div>
-          <Link
-            href="/admin"
-            className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-          >
-            <ArrowLeft className="size-3.5" />
-            Back office
-          </Link>
+          <span className="ml-auto flex items-center gap-2">
+            <a
+              href="/uat?preview"
+              target="_blank"
+              rel="noopener"
+              className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Preview punch list
+            </a>
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              <ArrowLeft className="size-3.5" />
+              Back office
+            </Link>
+          </span>
         </div>
 
         <section>

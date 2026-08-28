@@ -81,7 +81,14 @@ function loadDraft(tester: UatTesterInfo | null): Draft {
  * on a personal tester link, where the checklist also autosaves to the
  * server so the same link resumes the run on another device.
  */
-export function UatClient({ tester = null }: { tester?: UatTesterInfo | null }) {
+export function UatClient({
+  tester = null,
+  preview = false,
+}: {
+  tester?: UatTesterInfo | null;
+  /** Owner's read-through: intro skipped, nothing saves, nothing sends. */
+  preview?: boolean;
+}) {
   const [draft, setDraft] = useState<Draft | null>(null);
   // A blank link handed out in a community arrives with no name on it;
   // whoever opens it first introduces themselves and it becomes theirs.
@@ -92,12 +99,16 @@ export function UatClient({ tester = null }: { tester?: UatTesterInfo | null }) 
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate the saved draft once, after mount, so the server render stays deterministic
-    setDraft(loadDraft(tester));
+    setDraft(
+      preview
+        ? { first: "", last: "", email: "", started: true, items: {} }
+        : loadDraft(tester)
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps -- hydrate once; the tester prop never changes after mount
   }, []);
 
   useEffect(() => {
-    if (!draft) return;
+    if (!draft || preview) return;
     try {
       const key = tester ? `${DRAFT_KEY}-${tester.token}` : DRAFT_KEY;
       localStorage.setItem(key, JSON.stringify(draft));
@@ -260,7 +271,7 @@ export function UatClient({ tester = null }: { tester?: UatTesterInfo | null }) 
         <div className="mx-auto flex max-w-3xl items-center gap-4">
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-slate-900">
-              {draft.first} {draft.last}
+              {preview ? "Preview" : `${draft.first} ${draft.last}`}
             </p>
             <p className="text-xs text-slate-500">
               {tried} of {ALL_CHECKS.length} tried · {flagged}{" "}
@@ -393,6 +404,12 @@ export function UatClient({ tester = null }: { tester?: UatTesterInfo | null }) 
           </section>
         ))}
 
+        {preview ? (
+          <p className="mt-14 border-t-2 border-slate-900 pt-6 text-sm text-slate-500">
+            Preview mode. Ticks and notes here go nowhere, and there is no
+            Send. Testers see a Send button in this spot.
+          </p>
+        ) : (
         <form action={formAction} className="mt-14 border-t-2 border-slate-900 pt-6">
           <input type="hidden" name="testerName" value={`${draft.first} ${draft.last}`.trim()} />
           <input type="hidden" name="testerEmail" value={draft.email} />
@@ -416,6 +433,7 @@ export function UatClient({ tester = null }: { tester?: UatTesterInfo | null }) 
             {pending ? "Sending..." : `Send my report (${tried} tried, ${flagged} ${flagged === 1 ? "issue" : "issues"})`}
           </button>
         </form>
+        )}
       </div>
     </Shell>
   );

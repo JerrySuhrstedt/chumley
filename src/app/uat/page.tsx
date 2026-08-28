@@ -12,6 +12,14 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function UatPage() {
-  return <UatClient />;
+export default async function UatPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ preview?: string }>;
+}) {
+  // ?preview opens the checklist read-through for the owner: intro
+  // skipped, nothing saved, nothing sendable. Harmless if a tester finds
+  // it; they would only be looking at the same list with no Send button.
+  const preview = (await searchParams).preview !== undefined;
+  return <UatClient preview={preview} />;
 }
