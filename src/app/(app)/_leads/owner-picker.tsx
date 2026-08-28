@@ -65,12 +65,18 @@ export function OwnerPicker({
                     : "bg-slate-200 text-slate-600"
                 }`}
               >
-                {m.avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={m.avatarUrl} alt="" className="size-full object-cover" />
-                ) : (
-                  initialsOf(m.label)
-                )}
+                <span className="relative flex size-full items-center justify-center">
+                  {initialsOf(m.label)}
+                  {m.avatarUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={m.avatarUrl}
+                      alt=""
+                      onError={(e) => e.currentTarget.remove()}
+                      className="absolute inset-0 size-full object-cover"
+                    />
+                  )}
+                </span>
               </span>
               {m.label}
             </button>

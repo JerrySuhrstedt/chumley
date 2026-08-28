@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { count, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { memberships, orgInvites } from "@/db/schema";
@@ -83,6 +84,11 @@ export async function joinOrg(token: string) {
     }
     throw e;
   }
+
+  // The manager's board and header list members; a new teammate should
+  // appear on their next load, not their next deploy.
+  revalidatePath("/pipeline");
+  revalidatePath("/", "layout");
 
   return { error: null };
 }

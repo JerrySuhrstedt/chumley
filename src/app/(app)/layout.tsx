@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
+import { RefreshOnReturn } from "./_shell/refresh-on-return";
 import { Topbar } from "@/components/topbar";
 import { getCurrentOrg } from "@/lib/org";
 import { getOnboardingState } from "@/lib/onboarding";
@@ -62,6 +63,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           that frame. */}
       <div className="flex h-screen w-full overflow-hidden bg-[var(--nav-bg)]">
         <AppSidebar isAdmin={admin} />
+        <RefreshOnReturn />
         <div className="flex flex-1 flex-col overflow-hidden">
           <Topbar
             orgName={current.org.name}

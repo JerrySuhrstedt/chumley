@@ -54,7 +54,12 @@ const SECTIONS = [
   },
 ];
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ saved?: string }>;
+}) {
+  const { saved } = await searchParams;
   const current = await getCurrentOrg();
   if (!current) return null;
   const myReview = await getMyReview(current.userId);
@@ -62,6 +67,11 @@ export default async function SettingsPage() {
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
       <div className="mx-auto max-w-2xl">
+        {saved && (
+          <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-800">
+            Saved.
+          </div>
+        )}
         <h1 className="text-xl font-semibold text-slate-900">Settings</h1>
         <p className="mb-4 text-sm text-slate-500">{current.org.name}</p>
 

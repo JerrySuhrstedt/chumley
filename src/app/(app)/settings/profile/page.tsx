@@ -1,5 +1,6 @@
-import Link from "next/link";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import Link from "next/link";
 import { and, eq } from "drizzle-orm";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,12 @@ async function saveProfile(formData: FormData) {
   }
 
   revalidatePath("/", "layout");
+
+  // The header shows the name and the board shows the avatar, so both
+  // re-render, and Settings answers with a visible "saved" instead of
+  // this page silently swallowing the click.
+  revalidatePath("/", "layout");
+  redirect("/settings?saved=profile");
 }
 
 export default async function ProfileSettingsPage() {

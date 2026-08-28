@@ -198,13 +198,20 @@ function OwnerBubble({ ownerId }: { ownerId: string | null }) {
   return (
     <span
       title={owner.label}
-      className="flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-200 text-[10px] font-bold text-slate-600 ring-2 ring-white"
+      className="relative flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-200 text-[10px] font-bold text-slate-600 ring-2 ring-white"
     >
-      {owner.avatarUrl ? (
+      {/* Initials always render underneath; the photo covers them when it
+          loads and removes itself when it cannot. Google avatar links go
+          stale, and a dead image was showing as an unexplained gray dot. */}
+      {initialsOf(owner.label)}
+      {owner.avatarUrl && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={owner.avatarUrl} alt={owner.label} className="size-full object-cover" />
-      ) : (
-        initialsOf(owner.label)
+        <img
+          src={owner.avatarUrl}
+          alt=""
+          onError={(e) => e.currentTarget.remove()}
+          className="absolute inset-0 size-full object-cover"
+        />
       )}
     </span>
   );
