@@ -14,17 +14,7 @@ export const dynamic = "force-dynamic";
  * and it answers fast or not at all: a health check that hangs is a
  * health check that lies about being one.
  */
-// FIRE DRILL 08-28: reporting down on purpose so the new monitor's
-// alert can be heard ringing once. Reverted minutes after this ships.
-const DRILL = true;
-
 export async function GET() {
-  if (DRILL) {
-    return NextResponse.json(
-      { ok: false, drill: true, note: "fire drill, the site is fine" },
-      { status: 503, headers: { "cache-control": "no-store" } }
-    );
-  }
   const started = Date.now();
   try {
     await Promise.race([
