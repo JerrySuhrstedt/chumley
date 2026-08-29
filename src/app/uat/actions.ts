@@ -1,7 +1,7 @@
 "use server";
 
 import { after } from "next/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { backlogItems, uatReports, uatTesters } from "@/db/schema";
 import { scopeBacklogItems } from "@/lib/backlog/scope";
@@ -13,6 +13,30 @@ import {
 } from "./checks";
 
 export type UatSubmitState = { error: string | null; sent: boolean };
+
+/**
+ * These endpoints are public and unauthenticated by design, so they need a
+ * ceiling that does not depend on an account. The scoping cap is the one
+ * that matters: every scoped backlog item is a paid Claude call over
+ * tester-supplied text, so a script left running would otherwise bill
+ * without limit. The caps are global per hour rather than per IP, which a
+ * determined abuser can still fill, but that bounds the spend and the row
+ * growth, which is the point. UAT is invite-driven and low volume, so the
+ * ceilings sit far above any real testing session.
+ */
+const MAX_ISSUES_PER_REPORT = 40;
+const HOURLY_SCOPING_CAP = 200;
+const HOURLY_TESTER_CAP = 100;
+
+async function createdLastHour(
+  table: "uat_testers" | "backlog_items"
+): Promise<number> {
+  const rows = (await db.execute(
+    sql`SELECT count(*)::int AS n FROM ${sql.raw(table)}
+        WHERE created_at > now() - interval '1 hour'`
+  )) as unknown as { n: number }[];
+  return Number(rows[0]?.n ?? 0);
+}
 
 /**
  * Public on purpose: the tester has no account and never will. Everything
@@ -99,8 +123,10 @@ export async function submitUatReport(
 
   // Every finding with a note becomes a backlog item right now, so the
   // backlog can never lose a finding to a scoping failure. Claude fills
-  // in the fix scope after the tester already has their confirmation.
-  const issues = findings.filter((f) => f.note);
+  // in the fix scope after the tester already has their confirmation. The
+  // per-report cap keeps one submission from turning into dozens of paid
+  // scoping calls.
+  const issues = findings.filter((f) => f.note).slice(0, MAX_ISSUES_PER_REPORT);
   if (issues.length > 0) {
     const rows = await db
       .insert(backlogItems)
@@ -115,7 +141,12 @@ export async function submitUatReport(
       )
       .returning({ id: backlogItems.id });
 
-    after(() => scopeBacklogItems(rows.map((r) => r.id)));
+    // Store the items either way; only the paid scoping is rate-limited.
+    // Over the cap, the owner still sees the finding and can scope it by
+    // hand from /admin.
+    if ((await createdLastHour("backlog_items")) <= HOURLY_SCOPING_CAP) {
+      after(() => scopeBacklogItems(rows.map((r) => r.id)));
+    }
   }
 
   return { error: null, sent: true };
@@ -137,6 +168,10 @@ export async function startUatRun(
   const cleanEmail = String(email ?? "").trim().slice(0, 200);
   if (!cleanName || !cleanEmail.includes("@"))
     return { error: "Name and email are needed first." };
+
+  if ((await createdLastHour("uat_testers")) >= HOURLY_TESTER_CAP) {
+    return { error: "Too many new testers just now. Try again shortly." };
+  }
 
   const { randomBytes } = await import("crypto");
   const token = randomBytes(8).toString("base64url");

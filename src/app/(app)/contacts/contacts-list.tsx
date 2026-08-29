@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Activity, Lead, Template } from "@/db/schema";
 import { addToPipeline, type ActivityType } from "../_leads/actions";
+import { useLocalToday } from "../dashboard/local-heading";
 import { LeadAvatar } from "../_leads/lead-avatar";
 import { LeadDetailDialog } from "../_leads/lead-detail-dialog";
 import { CONTACT_STAGE } from "../_leads/stages";
@@ -32,6 +33,11 @@ export function ContactsList({
   const allStages = useStages();
   const [selectedId, setSelectedId] = useState<string | null>(openId ?? null);
   const [logType, setLogType] = useState<ActivityType>("note");
+  // Non-null only once mounted. toLocaleDateString formats in the browser's
+  // timezone and locale, so running it during the server prerender and again
+  // on hydration mismatched near midnight; hold the dates until the client
+  // has taken over, the same server-null-until-mounted trick the board uses.
+  const today = useLocalToday();
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- follow the record named in the URL
@@ -68,8 +74,9 @@ export function ContactsList({
                   .join(" · ") || "No contact details yet";
 
               const touched = lastTouched(lead);
-              const dateNote =
-                sortKey === "added"
+              const dateNote = !today
+                ? null
+                : sortKey === "added"
                   ? `Added ${new Date(lead.createdAt).toLocaleDateString()}`
                   : sortKey === "changed"
                     ? `Changed ${new Date(lead.updatedAt).toLocaleDateString()}`

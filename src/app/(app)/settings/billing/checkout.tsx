@@ -20,13 +20,14 @@ import { PRICE, TRIAL_DAYS } from "@/app/(marketing)/pricing/plans";
  * address from the one they signed up with, which is common.
  */
 export function Checkout({
-  orgId,
+  orgToken,
   email,
   membersNow,
   customPriceId,
   customPriceCents,
 }: {
-  orgId: string;
+  /** The team id, signed server-side. See lib/paddle/org-token. */
+  orgToken: string;
   email: string;
   /** Seats cannot be bought below the headcount already in the team. */
   membersNow: number;
@@ -118,9 +119,10 @@ export function Checkout({
         },
       ],
       customer: { email },
-      // How the webhook finds this team. Without it a paid subscription
-      // arrives with nowhere to put it.
-      customData: { orgId },
+      // How the webhook finds this team: a server-signed token, so this
+      // browser-set field cannot point a payment at another team. Without
+      // it a paid subscription arrives with nowhere to put it.
+      customData: { orgId: orgToken },
       settings: {
         displayMode: "overlay",
         theme: "light",

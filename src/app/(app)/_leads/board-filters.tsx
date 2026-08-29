@@ -28,10 +28,14 @@ export function matchesFilters(
   lead: Lead,
   temp: LeadTemperature | null,
   due: DueFilter | null,
-  owner: string | null = null
+  owner: string | null = null,
+  // The due filter is date-relative, so it needs the browser's local date.
+  // Null before the browser answers, but the due filter starts unset, so
+  // this branch is not reached on the server prerender.
+  today: string | null = null
 ) {
   if (temp && lead.temperature !== temp) return false;
-  if (due && nextActionStatus(lead).key !== due) return false;
+  if (due && nextActionStatus(lead, today).key !== due) return false;
   if (owner && lead.ownerId !== owner) return false;
   return true;
 }
@@ -314,6 +318,9 @@ export function BoardFilters({
           onClick={() => {
             onTemp(null);
             onDue(null);
+            // Owner counts toward `filtering`, so Clear has to drop it too,
+            // or the button lingers with the owner chip still active.
+            onOwner(null);
           }}
           className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium text-[var(--board-ink-muted)] transition-colors hover:bg-black/[0.06] hover:text-[var(--board-ink)]"
         >

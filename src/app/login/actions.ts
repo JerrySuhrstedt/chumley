@@ -13,13 +13,31 @@ function messageOf(e: unknown): string {
   return "Sign-in failed. Try again.";
 }
 
+/**
+ * Keep a post-login redirect on our own site.
+ *
+ * `next` comes off a form the browser controls, and it is handed to
+ * redirect(). Without this, /login?next=https://evil.example would bounce a
+ * freshly authenticated user off-site, which is the useful half of a
+ * phishing hand-off because it launders through the real domain. Only a
+ * plain same-origin path is allowed: it must start with a single slash and
+ * not "//" or "/\", both of which browsers read as protocol-relative.
+ */
+function safeNext(value: FormDataEntryValue | null): string {
+  const next = String(value ?? "").trim();
+  if (next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\")) {
+    return next;
+  }
+  return "/pipeline";
+}
+
 export async function signInWithPassword(
   _prevState: LoginState,
   formData: FormData
 ): Promise<LoginState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const next = String(formData.get("next") ?? "/pipeline").trim() || "/pipeline";
+  const next = safeNext(formData.get("next"));
 
   if (!email || !password) {
     return { error: "Enter your email and password.", sent: false };
@@ -43,7 +61,7 @@ export async function signUpWithPassword(
 ): Promise<LoginState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const next = String(formData.get("next") ?? "/pipeline").trim() || "/pipeline";
+  const next = safeNext(formData.get("next"));
 
   if (!email || !password) {
     return { error: "Enter your email and password.", sent: false };
@@ -74,7 +92,7 @@ export async function sendMagicLink(
   formData: FormData
 ): Promise<LoginState> {
   const email = String(formData.get("email") ?? "").trim();
-  const next = String(formData.get("next") ?? "/pipeline").trim() || "/pipeline";
+  const next = safeNext(formData.get("next"));
 
   if (!email) {
     return { error: "Enter an email address.", sent: false };
@@ -106,7 +124,7 @@ const PROVIDER_LABEL: Record<OAuthProvider, string> = {
  * which lands on the user record and becomes the default headshot.
  */
 async function startOAuth(provider: OAuthProvider, formData: FormData) {
-  const next = String(formData.get("next") ?? "/pipeline").trim() || "/pipeline";
+  const next = safeNext(formData.get("next"));
 
   let url: string | undefined;
   try {

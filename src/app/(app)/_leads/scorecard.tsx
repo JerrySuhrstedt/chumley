@@ -1,8 +1,13 @@
-import { localToday } from "@/lib/today";
+"use client";
+
+import { useLocalToday } from "../dashboard/local-heading";
 import type { Lead } from "@/db/schema";
 
 export function Scorecard({ leads }: { leads: Lead[] }) {
-  const today = localToday();
+  // The board is server-prerendered and Vercel runs in UTC, so "due today"
+  // has to wait for the browser's own date. Null until it answers, which is
+  // what keeps the server HTML and the first client render in step.
+  const today = useLocalToday();
 
   const activeDeals = leads.filter(
     (l) => l.stage !== "won" && l.stage !== "lost"
@@ -12,14 +17,14 @@ export function Scorecard({ leads }: { leads: Lead[] }) {
     .filter((l) => l.stage === "won")
     .reduce((sum, l) => sum + Number(l.value ?? 0), 0);
 
-  const dueToday = leads.filter(
-    (l) => l.nextActionDue && l.nextActionDue <= today
-  ).length;
+  const dueToday = today
+    ? leads.filter((l) => l.nextActionDue && l.nextActionDue <= today).length
+    : null;
 
   const stats = [
     { label: "Deals working", value: activeDeals.toLocaleString() },
     { label: "Money won", value: `$${closedRevenue.toLocaleString()}` },
-    { label: "Due today", value: dueToday.toLocaleString() },
+    { label: "Due today", value: dueToday === null ? "—" : dueToday.toLocaleString() },
   ];
 
   return (

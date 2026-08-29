@@ -100,7 +100,11 @@ export async function getAdminMetrics(): Promise<AdminMetrics> {
          WHERE created_at > now() - interval '7 days')::int AS new_users_7d,
       (SELECT count(DISTINCT org_id) FROM leads
          WHERE is_sample = false)::int AS activated_teams,
-      (SELECT count(*) FROM leads WHERE is_sample = false)::int AS real_leads,
+      -- "Real leads" means deals on the board, excluding the contacts pool,
+      -- so this matches the per-account real_leads in getAdminAccounts. The
+      -- two used to disagree on the same screen.
+      (SELECT count(*) FROM leads
+         WHERE is_sample = false AND stage <> 'contact')::int AS real_leads,
       (SELECT count(*) FROM activities)::int AS activities,
       (SELECT count(*) FROM problem_reports
         WHERE status = 'new')::int AS new_reports

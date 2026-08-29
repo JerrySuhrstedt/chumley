@@ -25,6 +25,10 @@ export function GlobalSearch() {
   const [active, setActive] = useState(0);
   const [pending, startTransition] = useTransition();
   const boxRef = useRef<HTMLDivElement>(null);
+  // Each search carries a token. A slower query that resolves after a newer
+  // one has already answered is dropped, so stale results never overwrite the
+  // ones the current text asked for.
+  const seq = useRef(0);
 
   // Debounced so a fast typist doesn't fire a query per keystroke.
   useEffect(() => {
@@ -32,11 +36,16 @@ export function GlobalSearch() {
 
     const timer = setTimeout(() => {
       if (q.length < 2) {
+        // Clearing is also a decision; bump the token so an in-flight older
+        // query cannot land its results on top of the cleared list.
+        seq.current += 1;
         setHits([]);
         return;
       }
+      const mine = (seq.current += 1);
       startTransition(async () => {
         const results = await searchLeads(q);
+        if (mine !== seq.current) return;
         setHits(results);
         setActive(0);
       });

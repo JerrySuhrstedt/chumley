@@ -5,6 +5,7 @@ import { alertAsync } from "@/lib/alert";
 import { organizations, subscriptions } from "@/db/schema";
 import { priceFor } from "@/lib/paddle/catalog";
 import { paddle } from "@/lib/paddle/server";
+import { verifyOrgToken } from "@/lib/paddle/org-token";
 
 const date = (v: string | null | undefined) => (v ? new Date(v) : null);
 
@@ -15,12 +16,19 @@ const date = (v: string | null | undefined) => (v ? new Date(v) : null);
  * reliable bridge here. Matching on email would be wrong: the person
  * paying is often a manager whose address has nothing to do with the team
  * record, and one person can own more than one team.
+ *
+ * The id is signed, not raw. custom_data is set in the browser, so an
+ * unsigned id there is attacker-controlled. An invalid or legacy-unsigned
+ * value verifies to null and the caller falls through to orgIdByCustomer,
+ * which is keyed on the customer id we recorded ourselves, so subscriptions
+ * created before signing existed still resolve.
  */
 function orgIdFrom(data: unknown): string | null {
   const custom = (data as { customData?: Record<string, unknown> } | null)
     ?.customData;
   const value = custom?.orgId ?? custom?.org_id;
-  return typeof value === "string" && value.length > 0 ? value : null;
+  if (typeof value !== "string" || value.length === 0) return null;
+  return verifyOrgToken(value);
 }
 
 /**
@@ -218,19 +226,59 @@ export async function syncPaddleEvent(event: EventEntity): Promise<string> {
        * event lost to a newer one, which is a correct outcome and not a
        * failure, so it must not be retried.
        */
-      const applied = await db
-        .insert(subscriptions)
-        .values(values)
-        .onConflictDoUpdate({
-          target: subscriptions.id,
-          set: values,
-          // ISO string with an explicit cast, not the Date object. Inside a
-          // raw fragment postgres-js gets the value with no type attached
-          // and refuses a Date outright, which fails every webhook rather
-          // than just this comparison.
-          setWhere: raw`${subscriptions.occurredAt} IS NULL OR ${subscriptions.occurredAt} < ${occurredAt.toISOString()}::timestamptz`,
-        })
-        .returning({ id: subscriptions.id });
+      let applied: { id: string }[];
+      try {
+        applied = await db
+          .insert(subscriptions)
+          .values(values)
+          .onConflictDoUpdate({
+            target: subscriptions.id,
+            set: values,
+            // ISO string with an explicit cast, not the Date object. Inside a
+            // raw fragment postgres-js gets the value with no type attached
+            // and refuses a Date outright, which fails every webhook rather
+            // than just this comparison.
+            setWhere: raw`${subscriptions.occurredAt} IS NULL OR ${subscriptions.occurredAt} < ${occurredAt.toISOString()}::timestamptz`,
+          })
+          .returning({ id: subscriptions.id });
+      } catch (e) {
+        /**
+         * The one-live-subscription-per-team index (partial unique on
+         * org_id where status <> canceled). A brand-new subscription for a
+         * team that still has a non-canceled one cannot be mirrored without
+         * deciding which is the real one, and that is a human's call. This
+         * used to 500 and let Paddle retry the same event for days. Ack it
+         * so the retries stop, and raise it for reconciliation instead.
+         */
+        if (
+          e &&
+          typeof e === "object" &&
+          "code" in e &&
+          (e as { code?: string }).code === "23505"
+        ) {
+          console.error(
+            "paddle webhook: second live subscription for team",
+            JSON.stringify({
+              event: event.eventType,
+              subscriptionId: sub.id,
+              orgId,
+            })
+          );
+          alertAsync(
+            "paddle-double-subscription",
+            "Chumley: a team has two live subscriptions",
+            [
+              `A ${event.eventType} for ${sub.id} could not be recorded because`,
+              `team ${orgId} already has a live subscription.`,
+              "",
+              "Reconcile in the Paddle dashboard: cancel whichever is not the",
+              "real one, then replay this event from Notifications.",
+            ].join("\n")
+          );
+          return `${event.eventType} for ${sub.id} not mirrored: team ${orgId} already has a live subscription`;
+        }
+        throw e;
+      }
 
       if (applied.length === 0) {
         return `${event.eventType} ignored: an event newer than ${occurredAt.toISOString()} is already recorded`;

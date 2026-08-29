@@ -16,7 +16,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { db } from "@/db";
 import { leads } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
-import { cn } from "@/lib/utils";
+import { CalendarDay } from "./day-cell";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -48,7 +48,9 @@ export default async function CalendarPage({
     byDay.set(key, [...(byDay.get(key) ?? []), lead]);
   }
 
-  const today = format(new Date(), "yyyy-MM-dd");
+  // "Today" and the overdue tint depend on the reader's timezone, so they are
+  // decided in CalendarDay on the client rather than against the server's UTC
+  // clock here.
   const prev = format(subMonths(base, 1), "yyyy-MM");
   const next = format(addMonths(base, 1), "yyyy-MM");
 
@@ -99,50 +101,19 @@ export default async function CalendarPage({
             {days.map((day) => {
               const key = format(day, "yyyy-MM-dd");
               const items = byDay.get(key) ?? [];
-              const inMonth = isSameMonth(day, base);
-              const isToday = key === today;
 
               return (
-                <div
+                <CalendarDay
                   key={key}
-                  className={cn(
-                    "min-h-24 border-r border-b border-slate-100 p-1.5",
-                    !inMonth && "bg-slate-50/60"
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "mb-1 flex size-6 items-center justify-center rounded-full text-xs",
-                      isToday
-                        ? "bg-[var(--brand)] font-semibold text-white"
-                        : inMonth
-                          ? "text-slate-700"
-                          : "text-slate-400"
-                    )}
-                  >
-                    {format(day, "d")}
-                  </div>
-
-                  <div className="flex flex-col gap-1">
-                    {items.map((lead) => (
-                      <div
-                        key={lead.id}
-                        title={`${lead.name}: ${lead.nextActionText}`}
-                        className={cn(
-                          "truncate rounded px-1.5 py-1 text-[11px] leading-tight",
-                          key < today
-                            ? "bg-red-50 text-red-700"
-                            : "bg-blue-50 text-blue-800"
-                        )}
-                      >
-                        <span className="font-medium">{lead.name}</span>
-                        <span className="block truncate opacity-80">
-                          {lead.nextActionText}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                  dayKey={key}
+                  dayNum={format(day, "d")}
+                  inMonth={isSameMonth(day, base)}
+                  items={items.map((lead) => ({
+                    id: lead.id,
+                    name: lead.name,
+                    nextActionText: lead.nextActionText,
+                  }))}
+                />
               );
             })}
           </div>

@@ -23,6 +23,9 @@ export default async function DashboardPage() {
   if (!current) return null;
 
   const [allLeads, recent, allTemplates] = await Promise.all([
+    // Activities ride along because the "What needs doing" rows open the
+    // lead detail dialog, which renders the timeline. The leads_org_idx and
+    // activities_lead_idx added in 08-28-2026 keep this off a table scan.
     db.query.leads.findMany({
       where: eq(leads.orgId, current.org.id),
       with: { activities: true },

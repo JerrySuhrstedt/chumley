@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Papa from "papaparse";
 import Link from "next/link";
 import { CheckCircle2, FileUp, TriangleAlert } from "lucide-react";
@@ -29,6 +29,12 @@ type Row = Record<string, string>;
 
 const CHUNK_SIZE = 200;
 const MAX_ROWS = 10_000;
+// Roughly what MAX_ROWS of lead data weighs with room to spare, and a hard
+// stop so a wrong file cannot lock up the tab parsing hundreds of MB.
+const MAX_FILE_BYTES = 15 * 1024 * 1024;
+// Above this, parse in a worker so the main thread, and the page, keep
+// moving. Small files parse inline to skip the worker's start-up cost.
+const WORKER_THRESHOLD = 1024 * 1024;
 
 /** The trigger shows the field's friendly label, not its internal key. */
 function fieldLabel(value: unknown) {
@@ -47,6 +53,7 @@ export function CsvImporter() {
   const [skipDuplicates, setSkipDuplicates] = useState(true);
   const [intoPipeline, setIntoPipeline] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<{
@@ -59,31 +66,85 @@ export function CsvImporter() {
 
   function handleFile(file: File) {
     setError(null);
+    setWarning(null);
+
+    // Size is checked before parsing: a huge file should fail fast, not after
+    // the browser has already tried to chew through it.
+    if (file.size > MAX_FILE_BYTES) {
+      setError(
+        `That file is ${(file.size / (1024 * 1024)).toFixed(1)} MB. Keep each import under ${MAX_FILE_BYTES / (1024 * 1024)} MB, which is roughly ${MAX_ROWS.toLocaleString()} rows. Split it and import in parts.`
+      );
+      return;
+    }
 
     Papa.parse<Row>(file, {
       header: true,
       skipEmptyLines: "greedy",
-      transformHeader: (h) => h.trim(),
+      // Header trimming is done by hand below, not via transformHeader: that
+      // option is a function, and worker mode posts the config through
+      // postMessage, which cannot clone a function and throws.
+      worker: file.size > WORKER_THRESHOLD,
+      encoding: "utf-8",
       complete: (parsed) => {
-        const cols = (parsed.meta.fields ?? []).filter(Boolean);
+        const rawFields = (parsed.meta.fields ?? []).filter(Boolean);
+        // Trim header names and carry the row values over under the trimmed
+        // keys, so headers and row keys stay in step whichever path parsed.
+        const cols = rawFields.map((h) => h.trim()).filter(Boolean);
+        const data = parsed.data.map((row) => {
+          const out: Row = {};
+          for (const raw of rawFields) out[raw.trim()] = row[raw];
+          return out;
+        });
         if (cols.length === 0) {
           setError("That file has no column headers in its first row.");
           return;
         }
-        if (parsed.data.length === 0) {
+        if (data.length === 0) {
           setError("That file has headers but no rows.");
           return;
         }
-        if (parsed.data.length > MAX_ROWS) {
+        if (data.length > MAX_ROWS) {
           setError(
-            `That file has ${parsed.data.length.toLocaleString()} rows. Split it into files of ${MAX_ROWS.toLocaleString()} or fewer.`
+            `That file has ${data.length.toLocaleString()} rows. Split it into files of ${MAX_ROWS.toLocaleString()} or fewer.`
           );
           return;
         }
 
+        // Bad quoting or ragged rows produce mangled cells. Surface them
+        // rather than quietly importing half-broken data; the preview below
+        // lets the user see the damage before committing.
+        const notes: string[] = [];
+        if (parsed.errors.length > 0) {
+          const first = parsed.errors[0];
+          const where =
+            typeof first.row === "number"
+              ? ` near row ${(first.row + 2).toLocaleString()}`
+              : "";
+          notes.push(
+            `We hit ${parsed.errors.length.toLocaleString()} formatting ${parsed.errors.length === 1 ? "problem" : "problems"} reading this file${where} (${first.message}). Check the preview before importing.`
+          );
+        }
+
+        // A file saved in the wrong encoding decodes to replacement
+        // characters. Cheap to spot in a sample, and worth a heads-up before
+        // names come in as garbage.
+        const garbled = data
+          .slice(0, 50)
+          .some((row) =>
+            Object.values(row).some(
+              (v) => typeof v === "string" && v.includes("�")
+            )
+          );
+        if (garbled) {
+          notes.push(
+            "Some characters did not decode. If names look wrong, re-save the file as UTF-8 and try again."
+          );
+        }
+
+        setWarning(notes.length > 0 ? notes.join(" ") : null);
         setFileName(file.name);
         setHeaders(cols);
-        setRows(parsed.data);
+        setRows(data);
         setMapping(autoMap(cols));
         setStep("map");
       },
@@ -124,7 +185,13 @@ export function CsvImporter() {
   }
 
   const hasName = !!columnFor("name") || !!columnFor("firstName");
-  const prepared = rows.map(buildRow);
+  // Mapping every row runs on each keystroke of the whole page otherwise;
+  // only the mapping, the rows, and the pipeline toggle actually change it.
+  const prepared = useMemo(
+    () => rows.map(buildRow),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- buildRow is derived from exactly these
+    [rows, mapping, intoPipeline, headers]
+  );
   const valid = prepared.filter((r): r is ImportRow => r !== null);
   const skippedNoName = prepared.length - valid.length;
 
@@ -169,6 +236,7 @@ export function CsvImporter() {
     setMapping({});
     setResult(null);
     setError(null);
+    setWarning(null);
     setProgress(0);
     if (inputRef.current) inputRef.current.value = "";
   }
@@ -354,6 +422,13 @@ export function CsvImporter() {
           <p className="text-sm text-slate-500">
             {skippedNoName.toLocaleString()} row
             {skippedNoName === 1 ? "" : "s"} have no name and will be skipped.
+          </p>
+        )}
+
+        {warning && (
+          <p className="flex items-start gap-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+            {warning}
           </p>
         )}
 

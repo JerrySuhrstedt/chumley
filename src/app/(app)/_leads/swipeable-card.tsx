@@ -25,6 +25,7 @@ export function SwipeableCard({
   onForward,
   onBack,
   onArchive,
+  dragActive = false,
   children,
 }: {
   /** The bucket a right swipe advances to, or null at the end of the line. */
@@ -38,6 +39,14 @@ export function SwipeableCard({
   onForward: () => void;
   onBack: () => void;
   onArchive: () => void;
+  /**
+   * True once the dnd TouchSensor has claimed a drag anywhere on the board.
+   * The swipe and the drag both listen to the same finger, so while a drag
+   * is live this card stops tracking its own swipe: without it, resting long
+   * enough to start a drag and then moving sideways both dragged the card
+   * and swiped it, firing two stage changes from one gesture.
+   */
+  dragActive?: boolean;
   children: React.ReactNode;
 }) {
   const [dx, setDx] = useState(0);
@@ -46,6 +55,7 @@ export function SwipeableCard({
   const locked = useRef<"none" | "x" | "y">("none");
 
   function onTouchStart(e: React.TouchEvent) {
+    if (dragActive) return;
     const t = e.touches[0];
     start.current = { x: t.clientX, y: t.clientY };
     locked.current = "none";
@@ -53,7 +63,7 @@ export function SwipeableCard({
   }
 
   function onTouchMove(e: React.TouchEvent) {
-    if (!start.current) return;
+    if (dragActive || !start.current) return;
     const t = e.touches[0];
     const moveX = t.clientX - start.current.x;
     const moveY = t.clientY - start.current.y;
@@ -71,6 +81,10 @@ export function SwipeableCard({
   }
 
   function onTouchEnd() {
+    // A drag took over this gesture. The handlers all bail on dragActive
+    // and the offset is forced to rest in render, so there is nothing to
+    // reset here; the next touch starts clean.
+    if (dragActive) return;
     if (locked.current === "x") {
       if (dx > THRESHOLD && forward) {
         onForward();
@@ -88,8 +102,13 @@ export function SwipeableCard({
     locked.current = "none";
   }
 
-  const past = Math.abs(dx) > THRESHOLD;
-  const revealing = dx > 0 ? "forward" : dx < 0 ? "archive" : null;
+  // While a drag has claimed the gesture the card rests: the swipe is
+  // abandoned and onTouchEnd bails, so any dx left from the instant before
+  // the drag took over is not shown. Deriving this beats resetting state in
+  // an effect, which the finger-vs-drag race made tempting.
+  const offset = dragActive ? 0 : dx;
+  const past = Math.abs(offset) > THRESHOLD;
+  const revealing = offset > 0 ? "forward" : offset < 0 ? "archive" : null;
 
   return (
     <div className="relative touch-pan-y md:touch-auto">
@@ -128,8 +147,8 @@ export function SwipeableCard({
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
         onTouchCancel={onTouchEnd}
-        style={{ transform: dx ? `translateX(${dx}px)` : undefined }}
-        className={`relative ${settling ? "transition-transform duration-200" : ""}`}
+        style={{ transform: offset ? `translateX(${offset}px)` : undefined }}
+        className={`relative ${settling && !dragActive ? "transition-transform duration-200" : ""}`}
       >
         {children}
       </div>

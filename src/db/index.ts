@@ -11,26 +11,31 @@ if (!connectionString) {
 }
 
 /**
- * The database client, tuned for serverless behind Supabase's pooler.
+ * The database client, tuned for serverless behind a transaction pooler.
  *
- * DATABASE_URL must point at the transaction pooler on port 6543, not at
- * the database directly on 5432. Every Vercel function instance is its own
+ * DATABASE_URL must point at Neon's POOLED endpoint (the host with the
+ * `-pooler` segment, e.g. ep-xxx-pooler.region.aws.neon.tech), not at the
+ * direct compute endpoint. Every Vercel function instance is its own
  * process with its own pool, and a few dozen warm instances talking
- * straight to Postgres will exhaust its connection limit long before the
- * app is under any real load. The pooler exists to multiplex exactly that.
+ * straight to Postgres will exhaust the compute's connection limit long
+ * before the app is under any real load. The pooler exists to multiplex
+ * exactly that. (History: this app ran on Supabase's pooler on port 6543
+ * before moving to Neon; the reasoning is identical, only the host differs,
+ * and the config below is correct for either pooler.)
  *
  * The settings below matter more than they look:
  *
  * `prepare: false` is not optional. postgres-js uses prepared statements by
- * default and PgBouncer in transaction mode hands each statement whichever
- * backend is free, so a statement prepared on one connection is executed on
- * another that has never seen it. The failure is intermittent and reads
- * like a random query bug, which is the worst kind to chase.
+ * default and a transaction-mode pooler (PgBouncer, which is what Neon's
+ * pooled endpoint runs) hands each statement whichever backend is free, so
+ * a statement prepared on one connection is executed on another that has
+ * never seen it. The failure is intermittent and reads like a random query
+ * bug, which is the worst kind to chase.
  *
  * `idle_timeout` is what actually protects the connection limit. Without
  * it a container that served one request at 9am holds its connections open
  * until the platform reaps the whole instance, so idle traffic pins
- * connections it is not using. Twenty seconds is longer than the gap
+ * connections it is not using. Ten seconds is longer than the gap
  * between a rep's page loads and far shorter than a warm instance's life.
  *
  * `max` is deliberately not 1, which is the usual serverless advice and is

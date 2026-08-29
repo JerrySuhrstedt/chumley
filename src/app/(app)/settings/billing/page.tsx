@@ -3,6 +3,7 @@ import { ArrowLeft, CreditCard, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCurrentOrg } from "@/lib/org";
 import { getBillingState } from "@/lib/paddle/access";
+import { signOrgId } from "@/lib/paddle/org-token";
 import { Checkout } from "./checkout";
 import { TestModeNotice } from "@/components/test-mode-notice";
 import { Seats } from "./seats";
@@ -71,7 +72,7 @@ export default async function BillingSettingsPage() {
         {billing.canSubscribe && current.email && (
           <>
             <Checkout
-              orgId={current.org.id}
+              orgToken={signOrgId(current.org.id)}
               email={current.email}
               membersNow={billing.seatsUsed}
               customPriceId={billing.customPriceId}

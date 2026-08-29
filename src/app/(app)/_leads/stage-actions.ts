@@ -115,9 +115,15 @@ export async function reorderStages(orderedIds: string[]) {
   const open = new Set(all.filter((s) => s.kind === "open").map((s) => s.id));
 
   // Ignore anything that is not one of this team's working columns, so a
-  // tampered payload cannot drag won or lost into the middle.
+  // tampered payload cannot drag won or lost into the middle. Deduping
+  // before the count matters: [a, a, b] against three open columns would
+  // otherwise pass the length check, renumber a twice and leave the third
+  // column on a stale position.
   const clean = orderedIds.filter((id) => open.has(id));
-  if (clean.length !== open.size) return { error: "That order is not valid." };
+  const unique = new Set(clean);
+  if (clean.length !== open.size || unique.size !== open.size) {
+    return { error: "That order is not valid." };
+  }
 
   await db.transaction(async (tx) => {
     for (const [i, id] of clean.entries()) {

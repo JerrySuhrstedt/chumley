@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { count, eq } from "drizzle-orm";
+import { count, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { memberships, orgInvites } from "@/db/schema";
 import { getCurrentUser } from "@/lib/org";
@@ -48,16 +48,26 @@ export async function joinOrg(token: string) {
   if (!seats.ok) return { error: seats.error };
 
   /**
-   * Insert, then count, then undo if that put them over.
+   * Lock the team, then insert, then count, then undo if that put them over.
    *
    * Checking before inserting is two steps, and two people opening the
    * same link at the same moment both pass the check and both get in.
-   * Counting after the write is inside the transaction settles it: the
-   * loser rolls back and is told the team is full.
+   * Counting after the write is not enough on its own: under Postgres's
+   * default READ COMMITTED each transaction's count sees only committed
+   * rows plus its own insert, so two racing joiners both count one and
+   * both pass. Taking a row lock on the organization first serializes
+   * joiners for this team, so the second one counts against a settled
+   * membership set and the loser rolls back.
    */
   const { cap } = seats;
   try {
     await db.transaction(async (tx) => {
+      if (cap !== null) {
+        await tx.execute(
+          sql`SELECT 1 FROM organizations WHERE id = ${invite.orgId}::uuid FOR UPDATE`,
+        );
+      }
+
       await tx.insert(memberships).values({
         orgId: invite.orgId,
         userId: user.id,
@@ -81,6 +91,19 @@ export async function joinOrg(token: string) {
         error:
           "That team just filled its last seat. The owner can add one in Billing." as const,
       };
+    }
+    // A double-submit can race two inserts for the same user past the
+    // membership pre-check; the unique(orgId,userId) index catches the
+    // loser. They are on the team either way, so treat it as success.
+    if (
+      e &&
+      typeof e === "object" &&
+      "code" in e &&
+      (e as { code?: string }).code === "23505"
+    ) {
+      revalidatePath("/pipeline");
+      revalidatePath("/", "layout");
+      return { error: null };
     }
     throw e;
   }
