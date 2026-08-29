@@ -22,9 +22,13 @@ export const getCurrentOrg = cache(async () => {
   const user = await getCurrentUser();
   if (!user) return null;
 
+  // Oldest membership wins, so a user who somehow ended up on two teams
+  // sees the same one every render rather than a team that changes between
+  // deploys with an unordered findFirst.
   const membership = await db.query.memberships.findFirst({
     where: eq(memberships.userId, user.id),
     with: { org: true },
+    orderBy: (m, { asc }) => [asc(m.createdAt)],
   });
 
   if (!membership) return null;
@@ -134,21 +138,37 @@ function starterLeads(orgId: string) {
 }
 
 export async function createOrgForUser(userId: string, name: string) {
-  const [org] = await db.insert(organizations).values({ name }).returning();
-
-  await db.insert(memberships).values({
-    orgId: org.id,
-    userId,
-    role: "owner",
+  // A user who already has a team is not given a second one. A double
+  // submit on onboarding, or a revisit to /onboarding, used to create an
+  // orphan org and a second membership, after which getCurrentOrg resolved
+  // the team nondeterministically. Return the existing team instead.
+  const existing = await db.query.memberships.findFirst({
+    where: eq(memberships.userId, userId),
+    with: { org: true },
+    orderBy: (m, { asc }) => [asc(m.createdAt)],
   });
+  if (existing) return existing.org;
 
-  await db
-    .insert(templates)
-    .values(STARTER_TEMPLATES.map((t) => ({ ...t, orgId: org.id })));
+  // All four writes together, so a failure part-way cannot leave an org
+  // with no membership (which stranded the user back on /onboarding, where
+  // they made another one, orphaning the first forever).
+  return db.transaction(async (tx) => {
+    const [org] = await tx.insert(organizations).values({ name }).returning();
 
-  await db.insert(leads).values(starterLeads(org.id));
+    await tx.insert(memberships).values({
+      orgId: org.id,
+      userId,
+      role: "owner",
+    });
 
-  return org;
+    await tx
+      .insert(templates)
+      .values(STARTER_TEMPLATES.map((t) => ({ ...t, orgId: org.id })));
+
+    await tx.insert(leads).values(starterLeads(org.id));
+
+    return org;
+  });
 }
 
 export type TeamMember = {

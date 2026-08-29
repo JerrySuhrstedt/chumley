@@ -20,12 +20,22 @@ const appUrl = process.env.DATABASE_URL?.trim();
 
 export const dbConfigured = Boolean(testUrl);
 
-if (testUrl && appUrl) {
+if (testUrl) {
   const strip = (u: string) => u.split("?")[0].replace(/\/+$/, "");
-  if (strip(testUrl) === strip(appUrl)) {
+  // The fixtures below (withOrg, sql) write and delete rows through
+  // TEST_DATABASE_URL, but the code under test imports @/db, which connects
+  // through DATABASE_URL. If the two name different databases the fixtures
+  // land in one database while the code reads and writes another: the tests
+  // assert against nothing, and whatever DATABASE_URL points at, production
+  // included, is what actually gets touched. The only safe configuration is
+  // both variables naming the SAME scratch database, so anything else is a
+  // hard stop rather than a silent split-brain. Point BOTH at the scratch DB.
+  if (!appUrl || strip(testUrl) !== strip(appUrl)) {
     throw new Error(
-      "TEST_DATABASE_URL is the same database as DATABASE_URL. These tests " +
-        "delete rows. Point TEST_DATABASE_URL at a scratch database."
+      "TEST_DATABASE_URL is set but DATABASE_URL does not point at the same " +
+        "database. Integration tests write fixtures via TEST_DATABASE_URL and " +
+        "the code under test reads via DATABASE_URL (@/db), so both must name " +
+        "the same scratch database. Set DATABASE_URL to the scratch DB too."
     );
   }
 }

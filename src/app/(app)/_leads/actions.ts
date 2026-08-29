@@ -50,6 +50,26 @@ async function stageLabel(orgId: string, stage: LeadStage) {
 }
 
 /**
+ * Confirm a lead belongs to this team before writing anything hung off it.
+ *
+ * A server action is an API: leadId arrives from the browser and the
+ * activities foreign key only checks the lead exists, not whose it is.
+ * Without this, an authenticated user in one team can insert timeline rows
+ * against another team's lead, and because the timeline joins on leadId
+ * alone the row surfaces on the victim's record, where they cannot delete
+ * it (their delete filters on their own org). logCallTouch has always done
+ * this check; the other activity writers now match it.
+ */
+async function leadBelongsTo(orgId: string, leadId: string) {
+  const [lead] = await db
+    .select({ id: leads.id })
+    .from(leads)
+    .where(and(eq(leads.id, leadId), eq(leads.orgId, orgId)))
+    .limit(1);
+  return Boolean(lead);
+}
+
+/**
  * The team, and permission to change its data.
  *
  * Every write below goes through the gate rather than through
@@ -323,6 +343,11 @@ export async function logActivity(
   const { current, error: refused } = await getWritableOrg();
   if (!current) return { error: refused };
   const { org, userId } = current;
+
+  if (!(await leadBelongsTo(org.id, leadId))) {
+    return { error: "That lead is gone." };
+  }
+
   const keepsOutcome = type === "call" || type === "meeting";
 
   // Voicemails are a cadence counter — number them so a rep can see where
@@ -383,12 +408,9 @@ export async function logCallTouch(
 
   // The lead has to belong to this team. A server action is callable by
   // anyone who can reach the site, and leadId arrives from the browser.
-  const [lead] = await db
-    .select({ id: leads.id })
-    .from(leads)
-    .where(and(eq(leads.id, leadId), eq(leads.orgId, org.id)))
-    .limit(1);
-  if (!lead) return { activityId: null, error: "That lead is gone." };
+  if (!(await leadBelongsTo(org.id, leadId))) {
+    return { activityId: null, error: "That lead is gone." };
+  }
 
   const [row] = await db
     .insert(activities)
@@ -491,6 +513,10 @@ export async function addLeadNote(
   if (!current) return { error: refused };
   const { org } = current;
 
+  if (!(await leadBelongsTo(org.id, leadId))) {
+    return { error: "That lead is gone." };
+  }
+
   await db.insert(activities).values({ orgId: org.id, leadId, body });
   revalidatePath("/pipeline");
   return { error: null };
@@ -578,6 +604,10 @@ export async function logSentMessage(
   body: string,
 ) {
   const { org, userId } = await requireOrg();
+
+  if (!(await leadBelongsTo(org.id, leadId))) {
+    throw new Error("That lead is gone.");
+  }
 
   await db.insert(activities).values({
     orgId: org.id,

@@ -103,15 +103,27 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 8,
   },
+  // A provider is registered only when both of its env vars are actually
+  // set. Registering with empty strings advertised a sign-in button that
+  // could never work and produced confusing OAuth errors instead of simply
+  // not being offered. Unset vars just mean that provider is off.
   socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID ?? "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-    },
-    linkedin: {
-      clientId: process.env.LINKEDIN_CLIENT_ID ?? "",
-      clientSecret: process.env.LINKEDIN_CLIENT_SECRET ?? "",
-    },
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? {
+          google: {
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          },
+        }
+      : {}),
+    ...(process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET
+      ? {
+          linkedin: {
+            clientId: process.env.LINKEDIN_CLIENT_ID,
+            clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
+          },
+        }
+      : {}),
   },
   account: {
     accountLinking: {

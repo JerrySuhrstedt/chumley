@@ -1,9 +1,10 @@
 "use client";
 
-import type { HTMLAttributes } from "react";
+import { memo, useMemo, type HTMLAttributes } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { MoveRight } from "lucide-react";
+import { useLocalToday } from "../dashboard/local-heading";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,7 +24,7 @@ import type { LeadStage } from "./actions";
  * Presentational card. Rendered both in a column and inside the DragOverlay,
  * so it takes no drag state of its own.
  */
-export function LeadCardView({
+export const LeadCardView = memo(function LeadCardView({
   lead,
   templates,
   onClick,
@@ -41,7 +42,11 @@ export function LeadCardView({
   overlay?: boolean;
 }) {
   const boardStages = useBoardStages();
-  const status = nextActionStatus(lead);
+  // The browser's local date, so the overdue/today/upcoming colour matches
+  // the reader's calendar rather than the server's UTC one. Null before the
+  // browser answers, which nextActionStatus renders as a neutral label.
+  const today = useLocalToday();
+  const status = nextActionStatus(lead, today);
   // Everywhere this deal is not, so the menu never offers where it is.
   const elsewhere = boardStages.filter((s) => s.key !== lead.stage);
 
@@ -183,7 +188,7 @@ export function LeadCardView({
       </div>
     </div>
   );
-}
+});
 
 /**
  * Whose deal, at a glance. Rendered only on teams of more than one,
@@ -209,7 +214,11 @@ function OwnerBubble({ ownerId }: { ownerId: string | null }) {
         <img
           src={owner.avatarUrl}
           alt=""
-          onError={(e) => e.currentTarget.remove()}
+          // Hide, don't remove: .remove() rips a node out from under React,
+          // which then trips over the missing child on its next render.
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
           className="absolute inset-0 size-full object-cover"
         />
       )}
@@ -222,7 +231,7 @@ function OwnerBubble({ ownerId }: { ownerId: string | null }) {
  * the pointer moves over them; the dragged card leaves a faded placeholder
  * while DragOverlay renders the travelling copy above the board.
  */
-export function LeadCard({
+export const LeadCard = memo(function LeadCard({
   lead,
   templates,
   onClick,
@@ -243,6 +252,13 @@ export function LeadCard({
     transition,
     isDragging,
   } = useSortable({ id: lead.id });
+
+  // Held stable so the memoized card body is not re-rendered by a fresh
+  // props object on every pointer move during someone else's drag.
+  const dragHandleProps = useMemo(
+    () => ({ ...listeners, ...attributes }),
+    [listeners, attributes]
+  );
 
   return (
     <div
@@ -269,9 +285,9 @@ export function LeadCard({
           onClick={onClick}
           onMove={onMove}
           onContact={onContact}
-          dragHandleProps={{ ...listeners, ...attributes }}
+          dragHandleProps={dragHandleProps}
         />
       </div>
     </div>
   );
-}
+});

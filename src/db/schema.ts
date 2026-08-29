@@ -1,6 +1,7 @@
 import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  index,
   uniqueIndex,
   pgTable,
   pgEnum,
@@ -184,7 +185,13 @@ export const memberships = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => [unique().on(table.orgId, table.userId)]
+  (table) => [
+    unique().on(table.orgId, table.userId),
+    // getCurrentOrg resolves the caller's team by user_id on every
+    // authenticated request; the unique index above leads with org_id and
+    // cannot serve it.
+    index("memberships_user_idx").on(table.userId),
+  ]
 );
 
 export const orgInvites = pgTable("org_invites", {
@@ -324,7 +331,11 @@ export const leads = pgTable("leads", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}, (table) => [
+  // Every board, dashboard, contacts and onboarding-count query filters by
+  // org_id, and Postgres does not index a foreign key on its own.
+  index("leads_org_idx").on(table.orgId),
+]);
 
 /**
  * One submitted test run from the hidden /uat page. No org, no user: the
@@ -468,7 +479,10 @@ export const templates = pgTable("templates", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}, (table) => [
+  // The board loads every team's templates by org_id.
+  index("templates_org_idx").on(table.orgId),
+]);
 
 export const activities = pgTable("activities", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -485,7 +499,12 @@ export const activities = pgTable("activities", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}, (table) => [
+  // Timelines are read per lead, and org-scoped feeds sort newest first;
+  // account deletion also cascades through lead_id one lead at a time.
+  index("activities_lead_idx").on(table.leadId),
+  index("activities_org_created_idx").on(table.orgId, table.createdAt),
+]);
 
 /**
  * A team's subscription, mirrored from Paddle.

@@ -80,11 +80,22 @@ export type NextActionStatus = {
 /**
  * At-a-glance urgency of a lead's next step, shown as a Trello-style colored
  * label on the card. "none" is the nudge to set one.
+ *
+ * `today` is passed in so the caller can source it from the browser's local
+ * date (see useLocalToday), which is the only clock that agrees with the
+ * plain calendar dates people pick. Left out, it falls back to localToday()
+ * for callers that already run in the browser (the detail dialog). Passed as
+ * null it means the browser has not answered yet, on a server prerender or
+ * the first hydration pass: the step is coloured neutrally rather than
+ * guessed overdue, so the server HTML and the first client render match.
  */
-export function nextActionStatus(lead: {
-  nextActionText: string | null;
-  nextActionDue: string | null;
-}): NextActionStatus {
+export function nextActionStatus(
+  lead: {
+    nextActionText: string | null;
+    nextActionDue: string | null;
+  },
+  today?: string | null
+): NextActionStatus {
   if (!lead.nextActionText) {
     return {
       key: "none",
@@ -101,9 +112,16 @@ export function nextActionStatus(lead: {
     };
   }
 
-  const today = localToday();
+  const day = today === undefined ? localToday() : today;
+  if (day === null) {
+    return {
+      key: "upcoming",
+      label: lead.nextActionText,
+      color: "var(--label-upcoming)",
+    };
+  }
 
-  if (lead.nextActionDue < today) {
+  if (lead.nextActionDue < day) {
     return {
       key: "overdue",
       label: lead.nextActionText,
@@ -111,7 +129,7 @@ export function nextActionStatus(lead: {
     };
   }
 
-  if (lead.nextActionDue === today) {
+  if (lead.nextActionDue === day) {
     return {
       key: "today",
       label: lead.nextActionText,

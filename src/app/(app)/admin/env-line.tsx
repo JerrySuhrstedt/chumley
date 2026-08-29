@@ -26,26 +26,30 @@ function describeDb(): {
   try {
     const u = new URL(raw);
     const port = u.port || "5432";
-    const pooled = u.hostname.includes("pooler");
+    const host = u.hostname;
+    const pooled = host.includes("pooler");
+    // Neon's transaction pooler runs on 5432 with "-pooler" in the host;
+    // Supabase's is port 6543. Both are the right target for serverless.
+    const isNeon = host.includes("neon.tech");
 
-    if (pooled && port === "6543") {
+    if (pooled && (isNeon || port === "6543")) {
       return {
         ok: true,
         mode: "transaction pooler",
-        detail: `${u.hostname}:${port}`,
+        detail: `${host}:${port}`,
       };
     }
     if (pooled && port === "5432") {
       return {
         ok: false,
         mode: "session pooler",
-        detail: `${u.hostname}:${port} — use 6543 for serverless`,
+        detail: `${host}:${port} — use the transaction pooler for serverless`,
       };
     }
     return {
       ok: false,
       mode: "direct connection",
-      detail: `${u.hostname}:${port} — every function instance opens its own`,
+      detail: `${host}:${port} — every function instance opens its own`,
     };
   } catch {
     return { ok: false, mode: "unreadable", detail: "DATABASE_URL will not parse" };

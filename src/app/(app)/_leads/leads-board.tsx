@@ -1,9 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { READ_ONLY_MESSAGE } from "@/lib/gate-messages";
+import { useLocalToday } from "../dashboard/local-heading";
 import { fireConfetti } from "@/lib/confetti";
 import {
   closestCenter,
@@ -74,8 +82,10 @@ export function LeadsBoard({
 }) {
   const boardStages = useBoardStages();
   const stageKeys = boardStages.map((s) => s.key);
-  const labelOf = (key: string) =>
-    boardStages.find((s) => s.key === key)?.label ?? key;
+  const labelOf = useCallback(
+    (key: string) => boardStages.find((s) => s.key === key)?.label ?? key,
+    [boardStages]
+  );
 
   const [localLeads, setLocalLeads] = useState(leads);
   // Column order is held locally during a drag for the same reason cards
@@ -96,9 +106,18 @@ export function LeadsBoard({
   const dragStartStage = useRef<LeadStage | null>(null);
   const [, startTransition] = useTransition();
   const router = useRouter();
+  // The browser's local date, so due-today / overdue colouring reflects the
+  // reader's calendar and not the server's UTC one. Null until it answers.
+  const today = useLocalToday();
+
+  // A live mirror of localLeads. A handler captured in an earlier render, a
+  // toast's Undo above all, reads through this to reach the current board
+  // instead of the snapshot it closed over, which is what let one Undo
+  // revert every card back to an old state.
+  const leadsRef = useRef(localLeads);
+  leadsRef.current = localLeads;
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- resync optimistic drag state once the server revalidates
     setLocalLeads(leads);
   }, [leads]);
 
@@ -116,7 +135,6 @@ export function LeadsBoard({
     .join(",");
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- adopt the server's order once it changes
     setColumnOrder(serverOrder ? serverOrder.split(",") : []);
   }, [serverOrder]);
 
@@ -155,53 +173,13 @@ export function LeadsBoard({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return localLeads.filter((lead) => {
-      if (!matchesFilters(lead, temp, due, ownerFilter)) return false;
+      if (!matchesFilters(lead, temp, due, ownerFilter, today)) return false;
       if (!q) return true;
       return [lead.name, lead.companyName, lead.phone]
         .filter(Boolean)
         .some((field) => field!.toLowerCase().includes(q));
     });
-  }, [localLeads, query, temp, due, ownerFilter]);
-
-  /**
-   * Swipe right: one bucket forward. Swipe left: off the board.
-   * Both are one tap from being undone, because a thumb makes mistakes a
-   * mouse does not.
-   */
-  /** Left swipe, where there is a bucket behind to step into. */
-  function swipeBack(leadId: string) {
-    const lead = localLeads.find((l) => l.id === leadId);
-    if (!lead) return;
-    const previous = prevStage(lead.stage, boardStages);
-    if (!previous) return;
-    const from = lead.stage;
-    moveStage(leadId, previous);
-    toast(`${lead.name} moved back to ${labelOf(previous)}`, {
-      action: { label: "Undo", onClick: () => moveStage(leadId, from) },
-    });
-  }
-
-  function swipeForward(leadId: string) {
-    const lead = localLeads.find((l) => l.id === leadId);
-    if (!lead) return;
-    const next = nextStage(lead.stage, boardStages);
-    if (!next) return;
-    const from = lead.stage;
-    moveStage(leadId, next);
-    toast(`${lead.name} moved to ${labelOf(next)}`, {
-      action: { label: "Undo", onClick: () => moveStage(leadId, from) },
-    });
-  }
-
-  function swipeArchive(leadId: string) {
-    const lead = localLeads.find((l) => l.id === leadId);
-    if (!lead) return;
-    const from = lead.stage;
-    moveStage(leadId, "contact");
-    toast(`${lead.name} moved to Contacts`, {
-      action: { label: "Undo", onClick: () => moveStage(leadId, from) },
-    });
-  }
+  }, [localLeads, query, temp, due, ownerFilter, today]);
 
   /** A drop target is either a column (stage id) or another card (lead id). */
   function stageOf(id: string, source: Lead[]): LeadStage | null {
@@ -223,28 +201,50 @@ export function LeadsBoard({
   }
 
   /**
-   * Save a column's order, and undo the drag if the save is refused.
+   * Save a column's order, and recover the board when the save does not land.
    *
    * The board moves the card first and writes second, which is what makes
-   * it feel instant and also what makes a rejected write dangerous: the
-   * card sits in its new column looking saved. A team whose plan has
-   * ended is exactly the case, so a failure says so and reloads from the
-   * server rather than leaving the screen telling a story the database
-   * does not agree with.
+   * it feel instant and also what makes a failed write dangerous: the card
+   * sits in its new column looking saved. The two ways a write can fail read
+   * very differently, so they are told apart.
+   *
+   * A refusal that reached the server comes back as an Error carrying a
+   * `digest` (Next redacts the message in production). The only refusal this
+   * action raises is the writability gate, so that means the plan has ended:
+   * say so and reload from the server, which is the truth.
+   *
+   * A thrown fetch or transport error has no digest. The write never landed,
+   * so nothing about the plan is known: leave the card where it is and offer
+   * a retry, rather than wrongly calling the account read-only.
    */
-  function persist(stage: LeadStage, source: Lead[]) {
-    const orderedIds = source.filter((l) => l.stage === stage).map((l) => l.id);
-    startTransition(async () => {
-      try {
-        await reorderStage(stage, orderedIds);
-      } catch {
-        // Next redacts the thrown message in production, so the reason is
-        // stated here rather than read off the error.
-        toast.error(READ_ONLY_MESSAGE);
-        router.refresh();
-      }
-    });
-  }
+  const persist = useCallback(
+    function persist(stage: LeadStage, source: Lead[]) {
+      const orderedIds = source
+        .filter((l) => l.stage === stage)
+        .map((l) => l.id);
+      startTransition(async () => {
+        try {
+          await reorderStage(stage, orderedIds);
+        } catch (err) {
+          if (err && typeof err === "object" && "digest" in err) {
+            toast.error(READ_ONLY_MESSAGE);
+            router.refresh();
+          } else {
+            toast.error(
+              "Couldn't save that. Check your connection and try again.",
+              {
+                action: {
+                  label: "Retry",
+                  onClick: () => persist(stage, source),
+                },
+              }
+            );
+          }
+        }
+      });
+    },
+    [router]
+  );
 
   /**
    * Closing a deal is the one moment worth celebrating.
@@ -258,34 +258,96 @@ export function LeadsBoard({
    * complaint that started this, and iOS turns that preference on by
    * itself in Low Power Mode.
    */
-  function celebrate(leadId: string, stage: LeadStage) {
-    const previous = localLeads.find((l) => l.id === leadId)?.stage;
-    const won = boardStages.find((s) => s.kind === "won")?.key;
-    if (!won || stage !== won || previous === won) return;
+  const celebrate = useCallback(
+    (leadId: string, stage: LeadStage) => {
+      const source = leadsRef.current;
+      const previous = source.find((l) => l.id === leadId)?.stage;
+      const won = boardStages.find((s) => s.kind === "won")?.key;
+      if (!won || stage !== won || previous === won) return;
 
-    const name = localLeads.find((l) => l.id === leadId)?.name ?? "That one";
-    if (!fireConfetti()) {
-      toast.success(`${name} is won.`);
-    }
-  }
+      const name = source.find((l) => l.id === leadId)?.name ?? "That one";
+      if (!fireConfetti()) {
+        toast.success(`${name} is won.`);
+      }
+    },
+    [boardStages]
+  );
 
-  function moveStage(leadId: string, stage: LeadStage) {
-    celebrate(leadId, stage);
-    const next = localLeads.map((l) => (l.id === leadId ? { ...l, stage } : l));
-    setLocalLeads(next);
-    persist(stage, next);
-  }
+  const moveStage = useCallback(
+    (leadId: string, stage: LeadStage) => {
+      celebrate(leadId, stage);
+      // Read the live board through the ref, so an Undo tapped after later
+      // moves puts back only this one card, not the snapshot the handler
+      // was created with.
+      const next = leadsRef.current.map((l) =>
+        l.id === leadId ? { ...l, stage } : l
+      );
+      leadsRef.current = next;
+      setLocalLeads(next);
+      persist(stage, next);
+    },
+    [celebrate, persist]
+  );
 
-  function openRecord(leadId: string) {
+  /**
+   * Swipe right: one bucket forward. Swipe left: off the board.
+   * Both are one tap from being undone, because a thumb makes mistakes a
+   * mouse does not.
+   */
+  /** Left swipe, where there is a bucket behind to step into. */
+  const swipeBack = useCallback(
+    (leadId: string) => {
+      const lead = leadsRef.current.find((l) => l.id === leadId);
+      if (!lead) return;
+      const previous = prevStage(lead.stage, boardStages);
+      if (!previous) return;
+      const from = lead.stage;
+      moveStage(leadId, previous);
+      toast(`${lead.name} moved back to ${labelOf(previous)}`, {
+        action: { label: "Undo", onClick: () => moveStage(leadId, from) },
+      });
+    },
+    [boardStages, labelOf, moveStage]
+  );
+
+  const swipeForward = useCallback(
+    (leadId: string) => {
+      const lead = leadsRef.current.find((l) => l.id === leadId);
+      if (!lead) return;
+      const next = nextStage(lead.stage, boardStages);
+      if (!next) return;
+      const from = lead.stage;
+      moveStage(leadId, next);
+      toast(`${lead.name} moved to ${labelOf(next)}`, {
+        action: { label: "Undo", onClick: () => moveStage(leadId, from) },
+      });
+    },
+    [boardStages, labelOf, moveStage]
+  );
+
+  const swipeArchive = useCallback(
+    (leadId: string) => {
+      const lead = leadsRef.current.find((l) => l.id === leadId);
+      if (!lead) return;
+      const from = lead.stage;
+      moveStage(leadId, "contact");
+      toast(`${lead.name} moved to Contacts`, {
+        action: { label: "Undo", onClick: () => moveStage(leadId, from) },
+      });
+    },
+    [moveStage]
+  );
+
+  const openRecord = useCallback((leadId: string) => {
     setLogType("note");
     setSelectedId(leadId);
-  }
+  }, []);
 
   /** Reaching out from a card opens the record with the log ready. */
-  function handleContact(leadId: string, type: ActivityType) {
+  const handleContact = useCallback((leadId: string, type: ActivityType) => {
     setLogType(type);
     setSelectedId(leadId);
-  }
+  }, []);
 
   /** True when what is being dragged is a column, not a card. */
   function isColumn(id: string) {
@@ -330,12 +392,46 @@ export function LeadsBoard({
     });
   }
 
+  /**
+   * Put an abandoned card back where its drag began.
+   *
+   * dragOver moves the card between columns in local state as the pointer
+   * travels, so a drag that ends nowhere, on a cancel or a drop into empty
+   * space, leaves the card sitting in a column the server was never told
+   * about. dragStartStage remembers the origin; this restores it, and
+   * deliberately does not persist, because nothing was decided.
+   */
+  function restoreDraggedCard(draggedId: string, origin: LeadStage | null) {
+    if (!origin || isColumn(draggedId)) return;
+    setLocalLeads((prev) =>
+      prev.map((l) => (l.id === draggedId ? { ...l, stage: origin } : l))
+    );
+  }
+
+  function handleDragCancel() {
+    const draggedId = activeId;
+    const origin = dragStartStage.current;
+    setActiveId(null);
+    dragStartStage.current = null;
+    if (draggedId) restoreDraggedCard(draggedId, origin);
+  }
+
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     setActiveId(null);
-    if (!over) return;
-
     const draggedId = String(active.id);
+    // Captured before the ref is cleared: still needed below to tell a real
+    // win from a card that merely started in the won column.
+    const origin = dragStartStage.current;
+    dragStartStage.current = null;
+
+    if (!over) {
+      // Dropped on nothing. dragOver may already have carried the card into
+      // another column, so send it home rather than leave it stranded.
+      restoreDraggedCard(draggedId, origin);
+      return;
+    }
+
     const overId = String(over.id);
 
     if (isColumn(draggedId)) {
@@ -347,11 +443,24 @@ export function LeadsBoard({
       const to = columnOrder.indexOf(columnIdOf(overId, localLeads) ?? "");
       if (from === -1 || to === -1 || from === to) return;
 
+      // Held so the columns can snap back if the write is refused, the same
+      // way a card does.
+      const previousOrder = columnOrder;
       const next = arrayMove(columnOrder, from, to);
       setColumnOrder(next);
       startTransition(async () => {
-        const result = await reorderStages(next);
-        if (result.error) toast.error(result.error);
+        try {
+          const result = await reorderStages(next);
+          if (result.error) {
+            toast.error(result.error);
+            setColumnOrder(previousOrder);
+          }
+        } catch {
+          toast.error(
+            "Couldn't save that. Check your connection and try again."
+          );
+          setColumnOrder(previousOrder);
+        }
       });
       return;
     }
@@ -364,7 +473,7 @@ export function LeadsBoard({
     // dragOver may already have moved it, so compare against the stage it
     // started the drag in.
     const wonKey = boardStages.find((s) => s.kind === "won")?.key;
-    if (wonKey && destStage === wonKey && dragStartStage.current !== wonKey) {
+    if (wonKey && destStage === wonKey && origin !== wonKey) {
       if (!fireConfetti()) {
         toast.success(`${dragged.name} is won.`);
       }
@@ -480,7 +589,7 @@ export function LeadsBoard({
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
-        onDragCancel={() => setActiveId(null)}
+        onDragCancel={handleDragCancel}
       >
         {/* Vertical padding keeps the drop-target glow from being clipped
             by this scroll container. */}
@@ -506,6 +615,7 @@ export function LeadsBoard({
                   }
                   templates={templates}
                   isDropTarget={!!activeLead && activeLead.stage === stage.key}
+                  dragActive={activeId !== null}
                   onCardClick={openRecord}
                   onMove={moveStage}
                   onSwipeForward={swipeForward}

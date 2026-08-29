@@ -161,7 +161,25 @@ export function UatClient({
   // A blank link handed out in a community arrives with no name on it;
   // whoever opens it first introduces themselves and it becomes theirs.
   const claimed = Boolean(tester?.name);
-  const [state, formAction, pending] = useActionState(submitUatReport, INITIAL);
+  // A fetch failure inside a Server Action rejects the whole action, which
+  // React would throw to the error boundary and blank the page mid-report.
+  // Catch it here and hand back an inline error instead. The draft is already
+  // saved in localStorage (and on a personal link, on the server too), so the
+  // tester loses nothing and can press Send again.
+  const [state, formAction, pending] = useActionState(
+    async (prev: UatSubmitState, formData: FormData) => {
+      try {
+        return await submitUatReport(prev, formData);
+      } catch {
+        return {
+          error:
+            "Couldn't send your report. Check your connection and try again. Your work is saved on this device.",
+          sent: false,
+        };
+      }
+    },
+    INITIAL
+  );
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hydrated = useRef(false);
 

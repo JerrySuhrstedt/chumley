@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { activities, leads } from "@/db/schema";
 import { getWritableOrg } from "@/lib/gate";
@@ -61,7 +61,13 @@ export async function importLeads(
           .select({ email: leads.email })
           .from(leads)
           .where(
-            and(eq(leads.orgId, current.org.id), inArray(leads.email, emails))
+            and(
+              eq(leads.orgId, current.org.id),
+              // Compare lowercased on both sides. The incoming emails are
+              // already lowercased, but stored ones may be mixed case, and a
+              // raw match would let "Jane@x.com" slip past as not-a-duplicate.
+              inArray(sql`lower(${leads.email})`, emails)
+            )
           )
       : [];
 
@@ -101,7 +107,9 @@ export async function importLeads(
           ownerId: current.userId,
           name: row.name.trim(),
           companyName: row.companyName,
-          email: row.email,
+          // Stored lowercased so the duplicate check above matches it on the
+          // next import, and so one person is not two rows over letter case.
+          email: row.email ? row.email.trim().toLowerCase() : null,
           phone: normalizePhone(row.phone),
           title: row.title,
           value: row.value,

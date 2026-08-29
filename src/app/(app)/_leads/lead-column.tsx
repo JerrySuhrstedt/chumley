@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -35,12 +35,13 @@ const BUCKET_TINT: Record<string, { base: string; over: string }> = {
   lost: { base: "var(--bucket-lost)", over: "var(--bucket-lost-hover)" },
 };
 
-export function LeadColumn({
+export const LeadColumn = memo(function LeadColumn({
   stage,
   leads,
   totalCount,
   templates,
   isDropTarget = false,
+  dragActive = false,
   onCardClick,
   onMove,
   onSwipeForward,
@@ -55,6 +56,8 @@ export function LeadColumn({
   totalCount: number;
   templates: Template[];
   isDropTarget?: boolean;
+  /** True while a dnd drag is live, so cards suspend their own swipe. */
+  dragActive?: boolean;
   onCardClick: (leadId: string) => void;
   onMove: (leadId: string, stage: LeadStage) => void;
   onSwipeForward: (leadId: string) => void;
@@ -199,6 +202,7 @@ export function LeadColumn({
               onForward={() => onSwipeForward(lead.id)}
               onBack={() => onSwipeBack(lead.id)}
               onArchive={() => onSwipeArchive(lead.id)}
+              dragActive={dragActive}
             >
               <LeadCard
                 lead={lead}
@@ -233,4 +237,4 @@ export function LeadColumn({
       )}
     </div>
   );
-}
+});

@@ -53,54 +53,86 @@ export async function redeemFreeTimeCode(
     };
   }
 
-  if (promo.maxRedemptions !== null) {
-    const [{ n }] = (await db.execute(dsql`
-      SELECT count(*)::int AS n FROM promo_redemptions
-      WHERE code_id = ${promo.id}::uuid
-    `)) as unknown as { n: number }[];
-    if (Number(n) >= promo.maxRedemptions) {
+  /**
+   * Count, redeem, and grant in one locked transaction.
+   *
+   * The redemption row and the comp grant have to move together: a crash
+   * between them used to consume the team's one redemption while granting
+   * zero free days. And a plain count-then-insert lets two teams redeeming
+   * the last slot both pass the cap, since neither sees the other's
+   * uncommitted row. Locking the code row first serializes redeemers of
+   * this code, so the count is taken against a settled set and the loser
+   * is turned away with nothing consumed.
+   */
+  try {
+    const until = await db.transaction(async (tx) => {
+      if (promo.maxRedemptions !== null) {
+        await tx.execute(
+          dsql`SELECT 1 FROM promo_codes WHERE id = ${promo.id}::uuid FOR UPDATE`
+        );
+        const [{ n }] = (await tx.execute(dsql`
+          SELECT count(*)::int AS n FROM promo_redemptions
+          WHERE code_id = ${promo.id}::uuid
+        `)) as unknown as { n: number }[];
+        if (Number(n) >= promo.maxRedemptions) {
+          throw new Error("EXHAUSTED");
+        }
+      }
+
+      // The unique index still referees a team redeeming twice.
+      await tx.insert(promoRedemptions).values({ codeId: promo.id, orgId });
+
+      const [org] = await tx
+        .select({
+          compedAt: organizations.compedAt,
+          compedUntil: organizations.compedUntil,
+        })
+        .from(organizations)
+        .where(eq(organizations.id, orgId))
+        .limit(1);
+      if (!org) throw new Error("NO_ORG");
+
+      const base =
+        org.compedUntil && org.compedUntil.getTime() > Date.now()
+          ? org.compedUntil
+          : new Date();
+      const granted = new Date(base.getTime() + promo.value * 86_400_000);
+
+      await tx
+        .update(organizations)
+        .set({
+          compedAt: org.compedAt ?? new Date(),
+          compedUntil: granted,
+          compedReason: `Promo ${promo.code}`,
+        })
+        .where(eq(organizations.id, orgId));
+
+      return granted;
+    });
+
+    return {
+      error: null,
+      message: `${promo.value} free days added. You're covered until ${until.toLocaleDateString(
+        undefined,
+        { month: "long", day: "numeric" }
+      )}.`,
+    };
+  } catch (e) {
+    if (e instanceof Error && e.message === "EXHAUSTED") {
       return { error: "That code has been fully redeemed." };
     }
+    if (e instanceof Error && e.message === "NO_ORG") {
+      return { error: "Team not found." };
+    }
+    // Unique index: this team has already redeemed this code.
+    if (
+      e &&
+      typeof e === "object" &&
+      "code" in e &&
+      (e as { code?: string }).code === "23505"
+    ) {
+      return { error: "Your team has already used this code." };
+    }
+    throw e;
   }
-
-  // The unique index makes the double-redeem a database error rather
-  // than a race, so insert first and let it referee.
-  try {
-    await db.insert(promoRedemptions).values({ codeId: promo.id, orgId });
-  } catch {
-    return { error: "Your team has already used this code." };
-  }
-
-  const [org] = await db
-    .select({
-      compedAt: organizations.compedAt,
-      compedUntil: organizations.compedUntil,
-    })
-    .from(organizations)
-    .where(eq(organizations.id, orgId))
-    .limit(1);
-  if (!org) return { error: "Team not found." };
-
-  const base =
-    org.compedUntil && org.compedUntil.getTime() > Date.now()
-      ? org.compedUntil
-      : new Date();
-  const until = new Date(base.getTime() + promo.value * 86_400_000);
-
-  await db
-    .update(organizations)
-    .set({
-      compedAt: org.compedAt ?? new Date(),
-      compedUntil: until,
-      compedReason: `Promo ${promo.code}`,
-    })
-    .where(eq(organizations.id, orgId));
-
-  return {
-    error: null,
-    message: `${promo.value} free days added. You're covered until ${until.toLocaleDateString(
-      undefined,
-      { month: "long", day: "numeric" }
-    )}.`,
-  };
 }
