@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { Loader2, Trash2 } from "lucide-react";
 import { CopiedChip } from "@/components/copied-chip";
 import type { AdminUatTester } from "@/lib/admin-data";
@@ -90,11 +90,23 @@ export function Testers({
                 className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg border border-slate-200 bg-white px-4 py-3"
               >
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-slate-900">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-slate-900">
                     {t.name || "Unclaimed link"}
+                    {/* Two blank links can be made in the same minute, so
+                        each carries a short code from its own token. It is
+                        the front of the /uat/{token} URL, so it also tells
+                        you which link is which when a tester replies. */}
+                    {!t.name && (
+                      <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] font-medium text-slate-500">
+                        {t.token.slice(0, 6)}
+                      </span>
+                    )}
                   </p>
                   <p className="truncate text-xs text-slate-500">
                     {t.email || "whoever opens it first makes it theirs"}
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    Created {format(t.createdAt, "MMM d 'at' h:mm a")}
                   </p>
                 </div>
                 <p className="text-xs text-slate-500">
