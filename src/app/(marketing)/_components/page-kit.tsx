@@ -106,11 +106,11 @@ export function Prose({ children }: { children: React.ReactNode }) {
   return (
     <div
       className="mx-auto max-w-[68ch] px-5 py-8
-        [&_h2]:mt-9 [&_h2]:mb-3 [&_h2]:text-[1.6rem] [&_h2]:font-extrabold [&_h2]:tracking-tight [&_h2]:text-[var(--ink)]
+        [&_h2]:mt-10 [&_h2]:mb-3 [&_h2]:text-[1.55rem] [&_h2]:font-extrabold [&_h2]:tracking-tight [&_h2]:text-[var(--ink)]
         [&_h3]:mt-7 [&_h3]:mb-2 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-[var(--ink)]
         [&_p]:my-4 [&_p]:text-[17px] [&_p]:leading-relaxed [&_p]:text-[var(--ink-soft)]
-        [&_ul]:my-4 [&_ul]:flex [&_ul]:flex-col [&_ul]:gap-2 [&_ul]:pl-1
-        [&_li]:flex [&_li]:gap-2.5 [&_li]:text-[17px] [&_li]:leading-relaxed [&_li]:text-[var(--ink-soft)]
+        [&_ul]:my-5 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:space-y-2.5 [&_ul]:marker:text-[var(--brand)]
+        [&_li]:pl-1.5 [&_li]:text-[17px] [&_li]:leading-relaxed [&_li]:text-[var(--ink-soft)]
         [&_a]:font-semibold [&_a]:text-[var(--brand)] [&_a:hover]:underline
         [&_strong]:font-bold [&_strong]:text-[var(--ink)]"
     >
