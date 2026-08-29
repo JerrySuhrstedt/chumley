@@ -22,6 +22,27 @@ const LEGAL = [
   { href: "/refunds", label: "Refund Policy" },
 ];
 
+const FOR = [
+  { href: "/for/solo-sales-reps", label: "Solo & independent reps" },
+  { href: "/for/small-sales-teams", label: "Small sales teams" },
+  { href: "/for/contractors", label: "Contractors" },
+  { href: "/for/wedding-vendors", label: "Wedding vendors" },
+  { href: "/for/djs", label: "Mobile DJs" },
+];
+
+const COMPARE = [
+  { href: "/compare/less-annoying-crm", label: "vs Less Annoying CRM" },
+  { href: "/compare/pipedrive", label: "vs Pipedrive" },
+  { href: "/compare/onepagecrm", label: "vs OnePageCRM" },
+];
+
+const GUIDES = [
+  { href: "/guides", label: "All guides" },
+  { href: "/guides/how-to-keep-track-of-sales-leads", label: "Keep track of sales leads" },
+  { href: "/guides/sales-follow-up-app", label: "Sales follow-ups" },
+  { href: "/guides/replace-spreadsheet-with-crm", label: "Replace a spreadsheet" },
+];
+
 export function SiteFooter() {
   return (
     <footer className="bg-[var(--deep)] text-white">
@@ -108,6 +129,37 @@ export function SiteFooter() {
               </ul>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Site-wide links to the use-case, comparison and guide pages, so
+          every one is reachable and passes a little authority from every
+          page it appears on. */}
+      <div className="border-t border-white/10">
+        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 px-5 py-10 sm:grid-cols-3 lg:px-8">
+          {[
+            { title: "Who it's for", links: FOR },
+            { title: "Compare", links: COMPARE },
+            { title: "Guides", links: GUIDES },
+          ].map((group) => (
+            <div key={group.title}>
+              <h3 className="text-xs font-bold tracking-widest text-white/50 uppercase">
+                {group.title}
+              </h3>
+              <ul className="mt-4 space-y-3">
+                {group.links.map((l) => (
+                  <li key={l.href}>
+                    <Link
+                      href={l.href}
+                      className="text-[15px] text-white/80 transition-colors hover:text-[var(--brand)]"
+                    >
+                      {l.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </div>
 

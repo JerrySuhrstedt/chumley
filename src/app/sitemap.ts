@@ -1,13 +1,12 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/seo/facts";
+import { PUBLIC_ROUTES } from "@/lib/seo/routes";
 
-/** The public pages, which is to say the marketing site. */
+/** The public pages, generated from the one route registry. */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = "https://chumley.app";
-  return [
-    { url: `${base}/`, changeFrequency: "weekly", priority: 1 },
-    { url: `${base}/pricing`, changeFrequency: "weekly", priority: 0.9 },
-    { url: `${base}/privacy`, changeFrequency: "yearly", priority: 0.2 },
-    { url: `${base}/terms`, changeFrequency: "yearly", priority: 0.2 },
-    { url: `${base}/refunds`, changeFrequency: "yearly", priority: 0.2 },
-  ];
+  return PUBLIC_ROUTES.map((r) => ({
+    url: `${SITE_URL}${r.path === "/" ? "" : r.path}`,
+    changeFrequency: r.changeFrequency,
+    priority: r.priority,
+  }));
 }

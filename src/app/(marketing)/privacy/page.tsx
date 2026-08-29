@@ -215,12 +215,12 @@ export default function PrivacyPage() {
         </p>
         <p>
           On our public marketing pages we use Google Analytics to understand
-          how visitors find and use the site, which sets Google's analytics
+          how visitors find and use the site, which sets Google&rsquo;s analytics
           cookies in your browser. This applies only to the public website:
           once you sign in, nothing about your use of the product is sent to
           Google Analytics. You can block analytics cookies with any standard
           content blocker without affecting the Service, or opt out directly
-          via Google's browser add-on at tools.google.com/dlpage/gaoptout.
+          via Google&rsquo;s browser add-on at tools.google.com/dlpage/gaoptout.
         </p>
       </Section>
 

@@ -6,13 +6,21 @@ import { CtaButton } from "./_components/cta";
 import { FeatureShowcase } from "./_components/feature-showcase";
 import { getPublishedReviews } from "@/lib/reviews";
 import { FaqList } from "./_components/faq-list";
+import { FAQS } from "./_components/faqs";
 import { PlatformMarquee } from "./_components/platform-marquee";
 import { TRIAL_DAYS } from "./pricing/plans";
+import {
+  JsonLd,
+  softwareApplicationLd,
+  organizationLd,
+  faqPageLd,
+} from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
   title: "Chumley | Ridiculously Simple Sales CRM",
   description:
     "Ridiculously simple sales CRM for independent sales reps and small sales teams. Nothing to set up, nothing to learn.",
+  alternates: { canonical: "https://chumley.app" },
 };
 
 const HERO_POINTS = [
@@ -73,16 +81,35 @@ export default async function HomePage() {
   const published = await getPublishedReviews(3);
   return (
     <>
+      {/* Machine-readable facts for search engines and AI answer engines. */}
+      <JsonLd data={softwareApplicationLd()} />
+      <JsonLd data={organizationLd()} />
+      <JsonLd data={faqPageLd(FAQS)} />
+
       {/* ---------------------------------------------------------------- 1. HERO */}
       {/* One screen, minus the header above it. min-h rather than h, so a
           short window or a long translation pushes the section taller
           instead of hiding the button. dvh, not vh: on a phone vh counts
           the address bar that is not there, which cuts the bottom off. */}
-      <section className="relative flex min-h-[calc(100dvh-4rem)] items-center overflow-hidden border-b border-[var(--rule)] bg-gradient-to-b from-[var(--brand-tint)] to-white">
+      <section className="relative flex min-h-[calc(100dvh-4rem)] items-center overflow-hidden border-b border-[var(--rule)]">
+        {/* A darkened office photo behind the hero. The black overlay buys
+            the contrast the white headline, subheads, bullets and phone need
+            to read cleanly over a bright, window-lit room. */}
+        <Image
+          src="/chumley-hero-office.jpg"
+          alt=""
+          aria-hidden
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-black/65" aria-hidden />
+
         {/* max-w-6xl, matching the header and every section below it. At 7xl
             the hero copy started 64px to the left of the logo above it, which
             is close enough to look like a mistake rather than a choice. */}
-        <div className="mx-auto grid w-full max-w-6xl gap-12 px-5 pt-14 pb-16 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-8 lg:px-8 lg:pt-16 lg:pb-16">
+        <div className="relative z-10 mx-auto grid w-full max-w-6xl gap-12 px-5 pt-14 pb-16 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-8 lg:px-8 lg:pt-16 lg:pb-16">
           <div className="min-w-0">
             <span className="inline-flex items-center gap-2 rounded-full border border-[var(--brand)]/25 bg-white px-3.5 py-1.5 text-xs font-bold tracking-wide text-[var(--brand)] uppercase">
               {TRIAL_DAYS} days free · No credit card
@@ -93,7 +120,7 @@ export default async function HomePage() {
                 point is the shape of the lockup and not just fitting: the
                 claim on top, what it is underneath. Sizes are the previous
                 2.6/3.1/4rem plus 30%. */}
-            <h1 className="mt-6 text-[3.38rem] leading-[1.02] font-extrabold tracking-tight text-[var(--ink)] sm:text-[4.03rem] xl:text-[5.2rem]">
+            <h1 className="mt-6 text-[3.38rem] leading-[1.02] font-extrabold tracking-tight text-white sm:text-[4.03rem] xl:text-[5.2rem]">
               Ridiculously Simple
               <br />
               Sales&nbsp;CRM.
@@ -101,14 +128,14 @@ export default async function HomePage() {
 
             {/* Names who it is for, which is the question the headline
                 leaves open. */}
-            <p className="mt-6 max-w-[52ch] text-[1.35rem] leading-snug font-bold text-[var(--ink)] sm:text-2xl">
+            <p className="mt-6 max-w-[52ch] text-[1.35rem] leading-snug font-bold text-white sm:text-2xl">
               Sales CRM for independent sales reps and small sales teams.
             </p>
 
             {/* Its own line with air above it, rather than a break inside
                 the sentence before. The two are doing different jobs: one
                 says who it is for, the other says what it costs you. */}
-            <p className="mt-4 max-w-[52ch] text-[1.35rem] leading-snug font-bold text-[var(--ink)] sm:text-2xl">
+            <p className="mt-4 max-w-[52ch] text-[1.35rem] leading-snug font-bold text-white sm:text-2xl">
               Nothing to set up, nothing to learn.
             </p>
 
@@ -118,7 +145,7 @@ export default async function HomePage() {
                   <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-[var(--brand)]">
                     <Check className="size-3.5 text-white" strokeWidth={3.5} />
                   </span>
-                  <span className="text-[17px] font-medium text-[var(--ink)]">
+                  <span className="text-[17px] font-medium text-white">
                     {point}
                   </span>
                 </li>
@@ -129,7 +156,7 @@ export default async function HomePage() {
                 centering the note centers it under the button itself. */}
             <div className="mt-9 inline-flex flex-col items-center gap-3">
               <CtaButton size="xl" />
-              <span className="text-sm text-[var(--ink-muted)]">
+              <span className="text-sm text-white/70">
                 No credit card. Set up in minutes.
               </span>
             </div>
@@ -176,7 +203,7 @@ export default async function HomePage() {
           // the text entirely, and by 1440 there is already a comfortable
           // gap. Aspect ratio is locked, so height is the only lever and
           // trimming it moves the left edge right by the same proportion.
-          className="pointer-events-none absolute right-0 -bottom-10 hidden h-[78%] w-auto max-w-none lg:block xl:h-[92%] 2xl:h-[99%]"
+          className="pointer-events-none absolute right-0 -bottom-10 z-10 hidden h-[78%] w-auto max-w-none lg:block xl:h-[92%] 2xl:h-[99%]"
         />
       </section>
 

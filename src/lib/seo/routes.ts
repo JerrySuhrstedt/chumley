@@ -1,0 +1,49 @@
+import type { MetadataRoute } from "next";
+
+/**
+ * Every public URL, in one list.
+ *
+ * The sitemap, the llms.txt, and the IndexNow ping all read from here, so a
+ * new marketing page is added in exactly one place and shows up everywhere a
+ * crawler or an AI looks. Anything behind login is deliberately absent.
+ */
+export type PublicRoute = {
+  path: string;
+  priority: number;
+  changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"];
+  /** A one-line description, used by llms.txt so an AI knows what each page is. */
+  summary: string;
+};
+
+export const PUBLIC_ROUTES: PublicRoute[] = [
+  { path: "/", priority: 1, changeFrequency: "weekly", summary: "Ridiculously simple sales CRM for independent reps and small teams." },
+  { path: "/pricing", priority: 0.9, changeFrequency: "weekly", summary: "One flat price per user, everything included, 14-day free trial." },
+
+  // Comparison and alternative pages (bottom-funnel, product-aware shoppers).
+  { path: "/compare/less-annoying-crm", priority: 0.8, changeFrequency: "monthly", summary: "Less Annoying CRM alternative: an honest comparison for small teams." },
+  { path: "/compare/pipedrive", priority: 0.8, changeFrequency: "monthly", summary: "A simpler, cheaper Pipedrive alternative for a small sales team." },
+  { path: "/compare/onepagecrm", priority: 0.7, changeFrequency: "monthly", summary: "How Chumley compares to OnePageCRM for solo reps and small teams." },
+
+  // Audience and use-case pages.
+  { path: "/for/solo-sales-reps", priority: 0.8, changeFrequency: "monthly", summary: "A sales CRM for one person: solo and independent reps who buy their own tools." },
+  { path: "/for/small-sales-teams", priority: 0.8, changeFrequency: "monthly", summary: "A simple CRM a small, non-technical sales team will actually use." },
+  { path: "/for/contractors", priority: 0.7, changeFrequency: "monthly", summary: "A lead and follow-up tracker for contractors who hate CRMs." },
+
+  // Vertical pages.
+  { path: "/for/wedding-vendors", priority: 0.6, changeFrequency: "monthly", summary: "The lead tracker wedding vendors actually keep using." },
+  { path: "/for/djs", priority: 0.6, changeFrequency: "monthly", summary: "A simple CRM for mobile DJs to track inquiries and bookings." },
+
+  // Guides hub and articles (informational, plain-language searches).
+  { path: "/guides", priority: 0.6, changeFrequency: "weekly", summary: "Plain-language guides on tracking sales leads and follow-ups." },
+  { path: "/guides/how-to-keep-track-of-sales-leads", priority: 0.7, changeFrequency: "monthly", summary: "How to keep track of sales leads without losing half of them." },
+  { path: "/guides/sales-follow-up-app", priority: 0.7, changeFrequency: "monthly", summary: "The simplest way to track sales follow-ups from your phone." },
+  { path: "/guides/run-your-sales-day-from-your-phone", priority: 0.6, changeFrequency: "monthly", summary: "How to run your whole sales day from your phone." },
+  { path: "/guides/keep-track-of-customers-without-a-spreadsheet", priority: 0.6, changeFrequency: "monthly", summary: "Keeping track of customers without a spreadsheet or a rolodex." },
+  { path: "/guides/replace-spreadsheet-with-crm", priority: 0.7, changeFrequency: "monthly", summary: "When a spreadsheet stops working for sales, and what replaces it." },
+  { path: "/guides/why-reps-quit-their-crm", priority: 0.6, changeFrequency: "monthly", summary: "Why most reps quit their CRM in the first month." },
+
+  // Legal.
+  { path: "/privacy", priority: 0.2, changeFrequency: "yearly", summary: "Privacy policy." },
+  { path: "/terms", priority: 0.2, changeFrequency: "yearly", summary: "Terms of service." },
+  { path: "/refunds", priority: 0.2, changeFrequency: "yearly", summary: "Refund policy." },
+];
