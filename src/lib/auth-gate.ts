@@ -50,12 +50,24 @@ export function gate(request: NextRequest) {
     pathname === "/privacy" ||
     pathname === "/terms" ||
     pathname === "/refunds" ||
+    // The SEO pages: comparison, use-case and vertical landing pages, and
+    // the guides. All marketing, all open to everyone. Behind the gate they
+    // would 307 a signed-out crawler to /login and never get indexed, which
+    // is the whole reason they exist.
+    pathname.startsWith("/compare/") ||
+    pathname.startsWith("/for/") ||
+    pathname === "/guides" ||
+    pathname.startsWith("/guides/") ||
     // Crawler plumbing. A robots.txt that redirects to a login page is
     // how a site tells Google it has nothing worth indexing.
     // The outside uptime watcher must reach this without a session.
     pathname === "/api/health" ||
     pathname === "/robots.txt" ||
     pathname === "/sitemap.xml" ||
+    // The AI-crawler manifest and the IndexNow key file, both fetched by
+    // machines with no session.
+    pathname === "/llms.txt" ||
+    pathname === "/12d0103a70c41e0d0b1ed955783db640.txt" ||
     // The embeddable website form is public by definition.
     pathname.startsWith("/f/") ||
     // The hidden tester punch list. Testers are outsiders with no account;
