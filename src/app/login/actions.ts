@@ -13,13 +13,26 @@ function messageOf(e: unknown): string {
   return "Sign-in failed. Try again.";
 }
 
+/**
+ * Where to land after signing in. Same-site relative paths only: `next`
+ * arrives from the browser and feeds redirects and OAuth callback URLs,
+ * so anything absolute or protocol-shaped would be an open redirect.
+ */
+function safeNext(formData: FormData): string {
+  const raw = String(formData.get("next") ?? "").trim();
+  if (raw.startsWith("/") && !raw.startsWith("//") && !raw.includes(":")) {
+    return raw;
+  }
+  return "/pipeline";
+}
+
 export async function signInWithPassword(
   _prevState: LoginState,
   formData: FormData
 ): Promise<LoginState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const next = String(formData.get("next") ?? "/pipeline").trim() || "/pipeline";
+  const next = safeNext(formData);
 
   if (!email || !password) {
     return { error: "Enter your email and password.", sent: false };
@@ -43,7 +56,7 @@ export async function signUpWithPassword(
 ): Promise<LoginState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const next = String(formData.get("next") ?? "/pipeline").trim() || "/pipeline";
+  const next = safeNext(formData);
 
   if (!email || !password) {
     return { error: "Enter your email and password.", sent: false };
@@ -74,7 +87,7 @@ export async function sendMagicLink(
   formData: FormData
 ): Promise<LoginState> {
   const email = String(formData.get("email") ?? "").trim();
-  const next = String(formData.get("next") ?? "/pipeline").trim() || "/pipeline";
+  const next = safeNext(formData);
 
   if (!email) {
     return { error: "Enter an email address.", sent: false };
@@ -94,11 +107,6 @@ export async function sendMagicLink(
 
 type OAuthProvider = "google" | "linkedin";
 
-const PROVIDER_LABEL: Record<OAuthProvider, string> = {
-  google: "Google",
-  linkedin: "LinkedIn",
-};
-
 /**
  * Hands off to the provider. Better Auth builds the authorization URL
  * against our own OAuth apps and handles the callback on
@@ -106,12 +114,20 @@ const PROVIDER_LABEL: Record<OAuthProvider, string> = {
  * which lands on the user record and becomes the default headshot.
  */
 async function startOAuth(provider: OAuthProvider, formData: FormData) {
-  const next = String(formData.get("next") ?? "/pipeline").trim() || "/pipeline";
+  const next = safeNext(formData);
 
   let url: string | undefined;
   try {
     const result = await auth.api.signInSocial({
-      body: { provider, callbackURL: next },
+      body: {
+        provider,
+        callbackURL: next,
+        // Failures land back on the login page, which maps the error
+        // code to words. Without this they fall through to better-auth's
+        // /api/auth/error, which in production bounces to the marketing
+        // homepage with a raw query string and no message anywhere.
+        errorCallbackURL: `/login?next=${encodeURIComponent(next)}`,
+      },
       headers: await headers(),
     });
     url = result.url ?? undefined;
@@ -120,10 +136,7 @@ async function startOAuth(provider: OAuthProvider, formData: FormData) {
   }
 
   if (!url) {
-    const label = PROVIDER_LABEL[provider];
-    redirect(
-      `/login?error=${encodeURIComponent(`${label} sign-in is unavailable.`)}`
-    );
+    redirect(`/login?error=provider_unavailable&provider=${provider}`);
   }
 
   redirect(url);

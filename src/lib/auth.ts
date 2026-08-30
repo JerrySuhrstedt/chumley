@@ -35,30 +35,33 @@ if (!secret && process.env.NODE_ENV === "production") {
   throw new Error("BETTER_AUTH_SECRET is not set");
 }
 
-async function sendMagicLinkEmail(email: string, url: string) {
+async function sendAuthEmail(email: string, subject: string, text: string) {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      from: FROM,
-      to: email,
-      subject: "Your sign-in link for Chumley",
-      text: [
-        "Click to sign in to Chumley:",
-        "",
-        url,
-        "",
-        "The link works once and expires in 5 minutes.",
-        "If you didn't ask for it, ignore this email and nothing happens.",
-      ].join("\n"),
-    }),
+    body: JSON.stringify({ from: FROM, to: email, subject, text }),
   });
   if (!res.ok) {
-    throw new Error(`Magic link email failed: ${res.status}`);
+    throw new Error(`Auth email failed: ${res.status}`);
   }
+}
+
+async function sendMagicLinkEmail(email: string, url: string) {
+  await sendAuthEmail(
+    email,
+    "Your sign-in link for Chumley",
+    [
+      "Click to sign in to Chumley:",
+      "",
+      url,
+      "",
+      "The link works once and expires in 5 minutes.",
+      "If you didn't ask for it, ignore this email and nothing happens.",
+    ].join("\n")
+  );
 }
 
 export const auth = betterAuth({
@@ -103,6 +106,33 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 8,
   },
+  /**
+   * Verification exists so account linking can be safe. Linking a Google
+   * sign-in into an email/password row requires that row's address to be
+   * proven; without a verification path, every password signup since the
+   * migration was permanently unlinkable and the OAuth attempt died as
+   * account_not_linked. Signup still signs you straight in - the email
+   * verifies in the background, it never stands in the way.
+   */
+  emailVerification: {
+    sendVerificationEmail: async ({ user, url }) => {
+      await sendAuthEmail(
+        user.email,
+        "Verify your email for Chumley",
+        [
+          "Click to verify your email address for Chumley:",
+          "",
+          url,
+          "",
+          "Verifying lets you sign in with Google or LinkedIn on this",
+          "address later. If you didn't create a Chumley account, ignore",
+          "this email and nothing happens.",
+        ].join("\n")
+      );
+    },
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+  },
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
@@ -116,12 +146,22 @@ export const auth = betterAuth({
   account: {
     accountLinking: {
       enabled: true,
-      // A Google or LinkedIn sign-in whose verified email matches an
-      // existing user attaches to that user instead of creating a twin.
-      // This is how every migrated user reclaims their account on the
-      // first login without any reclaim ceremony.
-      trustedProviders: ["google", "linkedin"],
+      // No trustedProviders, deliberately. Trusting a provider SKIPS the
+      // check on its email_verified claim rather than asserting it, and
+      // with free unverified signup that is an account-takeover recipe:
+      // pre-register the victim's address, wait for them to click
+      // "Continue with Google", and their identity links into your row.
+      // Without the trust list, linking requires the provider to vouch
+      // for the email AND the local row to be verified. Migrated users
+      // were seeded verified, so they still reclaim their account on
+      // first OAuth login with no ceremony.
     },
+  },
+  // Auth errors land on the login page, which knows how to say them,
+  // instead of better-auth's /api/auth/error, whose production behavior
+  // is a redirect to the marketing homepage with a raw query string.
+  onAPIError: {
+    errorURL: "/login",
   },
   plugins: [
     magicLink({
