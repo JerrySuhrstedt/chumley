@@ -364,6 +364,7 @@ export const uatTesters = pgTable("uat_testers", {
       browser?: string;
       extra?: string;
       severity?: string | null;
+      measurement?: string;
     }
   > | null>(),
   draftUpdatedAt: timestamp("draft_updated_at", { withTimezone: true }),
@@ -389,6 +390,8 @@ export const uatReports = pgTable("uat_reports", {
         tried: boolean;
         note: string | null;
         severity: string | null;
+        /** Seconds, for a timed check. Absent on runs before Beta 1.1. */
+        measurement?: number | null;
       }[]
     >()
     .notNull(),
@@ -413,7 +416,11 @@ export type BacklogScope = {
   files: string[];
   /** The proposed fix, concretely enough to approve or reject. */
   proposedFix: string;
-  size: "S" | "M" | "L";
+  /**
+   * The owner's four-tier complexity scale. Rows scoped before the
+   * switch carry "S" | "M" | "L"; the display maps those to the ladder.
+   */
+  size: "Super simple" | "Easy" | "Medium" | "Complex" | "S" | "M" | "L";
   /** What the fix could break, said plainly. Null when genuinely nothing. */
   risk: string | null;
   /** Open backlog item this appears to duplicate, if any. */

@@ -22,6 +22,9 @@ export function UatReports({ items }: { items: AdminUatReport[] }) {
     <div className="flex flex-col gap-3">
       {items.map((report) => {
         const issues = report.findings.filter((f) => f.note);
+        // Timed checks report a number even when they pass; a pass with
+        // no note would otherwise be invisible here.
+        const timings = report.findings.filter((f) => f.measurement != null);
         return (
           <div
             key={report.id}
@@ -42,6 +45,19 @@ export function UatReports({ items }: { items: AdminUatReport[] }) {
                 {issues.length} {issues.length === 1 ? "issue" : "issues"}
               </span>
             </div>
+
+            {timings.length > 0 && (
+              <p className="mt-2 flex flex-wrap gap-1.5">
+                {timings.map((f) => (
+                  <span
+                    key={f.id}
+                    className="rounded-full bg-slate-100 px-2 py-0.5 font-mono text-xs font-semibold text-slate-700"
+                  >
+                    {f.id} · {f.measurement}s
+                  </span>
+                ))}
+              </p>
+            )}
 
             {issues.length > 0 && (
               <ul className="mt-3 flex flex-col gap-2.5">

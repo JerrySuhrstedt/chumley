@@ -29,7 +29,7 @@ const scopeSchema = z.object({
       likelyCause: z.string(),
       files: z.array(z.string()),
       proposedFix: z.string(),
-      size: z.enum(["S", "M", "L"]),
+      size: z.enum(["Super simple", "Easy", "Medium", "Complex"]),
       risk: z.string().nullable(),
       duplicateOfId: z.string().nullable(),
     })
@@ -51,7 +51,12 @@ opening the code:
   only. Never invent a path.
 - proposedFix: what to change, concretely. If the honest answer is "needs a
   reproduction first", say that and what to instrument.
-- size: S under a day, M one to three days, L a week or more.
+- size: the owner's four-tier scale. "Super simple" is minutes in one file
+  with no way to break anything else. "Easy" is an hour or two across a
+  couple of files, low risk. "Medium" is half a day to a day, several files
+  or shared state, needs real testing. "Complex" is multiple days, or it
+  touches auth, data writes, or gesture logic where a bad fix is worse
+  than the bug.
 - risk: what this fix could plausibly break, plainly. null only when there is
   genuinely nothing worth naming.
 - duplicateOfId: if the finding describes the same underlying defect as one of

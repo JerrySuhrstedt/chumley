@@ -9,13 +9,20 @@
  * Which punch list this is. Bump it when the checks change materially,
  * so runs in the back office say which list they were run against.
  */
-export const PUNCH_LIST_VERSION = "Beta 1.0";
+export const PUNCH_LIST_VERSION = "Beta 1.1";
 
 export type Check = {
   id: string;
   what: string;
   how: string;
   should: string;
+  /**
+   * A number this check exists to capture, shown as its own input beside
+   * the checkbox rather than buried in the free-text write-up. `limit` is
+   * the pass threshold: a reported value over it files a backlog item by
+   * itself, with no prose needed from the tester.
+   */
+  measurement?: { kind: "seconds"; label: string; limit?: number };
 };
 
 export type Section = {
@@ -30,6 +37,7 @@ export const SEVERITIES = [
   "Wrong",
   "Ugly",
   "Confusing",
+  "Did not finish",
 ] as const;
 
 export const SECTIONS: Section[] = [
@@ -51,6 +59,7 @@ export const SECTIONS: Section[] = [
         how: "Start the clock when you click Create Your Free Account. Stop it when a deal of your own is on the board. Tell us the real number even if it is bad.",
         should:
           "Under two minutes. The website promises this, so we need to know if it is true.",
+        measurement: { kind: "seconds", label: "How many seconds did it take?", limit: 120 },
       },
       {
         id: "FR-3",

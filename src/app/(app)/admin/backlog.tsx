@@ -19,10 +19,15 @@ const STATUS: Record<
   done: { label: "Done", className: "bg-slate-900 text-white" },
 };
 
+/** The owner's four tiers, plus the S/M/L rows scoped before the switch. */
 const SIZE_LABEL: Record<string, string> = {
-  S: "Small · under a day",
-  M: "Medium · 1–3 days",
-  L: "Large · a week or more",
+  "Super simple": "Super simple · minutes",
+  Easy: "Easy · an hour or two",
+  Medium: "Medium · up to a day",
+  Complex: "Complex · days, handle with care",
+  S: "Easy · an hour or two",
+  M: "Medium · up to a day",
+  L: "Complex · days, handle with care",
 };
 
 /**

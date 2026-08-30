@@ -55,7 +55,15 @@ export async function submitUatReport(
   if (!Array.isArray(raw) || raw.length > 200)
     return { error: "The checklist did not come through. Try again.", sent: false };
 
-  const byId = new Map<string, { tried: boolean; note: string | null; severity: string | null }>();
+  const byId = new Map<
+    string,
+    {
+      tried: boolean;
+      note: string | null;
+      severity: string | null;
+      measurement: number | null;
+    }
+  >();
   for (const entry of raw) {
     if (entry === null || typeof entry !== "object") continue;
     const e = entry as Record<string, unknown>;
@@ -67,21 +75,43 @@ export async function submitUatReport(
       (SEVERITIES as readonly string[]).includes(e.severity)
         ? e.severity
         : null;
+    const measurement =
+      typeof e.measurement === "number" && Number.isFinite(e.measurement)
+        ? Math.min(Math.max(Math.round(e.measurement), 0), 36_000)
+        : null;
     byId.set(id, {
       tried: e.tried === true,
       note: note || null,
       severity: note ? severity : null,
+      measurement,
     });
   }
 
-  const findings = ALL_CHECKS.map((c) => ({
-    id: c.id,
-    tried: byId.get(c.id)?.tried ?? false,
-    note: byId.get(c.id)?.note ?? null,
-    severity: byId.get(c.id)?.severity ?? null,
-  }));
+  const findings = ALL_CHECKS.map((c) => {
+    const f = byId.get(c.id);
+    let note = f?.note ?? null;
+    // A measured miss files itself: the number over the check's limit IS
+    // the finding, and a tester who timed 190 seconds against a 120-second
+    // promise should not also have to write an essay about it.
+    const m = c.measurement;
+    const value = f?.measurement ?? null;
+    if (m?.limit != null && value != null && value > m.limit) {
+      const measured = `Measured: ${value} seconds. The promise is ${m.limit} seconds or under.`;
+      note = note ? `${measured}\n${note}` : measured;
+    }
+    return {
+      id: c.id,
+      tried: f?.tried ?? false,
+      note,
+      severity: f?.severity ?? null,
+      measurement: value,
+    };
+  });
   const triedCount = findings.filter((f) => f.tried).length;
-  if (triedCount === 0 && findings.every((f) => !f.note))
+  if (
+    triedCount === 0 &&
+    findings.every((f) => !f.note && f.measurement == null)
+  )
     return { error: "Nothing is filled in yet.", sent: false };
 
   const [report] = await db
@@ -207,6 +237,7 @@ export async function saveUatDraft(
       browser: string;
       extra: string;
       severity: string | null;
+      measurement: string;
     }
   > = {};
   for (const [id, value] of Object.entries(raw as Record<string, unknown>)) {
@@ -228,6 +259,7 @@ export async function saveUatDraft(
         (SEVERITIES as readonly string[]).includes(v.severity)
           ? v.severity
           : null,
+      measurement: cap(v.measurement, 20),
     };
   }
 

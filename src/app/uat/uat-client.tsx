@@ -28,6 +28,12 @@ type ItemState = {
   browser: string;
   extra: string;
   severity: string | null;
+  /**
+   * The number a timed check asks for, kept as the raw typed string so an
+   * empty field is "" rather than NaN. Lives outside the write-up panel:
+   * a pass still carries a number, and only failures open the panel.
+   */
+  measurement: string;
 };
 
 /**
@@ -69,6 +75,7 @@ function normalizeItems(raw: SavedItems | undefined | null): Draft["items"] {
             ? v.note
             : "",
       severity: typeof v.severity === "string" ? v.severity : null,
+      measurement: typeof v.measurement === "string" ? v.measurement : "",
     };
   }
   return items;
@@ -101,6 +108,7 @@ const EMPTY_ITEM: ItemState = {
   browser: "",
   extra: "",
   severity: null,
+  measurement: "",
 };
 const INITIAL: UatSubmitState = { error: null, sent: false };
 
@@ -233,7 +241,14 @@ export function UatClient({
       ]
         .filter(Boolean)
         .join("\n");
-      return { id: c.id, tried: it.tried, note, severity: it.severity };
+      const seconds = Number.parseInt(it.measurement, 10);
+      return {
+        id: c.id,
+        tried: it.tried,
+        note,
+        severity: it.severity,
+        measurement: Number.isFinite(seconds) && seconds >= 0 ? seconds : null,
+      };
     })
   );
 
@@ -502,6 +517,33 @@ export function UatClient({
                           </span>
                           {check.should}
                         </p>
+
+                        {/* Outside the write-up panel on purpose: a pass
+                            never opens the panel, and a pass with no
+                            number is exactly the report we cannot use. */}
+                        {check.measurement && (
+                          <label className="mt-2.5 flex flex-wrap items-center gap-2.5 text-sm font-medium text-slate-700">
+                            {check.measurement.label}
+                            <input
+                              type="number"
+                              inputMode="numeric"
+                              min={0}
+                              max={36000}
+                              value={it.measurement}
+                              onChange={(e) =>
+                                patch(check.id, { measurement: e.target.value })
+                              }
+                              placeholder="90"
+                              className="w-24 rounded-md border border-slate-300 bg-white px-3 py-2 text-base font-normal text-slate-900"
+                            />
+                            {it.tried && !it.measurement.trim() && (
+                              <span className="text-xs font-normal text-amber-700">
+                                You ticked this one, so give us the number.
+                                A rough guess beats a blank.
+                              </span>
+                            )}
+                          </label>
+                        )}
 
                         {open ? (
                           <div className="mt-3 flex flex-col gap-2.5 rounded-lg border border-slate-200 bg-slate-50 p-3">

@@ -447,6 +447,8 @@ export type AdminUatFinding = {
   tried: boolean;
   note: string | null;
   severity: string | null;
+  /** Seconds, for a timed check. Absent on runs before Beta 1.1. */
+  measurement?: number | null;
 };
 
 export type AdminUatReport = {
