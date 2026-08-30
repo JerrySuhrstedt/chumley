@@ -33,7 +33,7 @@ import { Brush } from "./brush";
 const PATH = "/tools/sales-pipeline-tracker";
 const TITLE = "Free Sales Pipeline Tracker for Google Sheets and Excel";
 const DESC =
-  "A free sales pipeline template that tracks deals, values and follow-ups, and turns a row pink when a next step is late. Works in Google Sheets or Excel. Tell us where to send it and it is yours.";
+  "A free sales pipeline template that tracks deals, values and follow-ups, and turns a row pink when a next step is late. Download it for Excel, or open it in Google Sheets. No account needed.";
 
 export const metadata: Metadata = pageMeta({
   title: TITLE,
@@ -50,11 +50,11 @@ const CRUMBS = [
 const FAQS = [
   {
     q: "Is this sales pipeline template really free?",
-    a: "Yes. We ask for an email address so we can send you the link, and that is the only thing we ask for. There is no card, no trial, and no call. Open it, choose File then Make a copy, and it is yours to keep.",
+    a: "Yes. We ask for an email address so we can send you a copy, and that is the only thing we ask for. No card, no trial, no call. The file downloads straight from this page and it is yours to keep.",
   },
   {
     q: "Does it work in Excel as well as Google Sheets?",
-    a: "Both. It is built as a Google Sheet, and File then Download then Microsoft Excel gives you an .xlsx that keeps the formulas, the stage dropdown and the colour rules.",
+    a: "Both. It downloads as a normal .xlsx, so it opens in Excel, Numbers, or LibreOffice. If you would rather work in Google Sheets there is a link for that too, and everything survives either way: the formulas, the stage dropdown and the colour rules.",
   },
   {
     q: "What are the six stages?",
@@ -96,7 +96,7 @@ export default function SalesPipelineTrackerPage() {
             call today
           </>
         }
-        sub="Track deals, values and follow-ups in Google Sheets or Excel. Late next steps turn pink so nothing quietly rots. Free, and we will email it to you."
+        sub="Track deals, values and follow-ups. Late next steps turn pink so nothing quietly rots. Downloads for Excel, works in Google Sheets, and we email you a copy too."
         cta={false}
       />
 

@@ -10,25 +10,25 @@ const EMPTY: SignupState = { error: null, link: null };
  *
  * The email is required, because giving away something this useful for
  * nothing in return is a missed list. What is deliberately not required is
- * going to an inbox to fetch it. That second step is where most of these
- * pages lose people, and both competing pages do not gate at all, so the
- * friction has to earn its place. One field earns it. A round trip does not.
+ * going to an inbox to fetch it, or holding a Google account. The file
+ * downloads from our own domain, so nothing outside this repo stands
+ * between somebody and the thing they just gave their address for.
  */
 export function GetForm() {
   const [state, action, pending] = useActionState(requestTracker, EMPTY);
   const opened = useRef(false);
 
   /**
-   * Open the sheet as soon as the link comes back.
+   * Start the download the moment the link comes back.
    *
-   * Guarded, because a re-render must not fire a second tab. Popup blockers
-   * stop this in some browsers, which is exactly why the link stays on
-   * screen underneath rather than the tab being the only way through.
+   * Same tab, not a popup: a download does not navigate anywhere, and a
+   * popup blocker firing on one looks exactly like a broken button. Guarded
+   * so a re-render cannot trigger it twice.
    */
   useEffect(() => {
     if (state.link && !opened.current) {
       opened.current = true;
-      window.open(state.link, "_blank", "noopener");
+      window.location.href = state.link;
     }
   }, [state.link]);
 
@@ -37,22 +37,28 @@ export function GetForm() {
       <div className="mx-auto mb-[10px] max-w-3xl px-5">
         <div className="rounded-2xl border border-[var(--rule)] bg-[var(--brand-tint)] px-6 py-8 text-center">
           <p className="text-lg font-bold text-[var(--ink)]">
-            It is on its way to your inbox.
+            Downloading now, and a copy is in your inbox.
           </p>
-          <p className="mx-auto mt-2 max-w-[46ch] text-[var(--ink-soft)]">
-            It should also have opened in a new tab. If your browser blocked
-            that, here it is.
+          <p className="mx-auto mt-2 max-w-[48ch] text-[var(--ink-soft)]">
+            It opens in Excel, Numbers, or Google Sheets. If the download did
+            not start, here it is.
           </p>
           <a
             href={state.link}
-            target="_blank"
-            rel="noopener"
             className="mt-5 inline-block rounded-xl bg-[var(--brand)] px-7 py-3.5 text-lg font-bold text-white hover:bg-[var(--brand-dark)]"
           >
-            Open the tracker
+            Download the tracker
           </a>
-          <p className="mt-3 text-sm text-[var(--ink-muted)]">
-            Then choose File, then Make a copy.
+          <p className="mt-4 text-sm text-[var(--ink-muted)]">
+            Prefer Google Sheets?{" "}
+            <a
+              href={`${state.link}&format=sheets`}
+              target="_blank"
+              rel="noopener"
+              className="font-semibold text-[var(--brand)] underline"
+            >
+              Open a copy there instead
+            </a>
           </p>
         </div>
       </div>
@@ -109,7 +115,7 @@ export function GetForm() {
         )}
 
         <p className="mt-3 text-sm text-[var(--ink-muted)]">
-          It opens straight away too. No waiting on an inbox.
+          It downloads straight away too. No waiting on an inbox.
         </p>
       </form>
     </div>
