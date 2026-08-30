@@ -12,6 +12,7 @@ import {
   jsonb,
   timestamp,
   unique,
+  index,
 } from "drizzle-orm/pg-core";
 
 export const membershipRoleEnum = pgEnum("membership_role", [
@@ -735,3 +736,46 @@ export const reviews = pgTable("reviews", {
     .defaultNow(),
   publishedAt: timestamp("published_at", { withTimezone: true }),
 });
+
+/**
+ * Somebody who asked for the free Sales Pipeline Tracker.
+ *
+ * Deliberately its own table rather than a lead in an org. Template
+ * downloaders are not deals, and filing them as leads would quietly wreck
+ * the back office: getAdminMetrics counts real leads and activated teams to
+ * tell whether people are actually using the product, and a few hundred
+ * spreadsheet hunters would make both numbers meaningless.
+ *
+ * The token is what makes downloads countable. A Google Sheets URL cannot
+ * be tracked, so the link handed out is one of ours that records the visit
+ * and forwards. The same token goes on screen and in the email, so it does
+ * not matter which one they use.
+ */
+export const toolSignups = pgTable(
+  "tool_signups",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: text("email").notNull(),
+    /** Which giveaway. There will be more than one. */
+    tool: text("tool").notNull().default("sales-pipeline-tracker"),
+    /** Opaque, unguessable, and the only thing the redirect route trusts. */
+    token: uuid("token").notNull().defaultRandom().unique(),
+    /** Null until Resend accepts it. Distinguishes "never sent" from "not opened". */
+    emailedAt: timestamp("emailed_at", { withTimezone: true }),
+    /** First time they followed the link, from the page or the email. */
+    downloadedAt: timestamp("downloaded_at", { withTimezone: true }),
+    /** Every time after that. Cheap signal that somebody keeps coming back. */
+    downloadCount: integer("download_count").notNull().default(0),
+    /** utm_source or referrer, so paid and organic can be told apart. */
+    source: text("source"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("tool_signups_created_idx").on(table.createdAt.desc()),
+    unique("tool_signups_email_tool_unique").on(table.email, table.tool),
+  ],
+);
+
+export type ToolSignup = typeof toolSignups.$inferSelect;

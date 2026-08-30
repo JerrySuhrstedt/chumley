@@ -58,6 +58,10 @@ export function gate(request: NextRequest) {
     pathname.startsWith("/for/") ||
     pathname === "/guides" ||
     pathname.startsWith("/guides/") ||
+    // Free tools. Same reasoning, and more so: the whole point of a
+    // giveaway is that a stranger can reach it without an account.
+    pathname === "/tools" ||
+    pathname.startsWith("/tools/") ||
     // Crawler plumbing. A robots.txt that redirects to a login page is
     // how a site tells Google it has nothing worth indexing.
     // The outside uptime watcher must reach this without a session.

@@ -41,20 +41,43 @@ export function PageHero({
   title,
   sub,
   cta = true,
+  eyebrowLarge = false,
+  titleLarge = false,
 }: {
   eyebrow?: string;
-  title: string;
+  /**
+   * ReactNode rather than string, so a page can emphasise one word inside
+   * its own headline. Every existing caller passes a string and is
+   * unaffected, because a string is already a ReactNode.
+   */
+  title: React.ReactNode;
   sub: string;
   cta?: boolean;
+  /** Turns the eyebrow into a headline in its own right. Use sparingly. */
+  eyebrowLarge?: boolean;
+  /** Roughly 30% up on the default. For pages that lead with the headline. */
+  titleLarge?: boolean;
 }) {
   return (
     <header className="mx-auto max-w-3xl px-5 pt-10 pb-6 text-center sm:pt-14">
       {eyebrow && (
-        <p className="text-sm font-bold uppercase tracking-wide text-[var(--brand)]">
+        <p
+          className={`font-bold uppercase text-[var(--brand)] ${
+            eyebrowLarge
+              ? "text-[1.75rem] leading-none tracking-tight"
+              : "text-sm tracking-wide"
+          }`}
+        >
           {eyebrow}
         </p>
       )}
-      <h1 className="mt-3 text-[2.4rem] leading-[1.05] font-extrabold tracking-tight text-balance text-[var(--ink)] sm:text-5xl">
+      <h1
+        className={`mt-3 leading-[1.05] font-extrabold tracking-tight text-balance text-[var(--ink)] ${
+          titleLarge
+            ? "text-[3.1rem] sm:text-[3.9rem]"
+            : "text-[2.4rem] sm:text-5xl"
+        }`}
+      >
         {title}
       </h1>
       <p className="mx-auto mt-5 max-w-[52ch] text-lg leading-snug font-medium text-[var(--ink-soft)]">
