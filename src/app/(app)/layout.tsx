@@ -61,7 +61,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       {/* The chrome is one continuous colour: the sidebar and top bar sit
           on it transparently, and the content is a panel resting inside
           that frame. */}
-      <div className="flex h-screen w-full overflow-hidden bg-[var(--nav-bg)]">
+      <div className="flex h-screen w-full overflow-hidden bg-[var(--nav-bg)] supports-[height:100dvh]:h-dvh">
         <AppSidebar isAdmin={admin} />
         <RefreshOnReturn />
         <div className="flex flex-1 flex-col overflow-hidden">

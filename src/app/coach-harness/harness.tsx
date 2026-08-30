@@ -55,7 +55,7 @@ export function Harness() {
         <div className="rounded-lg bg-white px-4 py-2 shadow-sm">$0 Money won</div>
         <div className="relative min-w-0 flex-1 md:max-w-xs">
           <input
-            placeholder="Search name, company, phone..."
+            placeholder="Search leads"
             className="w-full rounded-lg border border-slate-200 px-3 py-2"
           />
         </div>

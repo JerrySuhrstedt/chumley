@@ -123,6 +123,18 @@ export function LeadsBoard({
     setColumnOrder(serverOrder ? serverOrder.split(",") : []);
   }, [serverOrder]);
 
+  // Same primitive-string trick as serverOrder, for the mobile tab: if
+  // the bucket being viewed is deleted, every column falls into the
+  // hidden branch and the board renders blank. Snap back to the first.
+  const stageKeySig = stageKeys.join(",");
+  useEffect(() => {
+    if (!stageKeySig.split(",").includes(mobileStage)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- the viewed bucket no longer exists
+      setMobileStage(stageKeySig.split(",")[0] ?? "new_lead");
+    }
+     
+  }, [stageKeySig, mobileStage]);
+
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
     // A finger has to rest before it drags, which leaves quick horizontal
@@ -446,7 +458,9 @@ export function LeadsBoard({
           <div className="flex items-center gap-2 md:contents">
             <div
               data-coach="add-lead"
-              className="w-1/3 shrink-0 md:order-last md:ml-auto md:w-auto"
+              // Content-sized, not a hard third: the fixed width was what
+              // left the search box ~170px and clipped its placeholder.
+              className="shrink-0 md:order-last md:ml-auto md:w-auto"
             >
               <QuickAddLeadDialog
                 highlight={!localLeads.some((l) => !l.isSample)}
@@ -459,7 +473,7 @@ export function LeadsBoard({
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search name, company, phone..."
+                placeholder="Search leads"
                 className="h-10 w-full rounded-lg border-0 bg-white pr-3 pl-8 text-sm text-[var(--board-ink)] shadow-sm outline-none placeholder:text-[var(--board-ink-muted)] focus:ring-2 focus:ring-white/80 md:h-9"
               />
             </div>
@@ -493,6 +507,13 @@ export function LeadsBoard({
         />
 
         <div className="-mb-0.5 flex gap-1.5 overflow-x-auto md:hidden">
+          {/* First in the row so it is visible without scrolling: the
+              trailing position is exactly where a control goes to be
+              never found, which is how this feature was desktop-only. */}
+          <AddStageButton
+            openCount={boardStages.filter((s) => s.kind === "open").length}
+            variant="pill"
+          />
           {boardStages.map((stage) => (
             <button
               key={stage.key}

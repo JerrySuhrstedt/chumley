@@ -74,29 +74,39 @@ export function LeadCardView({
       className={`rounded-lg bg-white transition-shadow ${
         overlay
           ? "rotate-3 cursor-grabbing shadow-[0_8px_16px_rgba(9,30,66,0.35)]"
-          : "shadow-[0_1px_1px_rgba(9,30,66,0.25)] hover:shadow-[0_2px_4px_rgba(9,30,66,0.25)]"
+          : // Enough resting elevation to read as liftable against the
+            // darker mobile column, which is what tells a thumb this is
+            // the thing that moves.
+            "shadow-[0_2px_4px_rgba(9,30,66,0.22)] hover:shadow-[0_3px_6px_rgba(9,30,66,0.28)]"
       }`}
     >
       <div
         {...dragHandleProps}
         onClick={onClick}
-        className="cursor-pointer px-3 pt-2.5 pb-2"
+        // grab, not pointer: this region drags the card, and the column
+        // header's grip already says "grab" - the tester grabbed the
+        // column first because the card gave no such signal (JM-6).
+        className="cursor-grab px-3 pt-2.5 pb-2 active:cursor-grabbing"
       >
         {/* The next step and the money share the top line: what to do, and
             what it is worth. The amount is right-aligned and coloured
             because being different from everything around it is what
             draws the eye to it. */}
         <div className="mb-2 flex items-start justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-1.5">
+          <div className="flex min-w-0 items-start gap-1.5">
+            {/* Two lines then done, not a mid-word chop: the label is the
+                rep's own next-action text and a tooltip is unreachable on
+                touch. line-clamp needs its own element because its
+                -webkit-box display fights inline-flex. */}
             <span
-              className="inline-flex min-w-0 items-center truncate rounded px-2 py-0.5 text-xs font-medium"
+              className="min-w-0 rounded px-2 py-0.5 text-xs font-medium"
               style={{
                 backgroundColor: status.color,
                 color: status.key === "today" ? "#172b4d" : "#fff",
               }}
               title={status.label}
             >
-              {status.label}
+              <span className="line-clamp-2">{status.label}</span>
             </span>
 
             {lead.isSample && (
