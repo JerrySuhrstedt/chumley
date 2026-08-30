@@ -161,9 +161,9 @@ export const SECTIONS: Section[] = [
       {
         id: "CL-2",
         what: "A cancelled call from your smartphone",
-        how: "Tap Call again, but cancel at the dial prompt instead of calling. Check the history.",
+        how: "Tap Call again, but cancel at the dial prompt instead of calling. Check the history. Worth repeating in Firefox if you have it; it handles the dial prompt differently.",
         should:
-          "No call is logged. You may see a message saying it was not logged, or a window offering the number. Note which one you got.",
+          "No call is logged, and a message says so with a button to log it anyway. A window claiming this computer can't place the call is a bug on a phone.",
       },
       {
         id: "CL-3",

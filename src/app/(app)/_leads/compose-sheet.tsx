@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { Lead, Template } from "@/db/schema";
 import { telDigits } from "@/lib/phone";
+import { canDial } from "@/lib/device";
 import { logSentMessage } from "./actions";
 
 function fill(text: string, lead: Lead) {
@@ -69,10 +70,7 @@ export function ComposeSheet({
   // sms: does nothing on most desktops, so offer copy instead of a dead link.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- read the platform once on mount
-    setCanOpenSms(
-      typeof navigator !== "undefined" &&
-        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
-    );
+    setCanOpenSms(canDial());
   }, []);
 
   function apply(template: Template) {

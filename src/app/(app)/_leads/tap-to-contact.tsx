@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import type { Lead, Template } from "@/db/schema";
 import { isDialable, telDigits } from "@/lib/phone";
+import { canDial } from "@/lib/device";
 import { watchDialHandoff, watchFocusReturn } from "@/lib/dial-handoff";
 import { ComposeSheet } from "./compose-sheet";
 import { deleteActivity, logCallTouch } from "./actions";
@@ -44,7 +45,16 @@ export function TapToContact({
   // The tel: hand-off went nowhere, so the number is shown instead.
   const [noDialer, setNoDialer] = useState(false);
   const [copied, setCopied] = useState(false);
+  // Whether this device can place calls at all: a property of the device,
+  // answered from the device, never inferred from hand-off timing. Read
+  // after mount because the server render has no navigator.
+  const [dialCapable, setDialCapable] = useState(false);
   const [, startLog] = useTransition();
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- read the platform once on mount
+    setDialCapable(canDial());
+  }, []);
 
   // Every in-flight watcher, so unmount stops them all. Two fast taps on
   // Call are two watchers, and each has to settle its own row; sharing one
@@ -141,11 +151,35 @@ export function TapToContact({
     if (!canCall) return;
     onContact?.("call");
     watch((done) =>
-      watchDialHandoff((taken) => {
-        done();
-        if (taken) logIfReal();
-        else setNoDialer(true);
-      })
+      watchDialHandoff(
+        (taken) => {
+          done();
+          if (taken) {
+            logIfReal();
+            return;
+          }
+          if (dialCapable) {
+            // Silence on a phone is a dismissed dial prompt, or a browser
+            // (Firefox on Android) whose open-in-app doorhanger hides the
+            // hand-off until after the user decides. Either way "this
+            // computer can't place the call" would be a lie; nothing is
+            // logged, and the rep can say otherwise.
+            toast(`No call logged to ${lead.name}`, {
+              description:
+                "Nothing here took the call. If you made it anyway, log it.",
+              duration: 20_000,
+              action: { label: "I made the call, log it", onClick: logNow },
+            });
+            return;
+          }
+          setNoDialer(true);
+        },
+        // Firefox for Android parks a confirmation doorhanger over a
+        // still-visible page, so the real hand-off signal can arrive
+        // seconds after the tap. A phone gets a window wide enough for
+        // that decision; the desktop keeps the snappy one.
+        dialCapable ? 8000 : undefined
+      )
     );
   };
 

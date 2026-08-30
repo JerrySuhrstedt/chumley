@@ -82,6 +82,21 @@ describe("watchDialHandoff", () => {
     vi.advanceTimersByTime(2000);
     expect(onResult).not.toHaveBeenCalled();
   });
+
+  it("catches a slow hand-off inside a widened window", () => {
+    // Firefox for Android parks an open-in-app doorhanger over a
+    // still-visible page: no signal arrives until the user decides,
+    // seconds later. A phone passes a wider window so that decision
+    // still counts as the hand-off it is.
+    const onResult = vi.fn();
+    watchDialHandoff(onResult, 8000);
+
+    vi.advanceTimersByTime(4000);
+    expect(onResult).not.toHaveBeenCalled();
+
+    setVisibility("hidden");
+    expect(onResult).toHaveBeenCalledExactlyOnceWith(true);
+  });
 });
 
 /**
