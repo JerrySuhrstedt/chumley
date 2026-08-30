@@ -6,15 +6,7 @@ import { Search, X } from "lucide-react";
 import { searchLeads, type SearchHit } from "@/app/(app)/_leads/actions";
 import { useStages } from "@/app/(app)/_leads/stages-context";
 import { companyDomainFromEmail, companyLogoUrl } from "@/lib/company";
-
-function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? "")
-    .join("");
-}
+import { initials } from "@/lib/utils";
 
 export function GlobalSearch() {
   const allStages = useStages();

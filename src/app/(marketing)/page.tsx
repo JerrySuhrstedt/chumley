@@ -5,6 +5,7 @@ import { BoardPreview } from "./_components/board-preview";
 import { CtaButton } from "./_components/cta";
 import { FeatureShowcase } from "./_components/feature-showcase";
 import { getPublishedReviews } from "@/lib/reviews";
+import { initials } from "@/lib/utils";
 import { FaqList } from "./_components/faq-list";
 import { FAQS } from "./_components/faqs";
 import { PlatformMarquee } from "./_components/platform-marquee";
@@ -375,12 +376,7 @@ export default async function HomePage() {
                 </blockquote>
                 <figcaption className="mt-6 flex items-center gap-3">
                   <span className="flex size-10 items-center justify-center rounded-full bg-[var(--brand-tint)] text-sm font-bold text-[var(--brand-dark,var(--brand))]">
-                    {t.name
-                      .split(" ")
-                      .map((w) => w[0])
-                      .join("")
-                      .slice(0, 2)
-                      .toUpperCase()}
+                    {initials(t.name)}
                   </span>
                   <span className="text-sm">
                     <span className="block font-semibold text-[var(--ink)]">

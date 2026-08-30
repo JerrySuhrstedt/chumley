@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { Lead, Template } from "@/db/schema";
-import { telDigits } from "@/lib/phone";
+import { isDialable, telDigits } from "@/lib/phone";
 import { watchDialHandoff, watchFocusReturn } from "@/lib/dial-handoff";
 import { ComposeSheet } from "./compose-sheet";
 import { deleteActivity, logCallTouch } from "./actions";
@@ -134,6 +134,11 @@ export function TapToContact({
    * an explicit "log it" instead.
    */
   const handleCall = () => {
+    // The anchor render means base-ui's disabled guard runs after this
+    // handler, not before it, so the gate has to live here too: without
+    // it a lead with no number reaches the tel: hand-off and earns the
+    // can't-place-the-call dialog for a call that could never happen.
+    if (!canCall) return;
     onContact?.("call");
     watch((done) =>
       watchDialHandoff((taken) => {
@@ -148,8 +153,12 @@ export function TapToContact({
     ? (e: React.MouseEvent) => e.stopPropagation()
     : undefined;
 
+  // Stricter than "has a phone value": "ext 4412" or a half-typed number
+  // must not light up a button that would mis-dial. Text shares the gate
+  // because sms: chokes on the same inputs tel: does.
+  const canCall = isDialable(lead.phone);
   const dialable = telDigits(lead.phone);
-  const telHref = dialable ? `tel:${dialable}` : "#";
+  const telHref = canCall && dialable ? `tel:${dialable}` : "#";
 
   return (
     <>
@@ -158,7 +167,7 @@ export function TapToContact({
           render={<a href={telHref} onClick={handleCall} />}
           variant="outline"
           size={size}
-          disabled={!lead.phone}
+          disabled={!canCall}
           nativeButton={false}
           className={size === "default" ? "flex-1" : undefined}
         >
@@ -170,7 +179,7 @@ export function TapToContact({
           onClick={() => setComposing("text")}
           variant="outline"
           size={size}
-          disabled={!lead.phone}
+          disabled={!canCall}
           className={size === "default" ? "flex-1" : undefined}
         >
           <MessageSquare className="size-4" />

@@ -3,16 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Lead } from "@/db/schema";
 import { companyDomainFromEmail, companyLogoUrl } from "@/lib/company";
-import { cn } from "@/lib/utils";
-
-function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
-}
+import { cn, initials } from "@/lib/utils";
 
 /**
  * Identity for a lead, in order of preference:

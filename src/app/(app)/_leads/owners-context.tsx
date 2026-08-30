@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useMemo } from "react";
+import { initials } from "@/lib/utils";
 
 export type OwnerInfo = {
   userId: string;
@@ -64,10 +65,5 @@ export function useOwners() {
 }
 
 export function initialsOf(label: string) {
-  return label
-    .split(/\s+/)
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  return initials(label);
 }
