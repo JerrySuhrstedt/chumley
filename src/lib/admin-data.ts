@@ -449,6 +449,8 @@ export type AdminUatFinding = {
   severity: string | null;
   /** Seconds, for a timed check. Absent on runs before Beta 1.1. */
   measurement?: number | null;
+  /** uat_attachments ids for this check's screenshots. */
+  attachments?: string[];
 };
 
 export type AdminUatReport = {
@@ -493,6 +495,8 @@ export type AdminBacklogItem = {
   testerName: string;
   note: string;
   severity: string | null;
+  /** uat_attachments ids: the tester's screenshots of this finding. */
+  attachments: string[];
   scope: import("@/db/schema").BacklogScope | null;
   scopeStatus: "pending" | "scoped" | "failed";
   status: "new" | "approved" | "rejected" | "done";
@@ -506,8 +510,8 @@ export type AdminBacklogItem = {
  */
 export async function getAdminBacklog(): Promise<AdminBacklogItem[]> {
   const rows = (await db.execute(sql`
-    SELECT id, seq, check_id, tester_name, note, severity, scope, scope_status,
-           status, created_at
+    SELECT id, seq, check_id, tester_name, note, severity, attachments, scope,
+           scope_status, status, created_at
     FROM backlog_items
     ORDER BY (status = 'new') DESC, (status = 'approved') DESC,
              created_at DESC
@@ -521,6 +525,9 @@ export async function getAdminBacklog(): Promise<AdminBacklogItem[]> {
     testerName: String(r.tester_name),
     note: String(r.note),
     severity: r.severity ? String(r.severity) : null,
+    attachments: Array.isArray(r.attachments)
+      ? (r.attachments as string[])
+      : [],
     scope: (r.scope ?? null) as AdminBacklogItem["scope"],
     scopeStatus: r.scope_status as AdminBacklogItem["scopeStatus"],
     status: r.status as AdminBacklogItem["status"],

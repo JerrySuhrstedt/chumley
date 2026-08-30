@@ -2,6 +2,7 @@ import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   uniqueIndex,
+  customType,
   pgTable,
   pgEnum,
   uuid,
@@ -14,6 +15,18 @@ import {
   unique,
   index,
 } from "drizzle-orm/pg-core";
+
+/**
+ * Raw bytes. Screenshots live in Postgres rather than an object store
+ * because the punch list has a handful of testers, images are compressed
+ * client-side before upload, and a second storage vendor is a second
+ * thing that can be down.
+ */
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+  dataType() {
+    return "bytea";
+  },
+});
 
 export const membershipRoleEnum = pgEnum("membership_role", [
   "owner",
@@ -365,9 +378,31 @@ export const uatTesters = pgTable("uat_testers", {
       extra?: string;
       severity?: string | null;
       measurement?: string;
+      attachments?: string[];
     }
   > | null>(),
   draftUpdatedAt: timestamp("draft_updated_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+/**
+ * A tester's screenshot, attached to one check's write-up. Uploaded the
+ * moment it is picked so the ids can ride along in the draft and the
+ * submission; rows nothing ever references stay harmless and small.
+ * The id is the only key to reading one back, which is the same stance
+ * as the tester token itself: unguessable, unlinked, not secret.
+ */
+export const uatAttachments = pgTable("uat_attachments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  /** The personal link the upload came through, when there was one. */
+  testerId: uuid("tester_id").references(() => uatTesters.id, {
+    onDelete: "set null",
+  }),
+  checkId: text("check_id").notNull(),
+  contentType: text("content_type").notNull(),
+  data: bytea("data").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -392,6 +427,8 @@ export const uatReports = pgTable("uat_reports", {
         severity: string | null;
         /** Seconds, for a timed check. Absent on runs before Beta 1.1. */
         measurement?: number | null;
+        /** uat_attachments ids for this check's screenshots. */
+        attachments?: string[];
       }[]
     >()
     .notNull(),
@@ -450,6 +487,8 @@ export const backlogItems = pgTable("backlog_items", {
   testerName: text("tester_name").notNull(),
   note: text("note").notNull(),
   severity: text("severity"),
+  /** uat_attachments ids: the tester's screenshots of this finding. */
+  attachments: jsonb("attachments").$type<string[]>(),
   scope: jsonb("scope").$type<BacklogScope>(),
   /** pending → scoped | failed. Failed items keep a "Scope now" retry. */
   scopeStatus: text("scope_status").notNull().default("pending"),

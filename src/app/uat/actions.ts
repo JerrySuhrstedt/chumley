@@ -55,6 +55,8 @@ export async function submitUatReport(
   if (!Array.isArray(raw) || raw.length > 200)
     return { error: "The checklist did not come through. Try again.", sent: false };
 
+  const UUID =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const byId = new Map<
     string,
     {
@@ -62,6 +64,7 @@ export async function submitUatReport(
       note: string | null;
       severity: string | null;
       measurement: number | null;
+      attachments: string[];
     }
   >();
   for (const entry of raw) {
@@ -79,11 +82,17 @@ export async function submitUatReport(
       typeof e.measurement === "number" && Number.isFinite(e.measurement)
         ? Math.min(Math.max(Math.round(e.measurement), 0), 36_000)
         : null;
+    const attachments = Array.isArray(e.attachments)
+      ? e.attachments
+          .filter((a): a is string => typeof a === "string" && UUID.test(a))
+          .slice(0, 5)
+      : [];
     byId.set(id, {
       tried: e.tried === true,
       note: note || null,
       severity: note ? severity : null,
       measurement,
+      attachments,
     });
   }
 
@@ -105,6 +114,7 @@ export async function submitUatReport(
       note,
       severity: f?.severity ?? null,
       measurement: value,
+      attachments: f?.attachments ?? [],
     };
   });
   const triedCount = findings.filter((f) => f.tried).length;
@@ -141,6 +151,7 @@ export async function submitUatReport(
           testerName: name,
           note: f.note!,
           severity: f.severity,
+          attachments: f.attachments.length > 0 ? f.attachments : null,
         }))
       )
       .returning({ id: backlogItems.id });
@@ -238,6 +249,7 @@ export async function saveUatDraft(
       extra: string;
       severity: string | null;
       measurement: string;
+      attachments: string[];
     }
   > = {};
   for (const [id, value] of Object.entries(raw as Record<string, unknown>)) {
@@ -260,6 +272,12 @@ export async function saveUatDraft(
           ? v.severity
           : null,
       measurement: cap(v.measurement, 20),
+      attachments: Array.isArray(v.attachments)
+        ? v.attachments
+            .filter((a): a is string => typeof a === "string")
+            .map((a) => a.slice(0, 36))
+            .slice(0, 5)
+        : [],
     };
   }
 

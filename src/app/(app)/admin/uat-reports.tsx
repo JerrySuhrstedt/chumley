@@ -77,6 +77,25 @@ export function UatReports({ items }: { items: AdminUatReport[] }) {
                     <p className="mt-0.5 whitespace-pre-wrap text-slate-600">
                       {f.note}
                     </p>
+                    {f.attachments && f.attachments.length > 0 && (
+                      <div className="mt-1.5 flex flex-wrap gap-2">
+                        {f.attachments.map((a) => (
+                          <a
+                            key={a}
+                            href={`/api/uat/attachments/${a}`}
+                            target="_blank"
+                            rel="noopener"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element -- tester upload served from our own route */}
+                            <img
+                              src={`/api/uat/attachments/${a}`}
+                              alt="Tester screenshot"
+                              className="h-20 w-20 rounded-md border border-slate-200 object-cover"
+                            />
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>

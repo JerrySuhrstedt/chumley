@@ -231,6 +231,25 @@ function BacklogCard({
           <p className="border-l-2 border-slate-200 pl-3 text-sm whitespace-pre-wrap text-slate-600">
             {item.note}
           </p>
+          {item.attachments.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2 pl-3">
+              {item.attachments.map((a) => (
+                <a
+                  key={a}
+                  href={`/api/uat/attachments/${a}`}
+                  target="_blank"
+                  rel="noopener"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element -- tester upload served from our own route */}
+                  <img
+                    src={`/api/uat/attachments/${a}`}
+                    alt="Tester screenshot"
+                    className="h-20 w-20 rounded-md border border-slate-200 object-cover"
+                  />
+                </a>
+              ))}
+            </div>
+          )}
 
           {scope ? (
             <div className="mt-3 flex flex-col gap-2 rounded-md bg-slate-50 p-3 text-sm">

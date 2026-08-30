@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bug, Check as CheckIcon, Loader2 } from "lucide-react";
+import { Bug, Check as CheckIcon, Loader2, Paperclip, X } from "lucide-react";
 import { ChumleyLogo } from "@/components/chumley-logo";
 import {
   claimUatTester,
@@ -34,6 +34,11 @@ type ItemState = {
    * a pass still carries a number, and only failures open the panel.
    */
   measurement: string;
+  /**
+   * Screenshot ids. Uploaded the moment they are picked, so only the
+   * ids travel in drafts and the submission.
+   */
+  attachments: string[];
 };
 
 /**
@@ -76,6 +81,11 @@ function normalizeItems(raw: SavedItems | undefined | null): Draft["items"] {
             : "",
       severity: typeof v.severity === "string" ? v.severity : null,
       measurement: typeof v.measurement === "string" ? v.measurement : "",
+      attachments: Array.isArray(v.attachments)
+        ? v.attachments
+            .filter((a): a is string => typeof a === "string")
+            .slice(0, MAX_SHOTS)
+        : [],
     };
   }
   return items;
@@ -99,6 +109,7 @@ export type UatTesterInfo = {
 };
 
 const DRAFT_KEY = "chumley-uat-draft-v1";
+const MAX_SHOTS = 5;
 const EMPTY_ITEM: ItemState = {
   tried: false,
   flagged: false,
@@ -109,6 +120,7 @@ const EMPTY_ITEM: ItemState = {
   extra: "",
   severity: null,
   measurement: "",
+  attachments: [],
 };
 const INITIAL: UatSubmitState = { error: null, sent: false };
 
@@ -248,6 +260,7 @@ export function UatClient({
         note,
         severity: it.severity,
         measurement: Number.isFinite(seconds) && seconds >= 0 ? seconds : null,
+        attachments: it.attachments,
       };
     })
   );
@@ -605,6 +618,16 @@ export function UatClient({
                                 className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-900"
                               />
                             </label>
+                            {!preview && (
+                              <AttachmentRow
+                                checkId={check.id}
+                                token={tester?.token ?? null}
+                                ids={it.attachments}
+                                onChange={(ids) =>
+                                  patch(check.id, { attachments: ids })
+                                }
+                              />
+                            )}
                             <div className="flex flex-wrap items-center gap-1.5">
                               <span className="mr-1 text-xs text-slate-500">
                                 How bad did it feel?
@@ -638,6 +661,7 @@ export function UatClient({
                                     browser: "",
                                     extra: "",
                                     severity: null,
+                                    attachments: [],
                                   })
                                 }
                                 className="ml-auto text-xs font-medium text-slate-500 hover:underline"
@@ -697,6 +721,141 @@ export function UatClient({
         )}
       </div>
     </Shell>
+  );
+}
+
+/**
+ * Big phone screenshots shrink to a long-side of 1600px JPEG before
+ * upload, so a 12MB capture becomes a couple hundred KB and survives
+ * the server's 4MB cap. Anything the canvas cannot decode goes up as
+ * it is and lets the server rule on it.
+ */
+async function compressImage(file: File): Promise<Blob> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+    if (scale === 1 && file.size < 512 * 1024) return file;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", 0.82)
+    );
+    return blob ?? file;
+  } catch {
+    return file;
+  }
+}
+
+/**
+ * A picture is worth the whole write-up when the complaint is "this
+ * looks wrong". Files upload as they are picked; only ids live in the
+ * draft, so a run resumed on another device still shows its shots.
+ */
+function AttachmentRow({
+  checkId,
+  token,
+  ids,
+  onChange,
+}: {
+  checkId: string;
+  token: string | null;
+  ids: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const add = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setBusy(true);
+    setProblem(null);
+    const next = [...ids];
+    for (const file of Array.from(files).slice(0, MAX_SHOTS - ids.length)) {
+      const blob = await compressImage(file);
+      const fd = new FormData();
+      fd.set("file", blob, file.name || "screenshot.jpg");
+      fd.set("checkId", checkId);
+      if (token) fd.set("token", token);
+      try {
+        const res = await fetch("/api/uat/attachments", {
+          method: "POST",
+          body: fd,
+        });
+        const json = (await res.json().catch(() => null)) as {
+          id?: string;
+          error?: string;
+        } | null;
+        if (res.ok && json?.id) next.push(json.id);
+        else setProblem(json?.error ?? "That one didn't upload. Try it again.");
+      } catch {
+        setProblem("That one didn't upload. Try it again.");
+      }
+    }
+    onChange(next);
+    setBusy(false);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  const remove = (id: string) => {
+    onChange(ids.filter((a) => a !== id));
+    // Tidy-up, not correctness: an orphaned row is harmless.
+    void fetch(`/api/uat/attachments/${id}`, { method: "DELETE" }).catch(
+      () => undefined
+    );
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      {ids.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {ids.map((id) => (
+            <span key={id} className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element -- tiny thumbnail of a tester upload; next/image buys nothing here */}
+              <img
+                src={`/api/uat/attachments/${id}`}
+                alt="Attached screenshot"
+                className="h-16 w-16 rounded-md border border-slate-300 object-cover"
+              />
+              <button
+                type="button"
+                onClick={() => remove(id)}
+                aria-label="Remove this screenshot"
+                className="absolute -top-1.5 -right-1.5 grid size-5 place-content-center rounded-full bg-slate-900 text-white"
+              >
+                <X className="size-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      {ids.length < MAX_SHOTS && (
+        <label className="flex cursor-pointer items-center gap-1.5 self-start rounded-md border border-dashed border-slate-400 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-white">
+          {busy ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : (
+            <Paperclip className="size-3.5" />
+          )}
+          {busy
+            ? "Uploading..."
+            : ids.length > 0
+              ? "Attach another screenshot"
+              : "Attach screenshots"}
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            disabled={busy}
+            onChange={(e) => void add(e.target.files)}
+            className="sr-only"
+          />
+        </label>
+      )}
+      {problem && <p className="text-xs text-red-700">{problem}</p>}
+    </div>
   );
 }
 
