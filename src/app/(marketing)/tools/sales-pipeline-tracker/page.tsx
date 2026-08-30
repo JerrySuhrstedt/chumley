@@ -33,7 +33,7 @@ import { Brush } from "./brush";
 const PATH = "/tools/sales-pipeline-tracker";
 const TITLE = "Free Sales Pipeline Tracker for Google Sheets and Excel";
 const DESC =
-  "A free sales pipeline template that tracks deals, values and follow-ups, and turns a row pink when a next step is late. Works in Google Sheets or Excel. No email required.";
+  "A free sales pipeline template that tracks deals, values and follow-ups, and turns a row pink when a next step is late. Works in Google Sheets or Excel. Tell us where to send it and it is yours.";
 
 export const metadata: Metadata = pageMeta({
   title: TITLE,
