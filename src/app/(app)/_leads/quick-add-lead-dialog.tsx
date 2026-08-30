@@ -22,11 +22,17 @@ export function QuickAddLeadDialog({
   stage = "new_lead",
   variant = "button",
   highlight = false,
+  onCreated,
 }: {
   stage?: LeadStage;
   variant?: "button" | "inline" | "hero" | "contact";
   /** Draws the eye while a board still has no real deals on it. */
   highlight?: boolean;
+  /**
+   * Given the row that was just made, so the board can show it: switch
+   * to its bucket on mobile, drop filters that hide it, flash the card.
+   */
+  onCreated?: (lead: { id: string; name: string; stage: string }) => void;
 }) {
   const allStages = useStages();
   const [open, setOpen] = useState(false);
@@ -46,6 +52,7 @@ export function QuickAddLeadDialog({
       setShowDetails(false);
       setDestination(stage);
       setOpen(false);
+      if (state.lead) onCreated?.(state.lead);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, pending]);

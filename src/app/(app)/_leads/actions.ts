@@ -67,10 +67,19 @@ async function requireOrg() {
   return requireWritableOrg();
 }
 
+export type CreateLeadState = FormState & {
+  /**
+   * The row that was just made, so the board can point at it: switch the
+   * mobile view to its bucket, drop filters that would hide it, flash it.
+   * The save was never the problem; the card being invisible was.
+   */
+  lead?: { id: string; name: string; stage: string } | null;
+};
+
 export async function createLead(
-  _prevState: FormState,
+  _prevState: CreateLeadState,
   formData: FormData,
-): Promise<FormState> {
+): Promise<CreateLeadState> {
   const name = toNullable(formData.get("name"));
   if (!name) {
     return { error: "Name is required." };
@@ -80,22 +89,25 @@ export async function createLead(
   if (!current) return { error: refused };
   const { org } = current;
 
-  await db.insert(leads).values({
-    orgId: org.id,
-    // Whoever typed it in works it, until somebody says otherwise.
-    ownerId: current.userId,
-    name,
-    phone: normalizePhone(toNullable(formData.get("phone"))),
-    email: toNullable(formData.get("email")),
-    companyName: toNullable(formData.get("companyName")),
-    value: toNullable(formData.get("value")),
-    stage: await resolveStageKey(org.id, toNullable(formData.get("stage"))),
-  });
+  const [row] = await db
+    .insert(leads)
+    .values({
+      orgId: org.id,
+      // Whoever typed it in works it, until somebody says otherwise.
+      ownerId: current.userId,
+      name,
+      phone: normalizePhone(toNullable(formData.get("phone"))),
+      email: toNullable(formData.get("email")),
+      companyName: toNullable(formData.get("companyName")),
+      value: toNullable(formData.get("value")),
+      stage: await resolveStageKey(org.id, toNullable(formData.get("stage"))),
+    })
+    .returning({ id: leads.id, name: leads.name, stage: leads.stage });
 
   revalidatePath("/pipeline");
   // A new contact lands off the board, so that list has to refresh too.
   revalidatePath("/contacts");
-  return { error: null };
+  return { error: null, lead: row ?? null };
 }
 
 export async function updateLead(
@@ -305,12 +317,16 @@ export async function deleteLead(id: string) {
 export type ActivityType = (typeof activityTypeEnum.enumValues)[number];
 export type ActivityOutcome = (typeof activityOutcomeEnum.enumValues)[number];
 
-/** Record an interaction (call, email, text, meeting) with an optional note. */
+/**
+ * Record an interaction (call, email, text, meeting) with an optional note.
+ * Returns the id so the caller can offer an undo, which matters now that
+ * the logger commits on the way out as well as on the button.
+ */
 export async function logActivity(
   leadId: string,
   _prevState: FormState,
   formData: FormData,
-): Promise<FormState> {
+): Promise<FormState & { activityId?: string | null }> {
   const type = (toNullable(formData.get("type")) as ActivityType) ?? "note";
   const outcome = toNullable(formData.get("outcome")) as ActivityOutcome | null;
   const body = toNullable(formData.get("body")) ?? "";
@@ -323,6 +339,16 @@ export async function logActivity(
   const { current, error: refused } = await getWritableOrg();
   if (!current) return { error: refused };
   const { org, userId } = current;
+
+  // The lead has to belong to this team. A server action is callable by
+  // anyone who can reach the site, and leadId arrives from the browser.
+  const [lead] = await db
+    .select({ id: leads.id })
+    .from(leads)
+    .where(and(eq(leads.id, leadId), eq(leads.orgId, org.id)))
+    .limit(1);
+  if (!lead) return { error: "That lead is gone." };
+
   const keepsOutcome = type === "call" || type === "meeting";
 
   // Voicemails are a cadence counter — number them so a rep can see where
@@ -342,18 +368,21 @@ export async function logActivity(
     note = `Left VM #${previous.length + 1}`;
   }
 
-  await db.insert(activities).values({
-    orgId: org.id,
-    leadId,
-    type,
-    outcome: keepsOutcome ? outcome : null,
-    body: note,
-    createdBy: userId,
-  });
+  const [row] = await db
+    .insert(activities)
+    .values({
+      orgId: org.id,
+      leadId,
+      type,
+      outcome: keepsOutcome ? outcome : null,
+      body: note,
+      createdBy: userId,
+    })
+    .returning({ id: activities.id });
 
   revalidatePath("/pipeline");
   revalidatePath("/contacts");
-  return { error: null };
+  return { error: null, activityId: row?.id ?? null };
 }
 
 /**

@@ -47,6 +47,7 @@ export function LeadColumn({
   onSwipeBack,
   onSwipeArchive,
   onContact,
+  onCreated,
 }: {
   stage: BoardStage;
   /** What is drawn, after the board's filters. */
@@ -61,6 +62,8 @@ export function LeadColumn({
   onSwipeBack: (leadId: string) => void;
   onSwipeArchive: (leadId: string) => void;
   onContact: (leadId: string, type: "call" | "text" | "email") => void;
+  /** Passed through to the column's own add dialog. */
+  onCreated?: (lead: { id: string; name: string; stage: string }) => void;
 }) {
   const boardStages = useBoardStages();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -217,7 +220,11 @@ export function LeadColumn({
       </div>
 
       <div className="p-2 pt-1">
-        <QuickAddLeadDialog stage={stage.key} variant="inline" />
+        <QuickAddLeadDialog
+          stage={stage.key}
+          variant="inline"
+          onCreated={onCreated}
+        />
       </div>
 
       {confirmingDelete && (

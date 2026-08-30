@@ -1,10 +1,16 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { logActivity, type ActivityOutcome, type ActivityType } from "./actions";
+import {
+  deleteActivity,
+  logActivity,
+  type ActivityOutcome,
+  type ActivityType,
+} from "./actions";
 import { ACTIVITY_TYPES, outcomesFor } from "./activity-meta";
 
 export function ActivityLogger({
@@ -18,7 +24,23 @@ export function ActivityLogger({
 }) {
   const [type, setType] = useState<ActivityType>(initialType);
   const [outcome, setOutcome] = useState<ActivityOutcome | null>(null);
+  const [body, setBody] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
+
+  // Mirrored into refs through effects rather than assigned during
+  // render, so the unmount commit below reads the latest values without
+  // the component touching a ref while rendering. Same shape as the
+  // wrap-up strip and the history editor, which both save on the way out.
+  const bodyRef = useRef("");
+  const typeRef = useRef<ActivityType>(initialType);
+  const outcomeRef = useRef<ActivityOutcome | null>(null);
+  useEffect(() => {
+    bodyRef.current = body;
+  }, [body]);
+  useEffect(() => {
+    typeRef.current = type;
+    outcomeRef.current = outcome;
+  }, [type, outcome]);
 
   const action = logActivity.bind(null, leadId);
   const [state, formAction, pending] = useActionState(action, { error: null });
@@ -39,13 +61,52 @@ export function ActivityLogger({
       formRef.current?.reset();
       // eslint-disable-next-line react-hooks/set-state-in-effect -- clear disposition after a successful save
       setOutcome(null);
+      setBody("");
       onSaved?.();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, pending]);
 
+  /**
+   * Typing was the deliberate act; pressing Log it was ceremony. Clicking
+   * away used to throw the words out, which for a rep between jobs is
+   * silent data loss. So leaving commits whatever was typed, exactly like
+   * the two components either side of this one, and a toast carries the
+   * undo in place of the confirmation that no longer exists. The ref is
+   * cleared before the write so the submit path and this one can never
+   * both fire for the same words.
+   */
+  useEffect(() => {
+    return () => {
+      const text = bodyRef.current.trim();
+      if (!text) return;
+      bodyRef.current = "";
+      const fd = new FormData();
+      fd.set("type", typeRef.current);
+      fd.set("outcome", outcomeRef.current ?? "");
+      fd.set("body", text);
+      void logActivity(leadId, { error: null }, fd).then((res) => {
+        if (res.error || !res.activityId) return;
+        const id = res.activityId;
+        toast("Saved what you typed", {
+          description: "Leaving the box saves it. Undo if it was a draft.",
+          action: { label: "Undo", onClick: () => void deleteActivity(id) },
+        });
+      });
+    };
+  }, [leadId]);
+
   return (
-    <form ref={formRef} action={formAction} className="flex flex-col gap-3">
+    <form
+      ref={formRef}
+      action={formAction}
+      // The explicit submit owns these words now; without this the
+      // unmount commit would write them a second time.
+      onSubmit={() => {
+        bodyRef.current = "";
+      }}
+      className="flex flex-col gap-3"
+    >
       <input type="hidden" name="type" value={type} />
       <input type="hidden" name="outcome" value={outcome ?? ""} />
 
@@ -100,6 +161,8 @@ export function ActivityLogger({
       <Textarea
         name="body"
         rows={2}
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
         placeholder={
           type === "note" ? "What happened?" : "Add a note (optional)"
         }

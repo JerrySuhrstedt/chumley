@@ -69,6 +69,8 @@ export function LeadCardView({
          through a stage or a position, because neither is guaranteed:
          samples can be dragged anywhere before the tour is ever seen. */
       data-coach={lead.isSample ? "sample-lead" : undefined}
+      // The board scrolls to and flashes a just-created card through this.
+      data-lead-id={lead.id}
       className={`rounded-lg bg-white transition-shadow ${
         overlay
           ? "rotate-3 cursor-grabbing shadow-[0_8px_16px_rgba(9,30,66,0.35)]"

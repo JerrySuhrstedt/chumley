@@ -93,6 +93,9 @@ export function LeadsBoard({
   const [temp, setTemp] = useState<LeadTemperature | null>(null);
   const [due, setDue] = useState<DueFilter | null>(null);
   const [ownerFilter, setOwnerFilter] = useState<string | null>(null);
+  // A lead created seconds ago, waiting to be pointed at once its card
+  // arrives with the revalidated payload.
+  const [justAddedId, setJustAddedId] = useState<string | null>(null);
   const dragStartStage = useRef<LeadStage | null>(null);
   const [, startTransition] = useTransition();
   const router = useRouter();
@@ -162,6 +165,40 @@ export function LeadsBoard({
         .some((field) => field!.toLowerCase().includes(q));
     });
   }, [localLeads, query, temp, due, ownerFilter]);
+
+  /**
+   * A new lead must be unmissable. The save was always fine; the card was
+   * landing on a bucket tab the phone wasn't showing, or behind a filter,
+   * with nothing saying where it went, and that reads as a lost lead. So
+   * creation switches the view to its bucket, clears anything that would
+   * hide it, and says out loud where it landed.
+   */
+  function handleCreated(lead: { id: string; name: string; stage: string }) {
+    setMobileStage(lead.stage);
+    setQuery("");
+    setTemp(null);
+    setDue(null);
+    setOwnerFilter(null);
+    setJustAddedId(lead.id);
+    toast(`${lead.name} added to ${labelOf(lead.stage)}`);
+  }
+
+  // The card exists only after the revalidated payload lands, so the
+  // flash waits for it: this effect re-runs as localLeads changes and
+  // fires once the node is really there.
+  useEffect(() => {
+    if (!justAddedId) return;
+    const el = document.querySelector(`[data-lead-id="${justAddedId}"]`);
+    if (!el) return;
+    el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    el.classList.add("ring-4", "ring-[var(--brand)]/60");
+    const timer = setTimeout(() => {
+      el.classList.remove("ring-4", "ring-[var(--brand)]/60");
+       
+      setJustAddedId(null);
+    }, 2200);
+    return () => clearTimeout(timer);
+  }, [justAddedId, localLeads]);
 
   /**
    * Swipe right: one bucket forward. Swipe left: off the board.
@@ -413,6 +450,7 @@ export function LeadsBoard({
             >
               <QuickAddLeadDialog
                 highlight={!localLeads.some((l) => !l.isSample)}
+                onCreated={handleCreated}
               />
             </div>
 
@@ -512,6 +550,7 @@ export function LeadsBoard({
                   onSwipeBack={swipeBack}
                   onSwipeArchive={swipeArchive}
                   onContact={handleContact}
+                  onCreated={handleCreated}
                 />
               </div>
             ))}
