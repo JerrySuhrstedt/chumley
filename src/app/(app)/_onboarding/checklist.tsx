@@ -2,13 +2,33 @@
 
 import { useEffect, useState } from "react";
 import { Check, ChevronDown, PartyPopper, X } from "lucide-react";
+import { toast } from "sonner";
 import type { OnboardingState } from "@/lib/onboarding";
 import { usePathname, useRouter } from "next/navigation";
 import { NameStep } from "./name-step";
 import { REPLAY_EVENT, REPLAY_KEY } from "./coach-marks";
+import {
+  CHECKLIST_HIDDEN_KEY as HIDDEN,
+  OPEN_ADD_LEAD_EVENT,
+  OPEN_ADD_LEAD_KEY,
+  REOPEN_CHECKLIST_EVENT,
+} from "./events";
 
-const HIDDEN = "chumley:onboarding-hidden";
 const NAME_ASKED = "chumley:name-asked";
+
+/**
+ * What an unfinished step does when pressed. A row that names an action
+ * and does nothing on tap reads as broken, so every step either starts
+ * its action or points straight at it. The two drag/tap steps get told,
+ * not toured: the coach-mark machinery cannot target them reliably on
+ * every viewport, and a sentence that appears instantly beats a spotlight
+ * that silently fails to.
+ */
+const STEP_NUDGE: Record<string, string> = {
+  move: "Drag any card to another bucket. On a phone, press and hold it for a beat first, or just swipe it right.",
+  contact:
+    "Open a deal and tap Call, Text, or Email. It logs itself when you do.",
+};
 
 /**
  * A persistent checklist rather than a tour.
@@ -43,6 +63,48 @@ export function OnboardingChecklist({
     // eslint-disable-next-line react-hooks/set-state-in-effect -- read the dismissal on mount
     setHidden(localStorage.getItem(HIDDEN) === "1");
   }, []);
+
+  // The sidebar's "Getting started" entry brings a dismissed checklist
+  // back. Dismissal used to be forever, which punished a tidy-up click.
+  useEffect(() => {
+    const reopen = () => {
+      localStorage.removeItem(HIDDEN);
+      setHidden(false);
+      setOpen(true);
+    };
+    window.addEventListener(REOPEN_CHECKLIST_EVENT, reopen);
+    return () => window.removeEventListener(REOPEN_CHECKLIST_EVENT, reopen);
+  }, []);
+
+  /**
+   * Start a step's action from its row. "Add a deal" opens the real
+   * dialog, through the same window-event channel the tour replay uses,
+   * because the dialog lives under the page subtree and this widget does
+   * not. Off the pipeline, the note in sessionStorage survives the
+   * navigation and the dialog opens on arrival.
+   */
+  const startStep = (key: string) => {
+    if (key === "name") {
+      setNaming(true);
+      return;
+    }
+    setOpen(false);
+    const nudge = STEP_NUDGE[key];
+    const go = pathname !== "/pipeline";
+    if (key === "deal") {
+      if (go) {
+        sessionStorage.setItem(OPEN_ADD_LEAD_KEY, "1");
+        router.push("/pipeline");
+      } else {
+        window.dispatchEvent(new Event(OPEN_ADD_LEAD_EVENT));
+      }
+      return;
+    }
+    if (nudge) {
+      if (go) router.push("/pipeline");
+      toast(nudge, { duration: 8000 });
+    }
+  };
 
   const nameStep = state.steps.find((s) => s.key === "name");
   const dealDone = state.steps.find((s) => s.key === "deal")?.done ?? false;
@@ -98,13 +160,15 @@ export function OnboardingChecklist({
 
             <ul className="mt-3 flex flex-col pb-2">
               {state.steps.map((step) => {
-                const clickable = step.key === "name" && !step.done;
+                // Every unfinished step starts its action except the
+                // account step, which can only ever arrive already done.
+                const clickable = step.key !== "account" && !step.done;
                 return (
                   <li key={step.key}>
                     <button
                       type="button"
                       disabled={!clickable}
-                      onClick={() => clickable && setNaming(true)}
+                      onClick={() => clickable && startStep(step.key)}
                       className={`flex w-full items-start gap-3 px-4 py-2.5 text-left ${
                         clickable ? "hover:bg-slate-50" : "cursor-default"
                       }`}

@@ -62,7 +62,10 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           on it transparently, and the content is a panel resting inside
           that frame. */}
       <div className="flex h-screen w-full overflow-hidden bg-[var(--nav-bg)] supports-[height:100dvh]:h-dvh">
-        <AppSidebar isAdmin={admin} />
+        <AppSidebar
+          isAdmin={admin}
+          showGettingStarted={!onboarding.complete}
+        />
         <RefreshOnReturn />
         <div className="flex flex-1 flex-col overflow-hidden">
           <Topbar

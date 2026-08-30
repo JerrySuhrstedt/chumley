@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ReportButton } from "@/app/(app)/_report/report-button";
+import { GettingStartedButton } from "@/app/(app)/_onboarding/reopen-button";
 import { ChumleyDisc } from "@/components/chumley-disc";
 
 const NAV = [
@@ -27,8 +28,11 @@ const STORAGE_KEY = "ssc:nav-collapsed";
 
 export function AppSidebar({
   isAdmin = false,
+  showGettingStarted = false,
 }: {
   isAdmin?: boolean;
+  /** True while onboarding is incomplete: the way back to the checklist. */
+  showGettingStarted?: boolean;
 }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -147,6 +151,7 @@ export function AppSidebar({
           </Link>
         )}
 
+        {showGettingStarted && <GettingStartedButton collapsed={collapsed} />}
         <ReportButton collapsed={collapsed} />
       </div>
     </aside>

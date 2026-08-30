@@ -20,7 +20,7 @@ export function EmptyBoard() {
         </p>
 
         <div className="mt-6 flex justify-center">
-          <QuickAddLeadDialog variant="hero" />
+          <QuickAddLeadDialog variant="hero" openOnEvent />
         </div>
 
         <ol className="mx-auto mt-8 flex max-w-sm flex-col gap-3 text-left text-sm text-[var(--board-ink)]">

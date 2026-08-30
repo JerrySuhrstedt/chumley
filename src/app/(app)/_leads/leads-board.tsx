@@ -465,6 +465,7 @@ export function LeadsBoard({
               <QuickAddLeadDialog
                 highlight={!localLeads.some((l) => !l.isSample)}
                 onCreated={handleCreated}
+                openOnEvent
               />
             </div>
 

@@ -17,12 +17,17 @@ import { PhoneInput } from "@/components/phone-input";
 import { createLead } from "./actions";
 import type { LeadStage } from "./actions";
 import { useStages } from "./stages-context";
+import {
+  OPEN_ADD_LEAD_EVENT,
+  OPEN_ADD_LEAD_KEY,
+} from "../_onboarding/events";
 
 export function QuickAddLeadDialog({
   stage = "new_lead",
   variant = "button",
   highlight = false,
   onCreated,
+  openOnEvent = false,
 }: {
   stage?: LeadStage;
   variant?: "button" | "inline" | "hero" | "contact";
@@ -33,6 +38,12 @@ export function QuickAddLeadDialog({
    * to its bucket on mobile, drop filters that hide it, flash the card.
    */
   onCreated?: (lead: { id: string; name: string; stage: string }) => void;
+  /**
+   * Answer the checklist's "Add a deal" step. Only the board-header and
+   * empty-board instances opt in; a global listener would open one
+   * dialog per column at once.
+   */
+  openOnEvent?: boolean;
 }) {
   const allStages = useStages();
   const [open, setOpen] = useState(false);
@@ -56,6 +67,20 @@ export function QuickAddLeadDialog({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, pending]);
+
+  // The checklist's "Add a deal" step, from the other side: open on the
+  // event when both are mounted, or on the sessionStorage note left
+  // behind when the click happened on another page.
+  useEffect(() => {
+    if (!openOnEvent) return;
+    const openUp = () => setOpen(true);
+    window.addEventListener(OPEN_ADD_LEAD_EVENT, openUp);
+    if (sessionStorage.getItem(OPEN_ADD_LEAD_KEY) === "1") {
+      sessionStorage.removeItem(OPEN_ADD_LEAD_KEY);
+      openUp();
+    }
+    return () => window.removeEventListener(OPEN_ADD_LEAD_EVENT, openUp);
+  }, [openOnEvent]);
 
 
   // The column's own add button already says which bucket it is.
