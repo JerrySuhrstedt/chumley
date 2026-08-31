@@ -565,6 +565,13 @@ export type AdminUatTester = {
   draftUpdatedAt: Date | null;
   reports: number;
   createdAt: Date;
+  /** Which list they are on: the full punch list, or a generated retest. */
+  round: number;
+  focusCount: number;
+  /** Their bugs that are fixed and waiting to be re-checked. */
+  retestReady: number;
+  /** Their bugs still open, so a retest would waste their evening. */
+  stillOpen: number;
 };
 
 /** Personal tester links, most recently active first. */
@@ -572,8 +579,17 @@ export async function getAdminUatTesters(): Promise<AdminUatTester[]> {
   const rows = (await db.execute(sql`
     SELECT t.id, t.token, t.name, t.email, t.draft, t.draft_updated_at,
            t.created_at,
+           t.round, t.focus, t.retest_at,
            (SELECT count(*) FROM uat_reports r
-             WHERE r.tester_id = t.id)::int AS reports
+             WHERE r.tester_id = t.id)::int AS reports,
+           (SELECT count(DISTINCT b.check_id) FROM uat_reports r
+              JOIN backlog_items b ON b.report_id = r.id
+             WHERE r.tester_id = t.id AND b.status = 'done'
+               AND b.updated_at > COALESCE(t.retest_at, 'epoch'::timestamptz)
+           )::int AS retest_ready,
+           (SELECT count(*) FROM uat_reports r
+              JOIN backlog_items b ON b.report_id = r.id
+             WHERE r.tester_id = t.id AND b.status <> 'done')::int AS still_open
     FROM uat_testers t
     ORDER BY t.draft_updated_at DESC NULLS LAST, t.created_at DESC
   `)) as unknown as Record<string, unknown>[];
@@ -591,6 +607,10 @@ export async function getAdminUatTesters(): Promise<AdminUatTester[]> {
         : null,
       reports: Number(r.reports),
       createdAt: new Date(String(r.created_at)),
+      round: Number(r.round ?? 0),
+      focusCount: Array.isArray(r.focus) ? r.focus.length : 0,
+      retestReady: Number(r.retest_ready ?? 0),
+      stillOpen: Number(r.still_open ?? 0),
     };
   });
 }

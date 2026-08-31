@@ -2,13 +2,15 @@
 
 import { useActionState, useState, useTransition } from "react";
 import { format, formatDistanceToNow } from "date-fns";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, RotateCcw, Trash2 } from "lucide-react";
 import { CopiedChip } from "@/components/copied-chip";
 import type { AdminUatTester } from "@/lib/admin-data";
 import {
   createBlankUatTester,
   createUatTester,
   deleteUatTester,
+  generateRetest,
+  clearRetest,
   type CreateTesterResult,
 } from "./uat-actions";
 
@@ -109,6 +111,20 @@ export function Testers({
                     Created {format(t.createdAt, "MMM d 'at' h:mm a")}
                   </p>
                 </div>
+                {/* Which list this person is on, readable without opening
+                    anything. An accordion would hide exactly the thing you
+                    scan the table for. */}
+                <span
+                  className={`rounded px-2 py-0.5 text-[11px] font-bold ${
+                    t.focusCount > 0
+                      ? "bg-[var(--brand-tint)] text-[var(--brand-dark)]"
+                      : "bg-slate-100 text-slate-600"
+                  }`}
+                >
+                  {t.focusCount > 0
+                    ? `Retest · ${t.focusCount} checks`
+                    : "Full punch list"}
+                </span>
                 <p className="text-xs text-slate-500">
                   {t.reports} {t.reports === 1 ? "run sent" : "runs sent"}
                   {t.draftUpdatedAt && (
@@ -122,6 +138,46 @@ export function Testers({
                   )}
                 </p>
                 <span className="ml-auto flex items-center gap-2">
+                  {/* Only offered once their bugs are actually fixed.
+                      Sending a retest while the bugs are still open is how
+                      you get the same report twice: it is exactly what
+                      produced the duplicate CL-1 and CL-2 items. */}
+                  {t.retestReady > 0 && (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      title={`${t.retestReady} of their findings have been fixed since they last ran`}
+                      onClick={() =>
+                        start(async () => void (await generateRetest(t.id)))
+                      }
+                      className="flex items-center gap-1.5 rounded-md bg-[var(--brand)] px-2.5 py-1 text-xs font-bold text-white hover:bg-[var(--brand-dark)] disabled:opacity-50"
+                    >
+                      <RotateCcw className="size-3" />
+                      Send retest ({t.retestReady})
+                    </button>
+                  )}
+                  {t.retestReady === 0 && t.stillOpen > 0 && (
+                    <span
+                      title="Nothing they reported has been fixed yet, so there is nothing worth asking them to re-check"
+                      className="text-[11px] text-slate-400"
+                    >
+                      {t.stillOpen} still open
+                    </span>
+                  )}
+                  {t.focusCount > 0 && (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      title="Put them back on the full punch list"
+                      onClick={() => {
+                        if (confirm("Put them back on the full punch list? Their unsent draft is cleared."))
+                          start(async () => void (await clearRetest(t.id)));
+                      }}
+                      className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      Full list
+                    </button>
+                  )}
                   <span className="hidden font-mono text-[11px] text-slate-400 sm:inline">
                     /uat/{t.token}
                   </span>

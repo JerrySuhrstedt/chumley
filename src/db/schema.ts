@@ -397,6 +397,15 @@ export const uatTesters = pgTable("uat_testers", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
+  /**
+   * When a retest was last generated for this tester.
+   *
+   * The line between "already asked them to look again" and "fixed since
+   * then". Ready-to-retest is any backlog item from their report that has
+   * been marked done more recently than this, so a check cannot come back
+   * round after round once they have re-run it.
+   */
+  retestAt: timestamp("retest_at", { withTimezone: true }),
 });
 
 /**
