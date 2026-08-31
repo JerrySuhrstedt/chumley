@@ -12,7 +12,7 @@ import {
 import { getCurrentOrg } from "@/lib/org";
 import { getOrigin } from "@/lib/site-url";
 import { EmbedCode } from "./embed-code";
-import { saveFormHeading } from "./actions";
+import { saveFormHeading, setLeadNotifications } from "./actions";
 
 export default async function WebsiteFormPage() {
   const current = await getCurrentOrg();
@@ -21,6 +21,7 @@ export default async function WebsiteFormPage() {
   const origin = await getOrigin();
   const formUrl = `${origin}/f/${current.org.webhookToken}`;
   const heading = current.org.formHeading ?? "";
+  const notifying = current.org.notifyNewLeads;
 
   const scriptCode = `<script src="${origin}/embed.js" data-form="${current.org.webhookToken}" async></script>`;
 
@@ -85,6 +86,34 @@ export default async function WebsiteFormPage() {
                 Save
               </Button>
             </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Tell me when a lead comes in</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <p className="text-sm text-slate-600">
+              {notifying
+                ? "We email you the moment somebody fills in your form, with their number so you can call straight back."
+                : "Leads still arrive on your board. You just will not hear about them until you look."}
+            </p>
+            <form action={setLeadNotifications}>
+              <input type="hidden" name="on" value={notifying ? "0" : "1"} />
+              <Button
+                type="submit"
+                variant={notifying ? "outline" : "default"}
+                className="self-start"
+              >
+                {notifying ? "Turn the emails off" : "Turn the emails on"}
+              </Button>
+            </form>
+            <p className="text-xs text-slate-500">
+              Only for leads that arrive on their own, from your form or a
+              webhook. Adding one yourself never emails you, because you were
+              there. A rush of them in a few minutes is one email, not twenty.
+            </p>
           </CardContent>
         </Card>
 

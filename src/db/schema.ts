@@ -178,6 +178,15 @@ export const organizations = pgTable("organizations", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
+  /**
+   * Email the owner when a lead arrives from the website form or the
+   * inbound webhook. On by default, because a lead landing on a board
+   * nobody is looking at is the exact failure this product exists to
+   * prevent, and a notification nobody switched on never fires.
+   *
+   * Manual entry never notifies: you were there, you typed it.
+   */
+  notifyNewLeads: boolean("notify_new_leads").notNull().default(true),
 });
 
 export const memberships = pgTable(
@@ -846,3 +855,23 @@ export const toolSignups = pgTable(
 );
 
 export type ToolSignup = typeof toolSignups.$inferSelect;
+
+/**
+ * The throttle for new-lead emails, one row per team.
+ *
+ * A form under a bot attack, or an import, must produce one message rather
+ * than two hundred. `pending` counts what arrived during the quiet window
+ * so the next email can say "and 6 more" instead of losing them silently.
+ *
+ * Same claim-then-send shape as alert_log: the staleness test lives in the
+ * WHERE of an upsert, so two submissions landing together cannot both
+ * decide they are the one to send.
+ */
+export const leadNoticeLog = pgTable("lead_notice_log", {
+  orgId: uuid("org_id").primaryKey(),
+  lastSentAt: timestamp("last_sent_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  /** Arrived during the quiet window and not yet mentioned to anybody. */
+  pending: integer("pending").notNull().default(0),
+});

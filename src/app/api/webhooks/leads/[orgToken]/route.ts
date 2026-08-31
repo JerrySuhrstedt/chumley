@@ -7,6 +7,7 @@ import { activities, leads, organizations } from "@/db/schema";
 import { normalizePhone } from "@/lib/phone";
 import { overIngestCap } from "@/lib/ingest-guard";
 import { orgOwnerId } from "@/lib/org-owner";
+import { notifyNewLead } from "@/lib/notify-lead";
 
 function toNullable(value: unknown) {
   if (typeof value !== "string") return null;
@@ -91,6 +92,23 @@ export async function POST(
     body: toNullable(body.source)
       ? `Submitted via ${toNullable(body.source)}`
       : "Inbound form submission",
+  });
+
+  /**
+   * Not awaited. Zapier and Make both time out and retry, and a retry
+   * would create the lead a second time, so this request answers as soon
+   * as the row exists rather than waiting on an email.
+   */
+  notifyNewLead({
+    orgId: org.id,
+    leadId: lead.id,
+    name,
+    company: cap(toNullable(body.company), 120),
+    email: cap(toNullable(body.email), 200),
+    phone: normalizePhone(toNullable(body.phone)),
+    source: toNullable(body.source)
+      ? `${toNullable(body.source)}`
+      : "your webhook",
   });
 
   revalidatePath("/pipeline");

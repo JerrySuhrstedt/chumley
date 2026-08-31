@@ -23,3 +23,23 @@ export async function saveFormHeading(formData: FormData) {
 
   revalidatePath("/settings/form");
 }
+
+/**
+ * Switch the new-lead email on or off for this team.
+ *
+ * One toggle rather than a notification preferences screen. There is one
+ * thing worth being told about and it is on by default, because a
+ * notification nobody switched on never fires, and the lead sitting
+ * unnoticed on a board is the failure this product is sold on preventing.
+ */
+export async function setLeadNotifications(formData: FormData) {
+  const { current, error } = await getWritableOrg();
+  if (!current) throw new Error(error);
+
+  await db
+    .update(organizations)
+    .set({ notifyNewLeads: formData.get("on") === "1" })
+    .where(eq(organizations.id, current.org.id));
+
+  revalidatePath("/settings/form");
+}

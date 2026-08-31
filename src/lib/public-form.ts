@@ -5,6 +5,7 @@ import { defaultStageKey } from "@/lib/stages";
 import { normalizePhone } from "@/lib/phone";
 import { overIngestCap } from "@/lib/ingest-guard";
 import { orgOwnerId } from "@/lib/org-owner";
+import { notifyNewLead } from "@/lib/notify-lead";
 
 /**
  * One implementation of "a stranger filled in the website form".
@@ -102,6 +103,22 @@ export async function submitPublicLead(
     leadId: lead.id,
     type: "form_submission",
     body: "Filled out the form on your website",
+  });
+
+  /**
+   * Not awaited. A stranger's form submission must not wait on an email,
+   * and must never fail because of one. Until now this landed on the board
+   * in silence, which for somebody who is not looking at the board is the
+   * same as not landing at all.
+   */
+  notifyNewLead({
+    orgId: org.id,
+    leadId: lead.id,
+    name: `${firstName} ${lastName}`,
+    company: clean(input.company, "company"),
+    email,
+    phone: normalizePhone(clean(input.phone, "phone")),
+    source: "your website form",
   });
 
   return { ok: true, error: null };
