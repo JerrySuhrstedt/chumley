@@ -80,6 +80,10 @@ export function gate(request: NextRequest) {
     pathname === "/uat" ||
     // Personal tester links: /uat/{token}. Same standing as /uat itself.
     pathname.startsWith("/uat/") ||
+    // Tester screenshot uploads and read-backs. Same outsiders, same
+    // standing; behind the gate the upload 307s to the login page and
+    // the tester sees a button that silently does nothing.
+    pathname.startsWith("/api/uat/") ||
     pathname.startsWith("/auth/") ||
     pathname.startsWith("/api/auth/") ||
     pathname.startsWith("/join/") ||
