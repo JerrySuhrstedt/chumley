@@ -74,6 +74,12 @@ export function gate(request: NextRequest) {
     pathname === "/12d0103a70c41e0d0b1ed955783db640.txt" ||
     // The embeddable website form is public by definition.
     pathname.startsWith("/f/") ||
+    // The website form embed. embed.js runs on a stranger's site and the
+    // endpoint it posts to is reached from that stranger's browser, so
+    // neither can ever carry a session. Behind the gate they would both
+    // 307 to /login and the customer's form would silently stop working.
+    pathname === "/embed.js" ||
+    pathname.startsWith("/api/forms/") ||
     // The hidden tester punch list. Testers are outsiders with no account;
     // the page is unlinked and noindexed, not secret, and stores nothing
     // sensitive.

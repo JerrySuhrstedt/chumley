@@ -1,97 +1,34 @@
 "use server";
 
-import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
-import { defaultStageKey } from "@/lib/stages";
-import { activities, leads, organizations } from "@/db/schema";
-import { normalizePhone } from "@/lib/phone";
-import { overIngestCap } from "@/lib/ingest-guard";
-import { orgOwnerId } from "@/lib/org-owner";
+import { submitPublicLead } from "@/lib/public-form";
 
 export type FormState = { error: string | null; done: boolean };
 
 /**
- * Caps on what a stranger can put in the database.
+ * The hosted form at /f/[token].
  *
- * This form is public and unauthenticated by design, so nothing else
- * stands between the open internet and an insert. Generous enough that no
- * real person hits them, short enough that nobody stores a novel in the
- * name field.
+ * A thin wrapper now. The rules live in lib/public-form.ts so that this
+ * page, the script embed and a raw HTML post all behave identically. They
+ * are three presentations of one thing, and the moment they stop sharing
+ * an implementation they start disagreeing about which leads get in.
  */
-const LIMITS: Record<string, number> = {
-  firstName: 80,
-  lastName: 80,
-  email: 200,
-  phone: 40,
-  company: 120,
-};
-
-function text(formData: FormData, key: string) {
-  const value = String(formData.get(key) ?? "")
-    .trim()
-    .slice(0, LIMITS[key] ?? 200);
-  return value.length > 0 ? value : null;
-}
-
 export async function submitPublicForm(
   token: string,
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
-  // Bots fill every field they find. Real people never see this one.
-  if (String(formData.get("website") ?? "").trim()) {
-    return { error: null, done: true };
-  }
-
-  const org = await db.query.organizations.findFirst({
-    where: eq(organizations.webhookToken, token),
+  const result = await submitPublicLead(token, {
+    firstName: formData.get("firstName"),
+    lastName: formData.get("lastName"),
+    email: formData.get("email"),
+    phone: formData.get("phone"),
+    company: formData.get("company"),
+    website: formData.get("website"),
   });
-  if (!org) return { error: "This form is no longer active.", done: false };
 
-  // A flood is refused politely; the message names no cap, because the
-  // number would just become the script's target.
-  if (await overIngestCap(org.id)) {
-    return {
-      error: "This form is busy right now. Please try again in a while.",
-      done: false,
-    };
-  }
-
-  const firstName = text(formData, "firstName");
-  const lastName = text(formData, "lastName");
-  const email = text(formData, "email");
-
-  if (!firstName || !lastName || !email) {
-    return { error: "Please fill in your name and email.", done: false };
-  }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return { error: "That email address does not look right.", done: false };
-  }
-
-  const [lead] = await db
-    .insert(leads)
-    .values({
-      orgId: org.id,
-      ownerId: await orgOwnerId(org.id),
-      name: `${firstName} ${lastName}`,
-      email,
-      phone: normalizePhone(text(formData, "phone")),
-      companyName: text(formData, "company"),
-      stage: await defaultStageKey(org.id),
-    })
-    .returning({ id: leads.id });
-
-  // Someone filling out a form is a real signal, so the timeline starts here
-  // rather than the lead appearing with no history behind it.
-  await db.insert(activities).values({
-    orgId: org.id,
-    leadId: lead.id,
-    type: "form_submission",
-    body: "Filled out the form on your website",
-  });
+  if (!result.ok) return { error: result.error, done: false };
 
   revalidatePath("/pipeline");
-
   return { error: null, done: true };
 }
