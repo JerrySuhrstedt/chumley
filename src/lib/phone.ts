@@ -72,6 +72,25 @@ export function splitExtension(value: string): {
  * outside the parentheses, where it belongs, so nothing ever disappears
  * and nothing is ever mis-grouped.
  */
+/**
+ * Could these digits be a North American number at all?
+ *
+ * NANP reserves 0 and 1 as the first digit of both the area code and the
+ * exchange code, so "050 123 4567" is not a badly typed US number, it is
+ * somebody in Abu Dhabi typing their own. Checking costs nothing and stops
+ * the mask forcing a foreign local number into "(050) 123-4567", which is
+ * both wrong and undiallable.
+ *
+ * This is deliberately not full international support. Numbers written
+ * with a + already pass through untouched and dial correctly, so the only
+ * thing missing was the humility to leave alone what is not ours.
+ */
+function looksNanp(d: string): boolean {
+  if (d.length >= 1 && (d[0] === "0" || d[0] === "1")) return false;
+  if (d.length >= 4 && (d[3] === "0" || d[3] === "1")) return false;
+  return true;
+}
+
 function nanp(value: string) {
   const d = digits(value);
   if (d.startsWith("1")) {
@@ -103,6 +122,9 @@ export function formatPhoneInput(value: string): string {
 
   const { cc, rest: d } = nanp(base);
   if (d.length === 0 && !cc) return ext !== null ? value : "";
+  // Not a shape NANP can produce, so it belongs to some other country's
+  // numbering plan. Left exactly as typed.
+  if (!looksNanp(d)) return value;
 
   // The country code stands outside the parentheses so it stays visible.
   const lead = cc ? `${cc} ` : "";
@@ -124,12 +146,33 @@ export function normalizePhone(
 ): string | null {
   if (!value) return null;
 
-  const trimmed = value.trim();
+  /**
+   * Cleaned here as well as in the input, because this is the last gate
+   * before storage and values do not only arrive by keyboard. The website
+   * form, the CSV import and the API all land here, and "+++971 __44" was
+   * being kept verbatim by every one of them.
+   */
+  const trimmed = sanitizePhoneInput(value).trim();
   if (!trimmed) return null;
   if (isForeign(trimmed)) return trimmed;
 
   const { base, ext } = splitExtension(trimmed);
+
+  /**
+   * Too many digits to be a NANP number, so it is something else and gets
+   * kept as entered. formatPhoneInput has always guarded this; normalize
+   * did not need to while nanp() returned every digit, because the
+   * length check below simply failed. nanp() now truncates to ten, so
+   * without this an international number typed in 00-prefix form
+   * ("00971 50 123 4567") was reshaped into "(009) 715-0123" on save.
+   */
+  const allDigits = digits(base);
+  if (allDigits.length > (allDigits.startsWith("1") ? 11 : 10)) {
+    return trimmed;
+  }
+
   const { cc, rest: d } = nanp(base);
+  if (!looksNanp(d)) return trimmed;
   if (d.length === 10) {
     const lead = cc ? `${cc} ` : "";
     const formatted = `${lead}(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
@@ -163,5 +206,11 @@ export function isDialable(value: string | null | undefined): boolean {
     return d.length >= 7 && d.length <= 15;
   }
   const { base } = splitExtension(value);
-  return nanp(base).rest.length === 10;
+  const { rest } = nanp(base);
+  if (!looksNanp(rest)) {
+    // Somebody else's local number. Dial it if it is a plausible length.
+    const d = digits(base);
+    return d.length >= 7 && d.length <= 15;
+  }
+  return rest.length === 10;
 }

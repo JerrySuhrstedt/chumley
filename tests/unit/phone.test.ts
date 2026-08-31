@@ -172,3 +172,49 @@ describe("MD-2: the edge cases from UAT", () => {
     expect(formatPhoneInput("  6025551234  ")).toBe("(602) 555-1234");
   });
 });
+
+/**
+ * Joudi tested from Abu Dhabi, which is how these surfaced at all. The app
+ * is sold to North American reps and the mask is NANP-shaped on purpose,
+ * but a number belonging to another country's plan must be left alone
+ * rather than forced into a US shape it cannot have.
+ */
+describe("numbers that are not ours", () => {
+  it("leaves a local non-NANP number exactly as typed", () => {
+    // NANP reserves 0 and 1 as the first digit of the area code, so 050
+    // is not a mistyped US number, it is a UAE mobile.
+    expect(formatPhoneInput("050 123 4567")).toBe("050 123 4567");
+    expect(normalizePhone("050 123 4567")).toBe("050 123 4567");
+    expect(formatPhoneInput("0501234567")).toBe("0501234567");
+  });
+
+  it("leaves an exchange code that cannot be NANP alone", () => {
+    // Second rule: the exchange code cannot start 0 or 1 either.
+    expect(formatPhoneInput("602 012 3456")).toBe("602 012 3456");
+  });
+
+  it("keeps international numbers written with a plus untouched", () => {
+    expect(formatPhoneInput("+971 50 123 4567")).toBe("+971 50 123 4567");
+    expect(normalizePhone("+971 2 555 1234")).toBe("+971 2 555 1234");
+    expect(telDigits("+971 50 123 4567")).toBe("+971501234567");
+    expect(isDialable("+971 50 123 4567")).toBe(true);
+  });
+
+  it("does not reshape a 00-prefix international number on save", () => {
+    // The regression this caught: nanp() truncating to ten digits meant
+    // normalize turned this into "(009) 715-0123".
+    expect(normalizePhone("00971 50 123 4567")).toBe("00971 50 123 4567");
+    expect(normalizePhone("0044 20 7946 0958")).toBe("0044 20 7946 0958");
+  });
+
+  it("cleans junk on the way into storage, not just on the way in", () => {
+    // Values arrive from the website form, the CSV import and the API as
+    // well as the keyboard, and only the keyboard was being sanitised.
+    expect(normalizePhone("+++971 __44")).toBe("+971 44");
+  });
+
+  it("still formats a real US number", () => {
+    expect(formatPhoneInput("6025551234")).toBe("(602) 555-1234");
+    expect(normalizePhone("602-555-1234")).toBe("(602) 555-1234");
+  });
+});
