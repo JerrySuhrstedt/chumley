@@ -13,7 +13,6 @@ import {
 } from "./actions";
 import {
   ALL_CHECKS,
-  PUNCH_LIST_VERSION,
   SECTIONS,
   SEVERITIES,
 } from "./checks";
@@ -488,10 +487,13 @@ export function UatClient({
 
       <div className="mx-auto max-w-3xl py-10">
         <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
-          {focusSet ? "Retest" : "Punch list"}{" "}
-          <span className="align-middle text-sm font-semibold tracking-normal text-slate-400">
-            {PUNCH_LIST_VERSION}
-          </span>
+          {/* The list version is deliberately not shown. It exists so the
+              back office can say which list a run was against, and it is
+              recorded on the report server-side. On screen it only ever
+              confused: a first-run tester saw "Beta 1.1" beside her punch
+              list and reasonably concluded she had been sent the second
+              round by mistake. */}
+          {focusSet ? "Retest" : "Punch list"}
         </h1>
         {focusSet ? (
           <p className="mt-2 max-w-2xl text-slate-600">

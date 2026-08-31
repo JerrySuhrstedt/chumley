@@ -1,6 +1,38 @@
 const digits = (value: string) => value.replace(/\D/g, "");
 
 /**
+ * The most digits any real number has. E.164 caps a full international
+ * number at fifteen, so anything past that is a typo or a paste gone wrong,
+ * and letting it run unbounded means a field that accepts a novel.
+ */
+const MAX_DIGITS = 15;
+
+/**
+ * Strip what a phone number cannot contain.
+ *
+ * Reported as "+++971 __44 saved verbatim". Nothing rejected the junk
+ * because a value starting with + was treated as foreign and passed
+ * straight through untouched. Keeps digits, one leading +, and the
+ * separators people actually type; collapses the rest.
+ */
+export function sanitizePhoneInput(value: string): string {
+  const kept = value.replace(/[^\d+()\-. xX#extEXT]/g, "");
+  const plus = kept.trimStart().startsWith("+");
+  const body = kept.replace(/\+/g, "");
+  const capped =
+    digits(body).length > MAX_DIGITS
+      ? (() => {
+          let n = 0;
+          return body
+            .split("")
+            .filter((c) => (/\d/.test(c) ? ++n <= MAX_DIGITS : true))
+            .join("");
+        })()
+      : body;
+  return (plus ? "+" : "") + capped.replace(/\s{2,}/g, " ");
+}
+
+/**
  * True only for non-NANP numbers (+44, +52, ...). A "+1" number is US/Canada
  * and still formats as (XXX) XXX-XXXX.
  */
@@ -27,14 +59,25 @@ export function splitExtension(value: string): {
 }
 
 /**
- * Drop a leading country code, but only from a complete run. During typing
- * every leading-1 number passes through a two-digit state, and stripping
- * there eats the keystroke: type "1", then "6", and the 1 vanished.
+ * Split a NANP number into its country code and its ten digits.
+ *
+ * No NANP area code begins with 1, so a leading 1 is always the country
+ * code and never part of the number. That fact is what makes this safe to
+ * decide on the second keystroke rather than waiting for the eleventh.
+ *
+ * Waiting was the bug. A half-typed 1-800 number sat at ten digits and
+ * rendered as "(180) 055-5123", visibly scrambled, then snapped to
+ * "(800) 555-1234" on the next keystroke with the 1 apparently eaten. The
+ * fix is not to strip it sooner but to stop hiding it: the 1 is shown
+ * outside the parentheses, where it belongs, so nothing ever disappears
+ * and nothing is ever mis-grouped.
  */
 function nanp(value: string) {
-  let d = digits(value);
-  if (d.length >= 11 && d.startsWith("1")) d = d.slice(1);
-  return d;
+  const d = digits(value);
+  if (d.startsWith("1")) {
+    return { cc: "1", rest: d.slice(1, 11) };
+  }
+  return { cc: "", rest: d.slice(0, 10) };
 }
 
 /**
@@ -47,14 +90,28 @@ export function formatPhoneInput(value: string): string {
   if (isForeign(value)) return value;
 
   const { base, ext } = splitExtension(value);
-  const d = nanp(base);
-  if (d.length === 0) return ext !== null ? value : "";
-  if (d.length > 10) return value;
+
+  /**
+   * More digits than a NANP number can hold, so it is something else: an
+   * 0044 international number typed without a plus, an account reference,
+   * a paste gone wrong. Left exactly as entered rather than forced into a
+   * shape it does not have. Dropping this guard turned "0044 20 7946 0958"
+   * into "(004) 420-7946", which is worse than doing nothing.
+   */
+  const all = digits(base);
+  if (all.length > (all.startsWith("1") ? 11 : 10)) return value;
+
+  const { cc, rest: d } = nanp(base);
+  if (d.length === 0 && !cc) return ext !== null ? value : "";
+
+  // The country code stands outside the parentheses so it stays visible.
+  const lead = cc ? `${cc} ` : "";
+  if (d.length === 0) return ext !== null ? `${cc} x${ext}` : cc;
 
   let out: string;
-  if (d.length < 4) out = `(${d}`;
-  else if (d.length < 7) out = `(${d.slice(0, 3)}) ${d.slice(3)}`;
-  else out = `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+  if (d.length < 4) out = `${lead}(${d}`;
+  else if (d.length < 7) out = `${lead}(${d.slice(0, 3)}) ${d.slice(3)}`;
+  else out = `${lead}(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
   return ext !== null ? `${out} x${ext}` : out;
 }
 
@@ -72,9 +129,10 @@ export function normalizePhone(
   if (isForeign(trimmed)) return trimmed;
 
   const { base, ext } = splitExtension(trimmed);
-  const d = nanp(base);
+  const { cc, rest: d } = nanp(base);
   if (d.length === 10) {
-    const formatted = `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+    const lead = cc ? `${cc} ` : "";
+    const formatted = `${lead}(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
     return ext ? `${formatted} x${ext}` : formatted;
   }
   return trimmed;
@@ -105,5 +163,5 @@ export function isDialable(value: string | null | undefined): boolean {
     return d.length >= 7 && d.length <= 15;
   }
   const { base } = splitExtension(value);
-  return nanp(base).length === 10;
+  return nanp(base).rest.length === 10;
 }

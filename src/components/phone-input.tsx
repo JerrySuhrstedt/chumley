@@ -2,7 +2,7 @@
 
 import { useRef, type ComponentProps } from "react";
 import { Input } from "@/components/ui/input";
-import { formatPhoneInput } from "@/lib/phone";
+import { formatPhoneInput, sanitizePhoneInput } from "@/lib/phone";
 
 const countDigits = (s: string) => s.replace(/\D/g, "").length;
 
@@ -46,7 +46,15 @@ export function PhoneInput(props: ComponentProps<typeof Input>) {
       }
       onChange={(event) => {
         const input = event.target;
-        const raw = input.value;
+        /**
+         * Cleaned before anything else looks at it.
+         *
+         * Reported from UAT: "+++971 __44" was saved exactly as typed, and
+         * digits could be entered without any limit. The formatter below
+         * leaves anything it does not recognise alone, which is right, but
+         * it meant junk went straight through to the database.
+         */
+        const raw = sanitizePhoneInput(input.value);
         const prev = lastValue.current;
         const caret = input.selectionStart ?? raw.length;
         let digitsBefore = countDigits(raw.slice(0, caret));
