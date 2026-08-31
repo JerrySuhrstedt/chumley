@@ -43,7 +43,21 @@ export async function getRetestReadiness(): Promise<
       COALESCE(
         array_agg(DISTINCT b.check_id)
           FILTER (WHERE b.status = 'done'
-                    AND b.updated_at > COALESCE(t.retest_at, 'epoch'::timestamptz)),
+                    AND b.updated_at > COALESCE(t.retest_at, 'epoch'::timestamptz)
+                    /* A check is only ready when nothing about it is still
+                       open. The same check id can carry several items across
+                       rounds, and one of them being fixed says nothing about
+                       the others. Without this, closing a round-one item put
+                       the check back in a retest while a round-two report of
+                       the same thing sat untouched, which is precisely the
+                       duplicate-report loop this was built to end. */
+                    AND NOT EXISTS (
+                      SELECT 1 FROM uat_reports r2
+                        JOIN backlog_items b2 ON b2.report_id = r2.id
+                       WHERE r2.tester_id = t.id
+                         AND b2.check_id = b.check_id
+                         AND b2.status <> 'done'
+                    )),
         '{}'
       ) AS ready_checks,
       count(*) FILTER (WHERE b.status <> 'done')::int AS open_count

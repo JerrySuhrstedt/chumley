@@ -586,6 +586,13 @@ export async function getAdminUatTesters(): Promise<AdminUatTester[]> {
               JOIN backlog_items b ON b.report_id = r.id
              WHERE r.tester_id = t.id AND b.status = 'done'
                AND b.updated_at > COALESCE(t.retest_at, 'epoch'::timestamptz)
+               -- Only when nothing about that check is still open. See the
+               -- note in lib/uat-retest.ts.
+               AND NOT EXISTS (
+                 SELECT 1 FROM uat_reports r2
+                   JOIN backlog_items b2 ON b2.report_id = r2.id
+                  WHERE r2.tester_id = t.id AND b2.check_id = b.check_id
+                    AND b2.status <> 'done')
            )::int AS retest_ready,
            (SELECT count(*) FROM uat_reports r
               JOIN backlog_items b ON b.report_id = r.id
