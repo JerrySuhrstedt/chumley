@@ -43,8 +43,17 @@ export const SEVERITIES = [
 export const SECTIONS: Section[] = [
   {
     key: "fr",
-    title: "First run",
-    lede: "The part that decides whether somebody ever comes back. Use an email address that has never signed up before.",
+    /**
+     * Called "Onboarding" because "First run" meant a new customer's
+     * first run of the app, and a tester read it as her first run of the
+     * test and concluded she had been sent the wrong list. Two meanings,
+     * one phrase, and the testing programme genuinely does have first and
+     * second runs. The check ids stay FR-* because reports, backlog items
+     * and generated retest lists all reference them; only the words on
+     * screen change.
+     */
+    title: "Onboarding",
+    lede: "A brand new customer's first few minutes, which is the part that decides whether they ever come back. Use an email address that has never signed up before.",
     checks: [
       {
         id: "FR-1",
