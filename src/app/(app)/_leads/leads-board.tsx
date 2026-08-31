@@ -442,10 +442,12 @@ export function LeadsBoard({
   return (
     <OwnersProvider members={members} currentUserId={currentUserId} isTeamOwner={isTeamOwner}>
     <div className="flex flex-1 flex-col overflow-hidden">
-      {/* Tighter on a phone. Condensing the filters to two chips took a
-          row out of this stack, and the point of that was to give the
-          height to the cards rather than keep it as air. */}
-      <div className="flex flex-col gap-2 px-4 pt-3 pb-1.5 md:gap-3 md:px-6 md:pt-4 md:pb-2">
+      {/* Tighter on a phone, and tightened again after a tester on a
+          Galaxy S25 reported that between the numbers, the search, the
+          examples banner and the filters there was "barely the top half of
+          the first deal card" left. Every pixel this block does not use is
+          a pixel of the thing the rep actually came here for. */}
+      <div className="flex flex-col gap-1.5 px-4 pt-2 pb-1 md:gap-3 md:px-6 md:pt-4 md:pb-2">
         {/* Numbers, then search, then the add button, all on one line so
             the board starts higher up the screen. */}
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
@@ -544,7 +546,7 @@ export function LeadsBoard({
       >
         {/* Vertical padding keeps the drop-target glow from being clipped
             by this scroll container. */}
-        <div className="flex flex-1 items-start gap-3 overflow-x-auto overflow-y-hidden px-4 pt-1 pb-4 md:px-6 md:pt-1.5 md:pb-5">
+        <div className="flex flex-1 items-start gap-3 overflow-x-auto overflow-y-hidden px-4 pt-1 pb-2.5 md:px-6 md:pt-1.5 md:pb-5">
           <SortableContext
             items={columnOrder}
             strategy={horizontalListSortingStrategy}
