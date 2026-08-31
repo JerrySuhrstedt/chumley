@@ -495,6 +495,38 @@ export async function getAdminUatReports(): Promise<AdminUatReport[]> {
   }));
 }
 
+/**
+ * One run in full, for the owner reading the form exactly as the tester
+ * left it. Null for an unknown id rather than a throw, so a stale link
+ * lands on a 404 instead of an error page.
+ */
+export async function getAdminUatReport(
+  id: string
+): Promise<AdminUatReport | null> {
+  const rows = (await db.execute(sql`
+    SELECT r.id, r.tester_name, r.tester_email, r.list_version, r.findings,
+           r.tried_count, r.total_count, r.created_at, t.token AS tester_token
+    FROM uat_reports r
+    LEFT JOIN uat_testers t ON t.id = r.tester_id
+    WHERE r.id = ${id}
+    LIMIT 1
+  `)) as unknown as Record<string, unknown>[];
+  const r = rows[0];
+  if (!r) return null;
+
+  return {
+    id: String(r.id),
+    testerName: String(r.tester_name),
+    testerEmail: String(r.tester_email),
+    testerToken: r.tester_token ? String(r.tester_token) : null,
+    listVersion: r.list_version ? String(r.list_version) : null,
+    findings: (Array.isArray(r.findings) ? r.findings : []) as AdminUatFinding[],
+    triedCount: Number(r.tried_count),
+    totalCount: Number(r.total_count),
+    createdAt: new Date(String(r.created_at)),
+  };
+}
+
 export type AdminBacklogItem = {
   id: string;
   /** Global sequence number behind the human ref, e.g. the 7 in BT-7. */

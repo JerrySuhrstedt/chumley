@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { AdminUatReport } from "@/lib/admin-data";
 import { ALL_CHECKS } from "@/app/uat/checks";
 
@@ -84,14 +85,23 @@ export function UatReports({
                 );
                 return (
                   <div key={report.id} className="px-4 py-3">
-                    <p className="text-xs text-slate-500">
-                      {report.listVersion && `${report.listVersion} · `}
-                      {report.createdAt.toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                      })}{" "}
-                      · {report.triedCount} of {report.totalCount} tried ·{" "}
-                      {issues.length} {issues.length === 1 ? "issue" : "issues"}
+                    <p className="flex flex-wrap items-baseline gap-x-3 text-xs text-slate-500">
+                      <span>
+                        {report.listVersion && `${report.listVersion} · `}
+                        {report.createdAt.toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                        })}{" "}
+                        · {report.triedCount} of {report.totalCount} tried ·{" "}
+                        {issues.length}{" "}
+                        {issues.length === 1 ? "issue" : "issues"}
+                      </span>
+                      <Link
+                        href={`/admin/testing/runs/${report.id}`}
+                        className="font-semibold text-[var(--brand)] hover:underline"
+                      >
+                        View the full form
+                      </Link>
                     </p>
 
                     {timings.length > 0 && (
