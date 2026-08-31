@@ -452,6 +452,7 @@ export function LeadsBoard({
     if (!linkedId || openedFromLink.current === linkedId) return;
     if (!localLeads.some((l) => l.id === linkedId)) return;
     openedFromLink.current = linkedId;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- open the emailed deal once its card exists
     setSelectedId(linkedId);
   }, [linkedId, localLeads]);
 
