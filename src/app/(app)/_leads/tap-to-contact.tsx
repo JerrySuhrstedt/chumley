@@ -14,7 +14,7 @@ import {
 import type { Lead, Template } from "@/db/schema";
 import { isDialable, telDigits } from "@/lib/phone";
 import { canDial } from "@/lib/device";
-import { watchDialHandoff, watchFocusReturn } from "@/lib/dial-handoff";
+import { observeDial } from "@/lib/dial-handoff";
 import { ComposeSheet } from "./compose-sheet";
 import { deleteActivity, logCallTouch } from "./actions";
 
@@ -98,50 +98,29 @@ export function TapToContact({
   };
 
   /**
-   * A hand-off proves a dialer opened, not that a call connected; cancel
-   * and connect look identical from here. The tell is speed: cancel and
-   * the rep is back in the browser inside seconds. So the row is written
-   * immediately, because a phone that never comes back to the page must
-   * still have its call on record, and then the return decides. A fast
-   * return unwrites it and offers to log instead, a rep who stayed away
-   * long enough to have talked gets it announced as logged.
+   * Offer to log a call we cannot vouch for.
+   *
+   * Covers both "back too fast to have talked" and "nothing took the
+   * screen". The rep knows which it was; neither guess is worth writing to
+   * a timeline on its own.
    */
-  const logIfReal = () => {
-    startLog(async () => {
-      const { activityId, error } = await logCallTouch(lead.id);
-      if (error) {
-        toast.error(error);
-        return;
-      }
-      if (!activityId) return;
-
-      watch((done) =>
-        watchFocusReturn((returned) => {
-          done();
-          if (!returned) {
-            announce(activityId);
-            return;
-          }
-          void deleteActivity(activityId);
-          toast(`Didn't log that call to ${lead.name}`, {
-            description: "You came right back, so it looked like it never connected.",
-            duration: 20_000,
-            action: { label: "It connected, log it", onClick: logNow },
-          });
-        })
-      );
+  const offerToLog = (why: string) => {
+    toast(`No call logged to ${lead.name}`, {
+      description: why,
+      duration: 20_000,
+      action: { label: "I made the call, log it", onClick: logNow },
     });
   };
 
   /**
-   * Dialling is the log, but only a dial that happened.
+   * Dialling is the log, but only a dial that plausibly happened.
    *
-   * Text and email have always recorded themselves on send. Calling logs
-   * itself on hand-off: the href fires, and once something on the machine
-   * visibly takes the call, the row is written. On a machine with no tel:
-   * handler the click is pure silence, and writing a row there records a
-   * call that was never placed, so silence gets the number on screen and
-   * an explicit "log it" instead.
+   * Nothing is written until the outcome is known. The row used to go in
+   * the moment focus left and come out again if the rep returned too
+   * quickly, which is fine right up until Android discards the page while
+   * it is backgrounded: the delete never runs and a call that was never
+   * placed stays on the timeline. Waiting costs a second of latency on a
+   * real call and removes the only path that could invent one.
    */
   const handleCall = () => {
     // The anchor render means base-ui's disabled guard runs after this
@@ -150,36 +129,40 @@ export function TapToContact({
     // can't-place-the-call dialog for a call that could never happen.
     if (!canCall) return;
     onContact?.("call");
+
     watch((done) =>
-      watchDialHandoff(
-        (taken) => {
-          done();
-          if (taken) {
-            logIfReal();
-            return;
-          }
-          if (dialCapable) {
-            // Silence on a phone is a dismissed dial prompt, or a browser
-            // (Firefox on Android) whose open-in-app doorhanger hides the
-            // hand-off until after the user decides. Either way "this
-            // computer can't place the call" would be a lie; nothing is
-            // logged, and the rep can say otherwise.
-            toast(`No call logged to ${lead.name}`, {
-              description:
-                "Nothing here took the call. If you made it anyway, log it.",
-              duration: 20_000,
-              action: { label: "I made the call, log it", onClick: logNow },
-            });
-            return;
-          }
-          setNoDialer(true);
-        },
-        // Firefox for Android parks a confirmation doorhanger over a
-        // still-visible page, so the real hand-off signal can arrive
-        // seconds after the tap. A phone gets a window wide enough for
-        // that decision; the desktop keeps the snappy one.
-        dialCapable ? 8000 : undefined
-      )
+      observeDial((outcome, awayMs) => {
+        done();
+
+        if (outcome === "dialed") {
+          startLog(async () => {
+            const { activityId, error } = await logCallTouch(lead.id);
+            if (error) {
+              toast.error(error);
+              return;
+            }
+            if (activityId) announce(activityId);
+          });
+          return;
+        }
+
+        if (outcome === "too-short") {
+          offerToLog(
+            `You were away ${Math.max(1, Math.round(awayMs / 1000))} seconds, so it looked like it never connected.`
+          );
+          return;
+        }
+
+        // Nothing took the screen. On a phone that is a refused dial
+        // prompt; on a desktop it usually means there is no dialer at all.
+        if (dialCapable) {
+          offerToLog(
+            "Nothing here took the call. If you made it anyway, log it."
+          );
+          return;
+        }
+        setNoDialer(true);
+      })
     );
   };
 

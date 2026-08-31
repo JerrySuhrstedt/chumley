@@ -1,111 +1,135 @@
 /**
- * Watch whether anything on this machine answered a tel: hand-off.
+ * Deciding whether a tap on Call actually became a phone call.
  *
- * No browser API answers "is a dialer installed?". What every dialer does
- * do is take over: the window blurs or the page hides within a beat of the
- * click. Silence with focus retained means nothing answered, and the rep is
- * looking at a page that did nothing.
+ * Reported by Joudi Mohammad on a Galaxy S25 (CL-1): auto-logging was
+ * "completely non-deterministic". Switching apps for under thirty seconds
+ * produced a logged call; backgrounding cleanly for a minute produced
+ * nothing. Both are true, and both come from the same two mistakes.
  *
- * The distinction matters because dialling writes the activity row. A
- * hand-off that visibly happened is a call worth recording; a hand-off
- * that went nowhere must not be, or the timeline records calls that were
- * never placed.
+ * MISTAKE ONE: setTimeout was used to measure how long the rep was away.
+ * A backgrounded tab has its timers throttled and, on Android under memory
+ * pressure, frozen outright. So the clock that was supposed to tell a real
+ * call from an app switch simply stopped running during the only period it
+ * needed to measure. Wall-clock arithmetic on Date.now() is used instead:
+ * it is correct whether or not the page was ever suspended.
  *
- * Calls back exactly once: taken=true the moment focus leaves, taken=false
- * after `timeoutMs` with focus retained. This is a heuristic, and its
- * failure modes are chosen deliberately. A dialer that somehow keeps focus
- * reads as silence, which shows the rep the number instead of logging
- * behind their back. A rep who alt-tabs away inside the window reads as a
- * hand-off, same as today's behavior.
+ * MISTAKE TWO, and the one that put fiction in the database: the activity
+ * row was written the instant focus left, and deleted afterwards if the rep
+ * came back too quickly. When Gecko discarded the page while it was in the
+ * background, the delete never ran. The write had already happened, so a
+ * call that was never placed stayed on the lead's timeline forever. Nothing
+ * is written now until the outcome is known.
  *
- * Returns a cancel function for unmount; after cancel, no callback fires.
+ * What is honest about this: a browser cannot see a dialer. It can see that
+ * something took the screen, and for how long. So the signal is a hide that
+ * follows the tap closely enough to be caused by it, followed by an absence
+ * long enough to have held a conversation. Anything else asks the rep, who
+ * knows.
  */
-export function watchDialHandoff(
-  onResult: (taken: boolean) => void,
-  timeoutMs = 1500
-): () => void {
-  let settled = false;
 
-  const settle = (taken: boolean) => {
-    if (settled) return;
-    settled = true;
-    cleanup();
-    onResult(taken);
-  };
+/** A hide later than this had some other cause. Dialers take over at once. */
+const HANDOFF_WINDOW_MS = 6_000;
 
-  const onLeave = () => settle(true);
-  const onVisibility = () => {
-    // Mobile keeps the window "focused" while the dialer covers the page,
-    // so visibility is the signal there rather than blur.
-    if (document.visibilityState === "hidden") settle(true);
-  };
-  const timer = setTimeout(() => settle(false), timeoutMs);
+/** Shorter than this and nobody said hello, let alone anything after it. */
+const MIN_CALL_MS = 12_000;
 
-  function cleanup() {
-    clearTimeout(timer);
-    window.removeEventListener("blur", onLeave);
-    window.removeEventListener("pagehide", onLeave);
-    document.removeEventListener("visibilitychange", onVisibility);
-  }
+/** Focus never left, so nothing on this machine answered. */
+const NO_HANDOFF_MS = 8_000;
 
-  window.addEventListener("blur", onLeave);
-  window.addEventListener("pagehide", onLeave);
-  document.addEventListener("visibilitychange", onVisibility);
-
-  return () => {
-    settled = true;
-    cleanup();
-  };
-}
+export type DialOutcome =
+  /** Away long enough that a call plausibly happened. */
+  | "dialed"
+  /** Something took over, but they were back too fast for it to be a call. */
+  | "too-short"
+  /** Nothing ever took the screen. No dialer, or the prompt was refused. */
+  | "no-handoff";
 
 /**
- * Watch whether the rep comes straight back after a hand-off.
+ * Watch one tap on Call and report what became of it, exactly once.
  *
- * A hand-off only proves a dialer opened, not that a call happened. The
- * tell for a cancelled call is speed: cancel and you are back in the
- * browser inside a few seconds, while a call that connected holds the rep
- * for longer, or they return mid-call and can answer for themselves.
- *
- * Calls back exactly once: returned=true if focus is back within
- * `timeoutMs` (including already back by the time this attaches, which
- * happens when the cancel beats the server round-trip), returned=false
- * once the window passes. Returns a cancel function for unmount.
+ * Returns a cancel function. After cancelling, nothing fires.
  */
-export function watchFocusReturn(
-  onResult: (returned: boolean) => void,
-  timeoutMs = 10_000
+export function observeDial(
+  onOutcome: (outcome: DialOutcome, awayMs: number) => void,
+  now: () => number = Date.now,
 ): () => void {
+  const tappedAt = now();
+  let hiddenAt: number | null = null;
   let settled = false;
 
-  const settle = (returned: boolean) => {
+  const settle = (outcome: DialOutcome, awayMs: number) => {
     if (settled) return;
     settled = true;
     cleanup();
-    onResult(returned);
+    onOutcome(outcome, awayMs);
   };
 
-  const onBack = () => settle(true);
-  const onVisibility = () => {
-    if (document.visibilityState === "visible") settle(true);
+  const onHide = () => {
+    if (hiddenAt !== null) return;
+    // A hide long after the tap belongs to whatever the rep did next, not
+    // to the dial. Leaving it unsettled lets the no-handoff timer speak.
+    if (now() - tappedAt > HANDOFF_WINDOW_MS) return;
+    hiddenAt = now();
   };
-  const timer = setTimeout(() => settle(false), timeoutMs);
+
+  const onShow = () => {
+    if (hiddenAt === null) return;
+    const awayMs = now() - hiddenAt;
+    settle(awayMs >= MIN_CALL_MS ? "dialed" : "too-short", awayMs);
+  };
+
+  const onVisibility = () => {
+    if (document.visibilityState === "hidden") onHide();
+    else onShow();
+  };
+
+  /**
+   * The only timer left, and it only has to survive a visible page, which
+   * is precisely when timers are reliable. It is cleared the moment the
+   * page hides, so it can never fire against a suspended tab and call a
+   * real handoff a miss.
+   */
+  let idle: ReturnType<typeof setTimeout> | null = setTimeout(() => {
+    if (hiddenAt === null) settle("no-handoff", 0);
+  }, NO_HANDOFF_MS);
+
+  const clearIdle = () => {
+    if (idle !== null) {
+      clearTimeout(idle);
+      idle = null;
+    }
+  };
+
+  const onBlur = () => {
+    onHide();
+    clearIdle();
+  };
+  const onFocus = () => onShow();
 
   function cleanup() {
-    clearTimeout(timer);
-    window.removeEventListener("focus", onBack);
+    clearIdle();
+    window.removeEventListener("blur", onBlur);
+    window.removeEventListener("focus", onFocus);
+    window.removeEventListener("pagehide", onBlur);
+    window.removeEventListener("pageshow", onFocus);
     document.removeEventListener("visibilitychange", onVisibility);
   }
 
-  window.addEventListener("focus", onBack);
+  window.addEventListener("blur", onBlur);
+  window.addEventListener("focus", onFocus);
+  window.addEventListener("pagehide", onBlur);
+  window.addEventListener("pageshow", onFocus);
   document.addEventListener("visibilitychange", onVisibility);
-
-  if (document.hasFocus() && document.visibilityState === "visible") {
-    // Queued so the caller's cancel function exists before the callback.
-    setTimeout(() => settle(true), 0);
-  }
 
   return () => {
     settled = true;
     cleanup();
   };
 }
+
+/** Exported for the tests, so the thresholds cannot drift silently. */
+export const DIAL_TIMINGS = {
+  HANDOFF_WINDOW_MS,
+  MIN_CALL_MS,
+  NO_HANDOFF_MS,
+};

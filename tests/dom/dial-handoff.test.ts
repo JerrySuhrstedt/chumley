@@ -1,14 +1,18 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { watchDialHandoff, watchFocusReturn } from "@/lib/dial-handoff";
+import { observeDial, DIAL_TIMINGS, type DialOutcome } from "@/lib/dial-handoff";
 
 /**
  * What a tap on Call is allowed to record.
  *
- * The bug this locks down: on a machine with no tel: handler, clicking
- * Call did nothing visible while the app logged a call anyway. The rep saw
- * silence, the timeline gained a call that was never placed. The watcher's
- * one job is to tell those two worlds apart, and to say so exactly once.
+ * The original bug: on a machine with no tel: handler, clicking Call did
+ * nothing visible while the app logged a call anyway.
+ *
+ * Then CL-1, reported by Joudi Mohammad on a Galaxy S25: the same watcher
+ * logged calls for thirty-second app switches and missed real ones after a
+ * minute in the background. Both came from measuring time with setTimeout,
+ * which a suspended tab stops running, so the tests below drive a fake
+ * clock rather than waiting on real timers.
  */
 
 function setVisibility(state: "hidden" | "visible") {
@@ -19,153 +23,141 @@ function setVisibility(state: "hidden" | "visible") {
   document.dispatchEvent(new Event("visibilitychange"));
 }
 
-describe("watchDialHandoff", () => {
+/** A clock the test moves by hand, the way an OS moves it during a suspend. */
+function fakeClock(start = 1_000_000) {
+  let t = start;
+  return {
+    now: () => t,
+    advance: (ms: number) => {
+      t += ms;
+    },
+  };
+}
+
+describe("observeDial", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    setVisibility("visible");
   });
-
   afterEach(() => {
     vi.useRealTimers();
     setVisibility("visible");
   });
 
-  it("reports taken when the window blurs, and only once", () => {
-    const onResult = vi.fn();
-    watchDialHandoff(onResult, 1500);
+  it("reports a call when the rep was away long enough to have had one", () => {
+    const clock = fakeClock();
+    const seen: DialOutcome[] = [];
+    observeDial((o) => seen.push(o), clock.now);
 
-    window.dispatchEvent(new Event("blur"));
-    expect(onResult).toHaveBeenCalledExactlyOnceWith(true);
-
-    // Neither a second blur nor the expiring timer may speak again.
-    window.dispatchEvent(new Event("blur"));
-    vi.advanceTimersByTime(2000);
-    expect(onResult).toHaveBeenCalledTimes(1);
-  });
-
-  it("reports taken when the page hides, which is the mobile signal", () => {
-    const onResult = vi.fn();
-    watchDialHandoff(onResult, 1500);
-
+    clock.advance(400); // the dialer takes over almost at once
     setVisibility("hidden");
-    expect(onResult).toHaveBeenCalledExactlyOnceWith(true);
-  });
-
-  it("ignores visibility events while the page stays visible", () => {
-    const onResult = vi.fn();
-    watchDialHandoff(onResult, 1500);
-
+    clock.advance(45_000); // a conversation
     setVisibility("visible");
-    expect(onResult).not.toHaveBeenCalled();
+
+    expect(seen).toEqual(["dialed"]);
   });
 
-  it("reports silence once the timeout passes with focus retained", () => {
-    const onResult = vi.fn();
-    watchDialHandoff(onResult, 1500);
+  it("does not report a call for a brief app switch", () => {
+    // The reported false positive: "leaving Firefox for under 30 seconds
+    // while opening other apps forces a Call logged status".
+    const clock = fakeClock();
+    const seen: [DialOutcome, number][] = [];
+    observeDial((o, ms) => seen.push([o, ms]), clock.now);
 
-    vi.advanceTimersByTime(1499);
-    expect(onResult).not.toHaveBeenCalled();
+    clock.advance(500);
+    setVisibility("hidden");
+    clock.advance(4_000);
+    setVisibility("visible");
 
-    vi.advanceTimersByTime(1);
-    expect(onResult).toHaveBeenCalledExactlyOnceWith(false);
+    expect(seen).toEqual([["too-short", 4_000]]);
+  });
 
-    // A late blur, the rep wandering off to another window, stays quiet.
+  it("survives a suspended tab, where timers do not run", () => {
+    // The reported false negative: backgrounding cleanly for a minute
+    // failed to log. Timers are frozen while hidden, so the outcome has to
+    // come from wall-clock arithmetic on resume, not from a timeout.
+    const clock = fakeClock();
+    const seen: DialOutcome[] = [];
+    observeDial((o) => seen.push(o), clock.now);
+
+    clock.advance(300);
+    setVisibility("hidden");
+    // No timers fire at all here: this is the whole point.
+    clock.advance(90_000);
+    setVisibility("visible");
+
+    expect(seen).toEqual(["dialed"]);
+  });
+
+  it("ignores a hide that came too long after the tap", () => {
+    // Somebody tapped Call, nothing happened, and a minute later they
+    // switched apps for their own reasons. That is not a dial.
+    const clock = fakeClock();
+    const seen: DialOutcome[] = [];
+    observeDial((o) => seen.push(o), clock.now);
+
+    clock.advance(DIAL_TIMINGS.HANDOFF_WINDOW_MS + 1_000);
+    setVisibility("hidden");
+    clock.advance(60_000);
+    setVisibility("visible");
+
+    expect(seen).toEqual([]);
+  });
+
+  it("reports no handoff when nothing ever takes the screen", () => {
+    const clock = fakeClock();
+    const seen: DialOutcome[] = [];
+    observeDial((o) => seen.push(o), clock.now);
+
+    vi.advanceTimersByTime(DIAL_TIMINGS.NO_HANDOFF_MS + 100);
+
+    expect(seen).toEqual(["no-handoff"]);
+  });
+
+  it("settles exactly once, however many events arrive", () => {
+    const clock = fakeClock();
+    const seen: DialOutcome[] = [];
+    observeDial((o) => seen.push(o), clock.now);
+
+    clock.advance(200);
+    setVisibility("hidden");
     window.dispatchEvent(new Event("blur"));
-    expect(onResult).toHaveBeenCalledTimes(1);
+    clock.advance(30_000);
+    setVisibility("visible");
+    window.dispatchEvent(new Event("focus"));
+    setVisibility("hidden");
+    setVisibility("visible");
+
+    expect(seen).toEqual(["dialed"]);
   });
 
-  it("never calls back after cancel", () => {
-    const onResult = vi.fn();
-    const cancel = watchDialHandoff(onResult, 1500);
+  it("says nothing at all after it is cancelled", () => {
+    const clock = fakeClock();
+    const seen: DialOutcome[] = [];
+    const cancel = observeDial((o) => seen.push(o), clock.now);
 
     cancel();
-    window.dispatchEvent(new Event("blur"));
-    vi.advanceTimersByTime(2000);
-    expect(onResult).not.toHaveBeenCalled();
-  });
-
-  it("catches a slow hand-off inside a widened window", () => {
-    // Firefox for Android parks an open-in-app doorhanger over a
-    // still-visible page: no signal arrives until the user decides,
-    // seconds later. A phone passes a wider window so that decision
-    // still counts as the hand-off it is.
-    const onResult = vi.fn();
-    watchDialHandoff(onResult, 8000);
-
-    vi.advanceTimersByTime(4000);
-    expect(onResult).not.toHaveBeenCalled();
-
+    clock.advance(300);
     setVisibility("hidden");
-    expect(onResult).toHaveBeenCalledExactlyOnceWith(true);
-  });
-});
-
-/**
- * The second half of the same question. A hand-off proves a dialer opened,
- * not that a call connected; the tell for a cancelled call is coming back
- * to the browser within seconds. This watcher turns that speed into an
- * answer, so the toast can ask instead of assert.
- */
-describe("watchFocusReturn", () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-    vi.spyOn(document, "hasFocus").mockReturnValue(false);
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-    vi.restoreAllMocks();
+    clock.advance(60_000);
     setVisibility("visible");
+    vi.advanceTimersByTime(30_000);
+
+    expect(seen).toEqual([]);
   });
 
-  it("reports a return when focus comes back inside the window", () => {
-    const onResult = vi.fn();
-    watchFocusReturn(onResult, 10_000);
+  it("treats the boundary as not-a-call, so the rep is asked", () => {
+    // A guess either way is wrong here, and the cost is asymmetric: a
+    // missed log costs one tap, a false log puts fiction on the record.
+    const clock = fakeClock();
+    const seen: DialOutcome[] = [];
+    observeDial((o) => seen.push(o), clock.now);
 
-    vi.advanceTimersByTime(3000);
-    window.dispatchEvent(new Event("focus"));
-    expect(onResult).toHaveBeenCalledExactlyOnceWith(true);
-
-    vi.advanceTimersByTime(20_000);
-    expect(onResult).toHaveBeenCalledTimes(1);
-  });
-
-  it("reports a return when the page becomes visible again", () => {
-    const onResult = vi.fn();
-    watchFocusReturn(onResult, 10_000);
-
+    clock.advance(300);
+    setVisibility("hidden");
+    clock.advance(DIAL_TIMINGS.MIN_CALL_MS - 1);
     setVisibility("visible");
-    expect(onResult).toHaveBeenCalledExactlyOnceWith(true);
-  });
 
-  it("reports immediately when focus is already back at attach", () => {
-    // A fast cancel beats the logging round-trip, so the watcher starts
-    // with the rep already returned and must not wait out the timeout.
-    vi.spyOn(document, "hasFocus").mockReturnValue(true);
-    const onResult = vi.fn();
-    watchFocusReturn(onResult, 10_000);
-
-    vi.advanceTimersByTime(0);
-    expect(onResult).toHaveBeenCalledExactlyOnceWith(true);
-  });
-
-  it("reports no return once the window passes", () => {
-    const onResult = vi.fn();
-    watchFocusReturn(onResult, 10_000);
-
-    vi.advanceTimersByTime(10_000);
-    expect(onResult).toHaveBeenCalledExactlyOnceWith(false);
-
-    window.dispatchEvent(new Event("focus"));
-    expect(onResult).toHaveBeenCalledTimes(1);
-  });
-
-  it("never calls back after cancel, even when already focused", () => {
-    vi.spyOn(document, "hasFocus").mockReturnValue(true);
-    const onResult = vi.fn();
-    const cancel = watchFocusReturn(onResult, 10_000);
-
-    cancel();
-    vi.advanceTimersByTime(20_000);
-    expect(onResult).not.toHaveBeenCalled();
+    expect(seen).toEqual(["too-short"]);
   });
 });
