@@ -1,6 +1,13 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { observeDial, DIAL_TIMINGS, type DialOutcome } from "@/lib/dial-handoff";
+import {
+  observeDial,
+  DIAL_TIMINGS,
+  noteDialRefused,
+  dialWasRefused,
+  clearDialRefused,
+  type DialOutcome,
+} from "@/lib/dial-handoff";
 
 /**
  * What a tap on Call is allowed to record.
@@ -159,5 +166,53 @@ describe("observeDial", () => {
     setVisibility("visible");
 
     expect(seen).toEqual(["too-short"]);
+  });
+});
+
+/**
+ * CL-2, reported by Joudi Mohammad: deny Firefox's external-app prompt for
+ * tel: once and every later tap on Call "hangs", with "zero prompt to
+ * reset browser permissions".
+ *
+ * It was never a hang. It was an eight-second wait for a handoff the
+ * browser had already decided would never happen, repeated on every tap,
+ * with only a toast at the end of it.
+ */
+describe("remembering a refused dialer", () => {
+  beforeEach(() => clearDialRefused());
+  afterEach(() => clearDialRefused());
+
+  it("starts out assuming the dialer works", () => {
+    expect(dialWasRefused()).toBe(false);
+  });
+
+  it("remembers a refusal so the next tap does not wait again", () => {
+    noteDialRefused();
+    expect(dialWasRefused()).toBe(true);
+  });
+
+  it("forgets on request, so a fixed permission is not assumed broken", () => {
+    // Closing the fallback dialog clears this. Somebody who just went and
+    // allowed the permission must get a real attempt on their next tap.
+    noteDialRefused();
+    clearDialRefused();
+    expect(dialWasRefused()).toBe(false);
+  });
+
+  it("survives storage being unavailable", () => {
+    // Private mode throws on sessionStorage. The cost of failing here is
+    // the eight second wait coming back, which is merely where we started,
+    // so it must never throw into the click handler.
+    const original = Object.getOwnPropertyDescriptor(window, "sessionStorage");
+    Object.defineProperty(window, "sessionStorage", {
+      configurable: true,
+      get() {
+        throw new Error("denied");
+      },
+    });
+    expect(() => noteDialRefused()).not.toThrow();
+    expect(dialWasRefused()).toBe(false);
+    expect(() => clearDialRefused()).not.toThrow();
+    if (original) Object.defineProperty(window, "sessionStorage", original);
   });
 });

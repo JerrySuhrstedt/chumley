@@ -14,7 +14,12 @@ import {
 import type { Lead, Template } from "@/db/schema";
 import { isDialable, telDigits } from "@/lib/phone";
 import { canDial } from "@/lib/device";
-import { observeDial } from "@/lib/dial-handoff";
+import {
+  observeDial,
+  noteDialRefused,
+  dialWasRefused,
+  clearDialRefused,
+} from "@/lib/dial-handoff";
 import { ComposeSheet } from "./compose-sheet";
 import { deleteActivity, logCallTouch } from "./actions";
 
@@ -69,6 +74,15 @@ export function TapToContact({
     const cancel = start(() => cancelWatches.current.delete(cancel));
     cancelWatches.current.add(cancel);
   };
+
+  /**
+   * The call watcher currently running, so a second tap replaces it rather
+   * than stacking. Tapping Call three times after a refused dial prompt
+   * used to leave three eight-second timers running and produce three
+   * toasts, one after another, which is most of what "the UI hangs" felt
+   * like from the outside.
+   */
+  const callWatch = useRef<(() => void) | null>(null);
 
   const announce = (activityId: string) => {
     if (onCallLogged) {
@@ -130,9 +144,24 @@ export function TapToContact({
     if (!canCall) return;
     onContact?.("call");
 
-    watch((done) =>
-      observeDial((outcome, awayMs) => {
+    /**
+     * This browser has already refused once, so waiting eight seconds to
+     * be refused again helps nobody. Straight to the number and the manual
+     * log, which is the only thing that was ever going to work.
+     */
+    if (dialCapable && dialWasRefused()) {
+      setNoDialer(true);
+      return;
+    }
+
+    // A new tap supersedes the one before it.
+    callWatch.current?.();
+    callWatch.current = null;
+
+    watch((done) => {
+      const cancel = observeDial((outcome, awayMs) => {
         done();
+        callWatch.current = null;
 
         if (outcome === "dialed") {
           startLog(async () => {
@@ -153,17 +182,23 @@ export function TapToContact({
           return;
         }
 
-        // Nothing took the screen. On a phone that is a refused dial
-        // prompt; on a desktop it usually means there is no dialer at all.
-        if (dialCapable) {
-          offerToLog(
-            "Nothing here took the call. If you made it anyway, log it."
-          );
-          return;
-        }
+        /**
+         * Nothing took the screen at all.
+         *
+         * On a desktop that means no tel: handler exists. On a phone it
+         * means the browser refused, which on Firefox for Android is a
+         * permission the rep denied and will be asked about never again.
+         * Either way the answer is the same and it is not a toast: show
+         * the number so they can dial it, and let them log it afterwards.
+         * A toast that disappears is what left the tester "locked out with
+         * zero prompt", as she put it.
+         */
+        if (dialCapable) noteDialRefused();
         setNoDialer(true);
-      })
-    );
+      });
+      callWatch.current = cancel;
+      return cancel;
+    });
   };
 
   const stop = stopPropagation
@@ -222,15 +257,30 @@ export function TapToContact({
             if (!next) {
               setNoDialer(false);
               setCopied(false);
+              /**
+               * Forget the refusal on the way out. If they went and
+               * changed their browser settings, the next tap has to be
+               * allowed to try; assuming a permanent no is how a fixed
+               * problem stays broken.
+               */
+              clearDialRefused();
             }
           }}
         >
           <DialogContent className="sm:max-w-sm">
             <DialogHeader>
-              <DialogTitle>This computer can&apos;t place the call</DialogTitle>
+              {/* Two different situations reach this dialog and telling a
+                  phone it is a computer is the sort of thing that makes
+                  somebody stop trusting the rest of the screen. */}
+              <DialogTitle>
+                {dialCapable
+                  ? "Your browser blocked the dialer"
+                  : "This computer can't place the call"}
+              </DialogTitle>
               <DialogDescription>
-                Nothing here answered the dial, so the call has not been
-                logged. Call from your phone, then log it below.
+                {dialCapable
+                  ? "Nothing has been logged. Dial the number below, then log the call when you are done. To let the browser open your dialer again, allow it in your browser's site settings."
+                  : "Nothing here answered the dial, so the call has not been logged. Call from your phone, then log it below."}
               </DialogDescription>
             </DialogHeader>
 

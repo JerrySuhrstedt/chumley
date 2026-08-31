@@ -133,3 +133,46 @@ export const DIAL_TIMINGS = {
   MIN_CALL_MS,
   NO_HANDOFF_MS,
 };
+
+/**
+ * Remembering that this browser refused to open a dialer.
+ *
+ * Reported as CL-2: deny Firefox's external-app prompt once and every
+ * later tap on Call hangs. It is not literally a hang, it is an eight
+ * second wait for a handoff that Firefox has already decided will never
+ * happen, repeated on every tap, with nothing on screen to explain it.
+ *
+ * A refusal is a fact about the browser, not about the lead, so it is
+ * remembered for the session and every card benefits. sessionStorage
+ * rather than a module variable so it survives a navigation, and rather
+ * than localStorage so it does not outlive the reason: the rep may well
+ * grant the permission on their next visit, and starting the next session
+ * by assuming the worst would be its own bug.
+ */
+const REFUSED_KEY = "chumley-dial-refused";
+
+export function noteDialRefused(): void {
+  try {
+    sessionStorage.setItem(REFUSED_KEY, "1");
+  } catch {
+    // Private mode, or storage disabled. The cost is the eight second wait
+    // returning, which is where we started, so there is nothing to do.
+  }
+}
+
+export function dialWasRefused(): boolean {
+  try {
+    return sessionStorage.getItem(REFUSED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/** After the rep fixes their browser settings, so Call stops assuming. */
+export function clearDialRefused(): void {
+  try {
+    sessionStorage.removeItem(REFUSED_KEY);
+  } catch {
+    /* nothing to clear */
+  }
+}
