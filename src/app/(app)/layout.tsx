@@ -74,6 +74,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
             jobTitle={current.jobTitle}
             avatarUrl={current.avatarUrl}
             email={current.email}
+            showGettingStarted={!onboarding.complete}
           />
           <main className="flex flex-1 flex-col overflow-hidden rounded-tl-2xl bg-[var(--board-bg)]">
             {billing.readOnly && (

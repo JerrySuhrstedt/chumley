@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LogOut, Menu, Settings, User } from "lucide-react";
+import { LogOut, Menu, Settings, Sparkles, User } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +10,7 @@ import {
 import { signOut } from "@/app/(app)/actions";
 import { GlobalSearch } from "@/components/global-search";
 import { ChumleyDisc } from "@/components/chumley-disc";
+import { reopenChecklist } from "@/app/(app)/_onboarding/reopen-button";
 
 // Where you can go, not what you can change. Settings lives in the
 // profile menu, which sits beside this one on a phone.
@@ -26,12 +27,15 @@ export function Topbar({
   jobTitle,
   email,
   avatarUrl,
+  showGettingStarted = false,
 }: {
   orgName: string;
   displayName: string | null;
   jobTitle: string | null;
   email: string | null;
   avatarUrl: string | null;
+  /** While onboarding is incomplete, so it never becomes furniture. */
+  showGettingStarted?: boolean;
 }) {
   const person = displayName ?? email ?? null;
   const initial = (person ?? "?").charAt(0).toUpperCase();
@@ -115,6 +119,16 @@ export function Topbar({
             </div>
 
             <DropdownMenuSeparator />
+
+            {/* The sidebar carries this too, but the sidebar does not
+                exist below 768px, so on a phone this is the only way back
+                to a dismissed checklist. */}
+            {showGettingStarted && (
+              <DropdownMenuItem onClick={reopenChecklist}>
+                <Sparkles className="mr-2 size-4" />
+                Getting started
+              </DropdownMenuItem>
+            )}
 
             <DropdownMenuItem
               render={
