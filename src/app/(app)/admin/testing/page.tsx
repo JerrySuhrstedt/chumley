@@ -92,10 +92,10 @@ export default async function TestingPage() {
             Tester runs ({uatReports.length})
           </h2>
           <p className="mb-3 text-xs text-slate-500">
-            Submissions from the hidden punch list at /uat. Issues shown in
-            full; ticked checks are counted only.
+            Submissions from the hidden punch list at /uat, grouped by
+            tester. Issues shown in full; ticked checks are counted only.
           </p>
-          <UatReports items={uatReports} />
+          <UatReports items={uatReports} origin={origin} />
         </section>
       </div>
     </div>

@@ -457,6 +457,12 @@ export type AdminUatReport = {
   id: string;
   testerName: string;
   testerEmail: string;
+  /**
+   * The personal link the run came through, for grouping a tester's
+   * submissions under one heading. Null for a run sent from the
+   * anonymous /uat page before personal links existed.
+   */
+  testerToken: string | null;
   /** Which punch list the run was against, e.g. "Beta 1.0". */
   listVersion: string | null;
   findings: AdminUatFinding[];
@@ -468,10 +474,11 @@ export type AdminUatReport = {
 /** Submissions from the hidden /uat tester page, newest first. */
 export async function getAdminUatReports(): Promise<AdminUatReport[]> {
   const rows = (await db.execute(sql`
-    SELECT id, tester_name, tester_email, list_version, findings, tried_count,
-           total_count, created_at
-    FROM uat_reports
-    ORDER BY created_at DESC
+    SELECT r.id, r.tester_name, r.tester_email, r.list_version, r.findings,
+           r.tried_count, r.total_count, r.created_at, t.token AS tester_token
+    FROM uat_reports r
+    LEFT JOIN uat_testers t ON t.id = r.tester_id
+    ORDER BY r.created_at DESC
     LIMIT 50
   `)) as unknown as Record<string, unknown>[];
 
@@ -479,6 +486,7 @@ export async function getAdminUatReports(): Promise<AdminUatReport[]> {
     id: String(r.id),
     testerName: String(r.tester_name),
     testerEmail: String(r.tester_email),
+    testerToken: r.tester_token ? String(r.tester_token) : null,
     listVersion: r.list_version ? String(r.list_version) : null,
     findings: (Array.isArray(r.findings) ? r.findings : []) as AdminUatFinding[],
     triedCount: Number(r.tried_count),
