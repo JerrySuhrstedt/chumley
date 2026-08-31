@@ -618,16 +618,18 @@ export function UatClient({
                                 className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-900"
                               />
                             </label>
-                            {!preview && (
-                              <AttachmentRow
-                                checkId={check.id}
-                                token={tester?.token ?? null}
-                                ids={it.attachments}
-                                onChange={(ids) =>
-                                  patch(check.id, { attachments: ids })
-                                }
-                              />
-                            )}
+                            <AttachmentRow
+                              checkId={check.id}
+                              token={tester?.token ?? null}
+                              ids={it.attachments}
+                              // Preview promises nothing saves, and an
+                              // upload is a save, so the control shows
+                              // itself but stays inert there.
+                              disabled={preview}
+                              onChange={(ids) =>
+                                patch(check.id, { attachments: ids })
+                              }
+                            />
                             <div className="flex flex-wrap items-center gap-1.5">
                               <span className="mr-1 text-xs text-slate-500">
                                 How bad did it feel?
@@ -757,11 +759,14 @@ function AttachmentRow({
   checkId,
   token,
   ids,
+  disabled = false,
   onChange,
 }: {
   checkId: string;
   token: string | null;
   ids: string[];
+  /** Owner preview: visible so the page reads true, inert so nothing saves. */
+  disabled?: boolean;
   onChange: (ids: string[]) => void;
 }) {
   const [busy, setBusy] = useState(false);
@@ -832,7 +837,11 @@ function AttachmentRow({
         </div>
       )}
       {ids.length < MAX_SHOTS && (
-        <label className="flex cursor-pointer items-center gap-1.5 self-start rounded-md border border-dashed border-slate-400 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-white">
+        <label
+          className={`flex items-center gap-1.5 self-start rounded-md border border-dashed border-slate-400 px-2.5 py-1.5 text-xs font-semibold text-slate-600 ${
+            disabled ? "opacity-60" : "cursor-pointer hover:bg-white"
+          }`}
+        >
           {busy ? (
             <Loader2 className="size-3.5 animate-spin" />
           ) : (
@@ -840,15 +849,17 @@ function AttachmentRow({
           )}
           {busy
             ? "Uploading..."
-            : ids.length > 0
-              ? "Attach another screenshot"
-              : "Attach screenshots"}
+            : disabled
+              ? "Attach screenshots (off in preview)"
+              : ids.length > 0
+                ? "Attach another screenshot"
+                : "Attach screenshots"}
           <input
             ref={inputRef}
             type="file"
             accept="image/*"
             multiple
-            disabled={busy}
+            disabled={busy || disabled}
             onChange={(e) => void add(e.target.files)}
             className="sr-only"
           />
