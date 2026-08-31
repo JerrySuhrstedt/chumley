@@ -37,13 +37,17 @@ export async function submitUatReport(
     .trim()
     .slice(0, 64);
   let testerId: string | null = null;
+  // On a retest the run is out of that many checks, not all of them, or
+  // the back office reports "14 of 33 tried" for a perfect round.
+  let focusCount: number | null = null;
   if (token) {
     const tester = await db
-      .select({ id: uatTesters.id })
+      .select({ id: uatTesters.id, focus: uatTesters.focus })
       .from(uatTesters)
       .where(eq(uatTesters.token, token))
       .limit(1);
     testerId = tester[0]?.id ?? null;
+    focusCount = tester[0]?.focus?.length ? tester[0].focus.length : null;
   }
 
   let raw: unknown;
@@ -133,7 +137,7 @@ export async function submitUatReport(
       listVersion: PUNCH_LIST_VERSION,
       findings,
       triedCount,
-      totalCount: ALL_CHECKS.length,
+      totalCount: focusCount ?? ALL_CHECKS.length,
     })
     .returning({ id: uatReports.id });
 

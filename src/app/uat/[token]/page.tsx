@@ -30,6 +30,8 @@ export default async function UatTokenPage({
       name: uatTesters.name,
       email: uatTesters.email,
       draft: uatTesters.draft,
+      focus: uatTesters.focus,
+      round: uatTesters.round,
     })
     .from(uatTesters)
     .where(eq(uatTesters.token, token))
@@ -44,6 +46,8 @@ export default async function UatTokenPage({
         name: tester.name,
         email: tester.email,
         savedItems: tester.draft ?? null,
+        focus: tester.focus ?? null,
+        round: tester.round,
       }}
     />
   );

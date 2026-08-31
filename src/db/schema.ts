@@ -382,6 +382,18 @@ export const uatTesters = pgTable("uat_testers", {
     }
   > | null>(),
   draftUpdatedAt: timestamp("draft_updated_at", { withTimezone: true }),
+  /**
+   * A retest: the check ids this tester is being asked to run again.
+   * While set, their link shows only these checks. Null means the full
+   * punch list.
+   */
+  focus: jsonb("focus").$type<string[] | null>(),
+  /**
+   * Bumped each time a retest is assigned. Keys the browser-side draft,
+   * so round two starts clean instead of resurfacing round one's
+   * write-ups, whose resubmission would file every old finding again.
+   */
+  round: integer("round").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

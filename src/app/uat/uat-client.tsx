@@ -106,6 +106,10 @@ export type UatTesterInfo = {
   email: string;
   /** Their run as last saved from any device, or null for a fresh one. */
   savedItems: SavedItems | null;
+  /** A retest: only these check ids show. Null means the whole list. */
+  focus?: string[] | null;
+  /** Bumped per retest; keys the browser draft so each round starts clean. */
+  round?: number;
 };
 
 const DRAFT_KEY = "chumley-uat-draft-v1";
@@ -124,10 +128,20 @@ const EMPTY_ITEM: ItemState = {
 };
 const INITIAL: UatSubmitState = { error: null, sent: false };
 
+/**
+ * The browser draft's key: per-link, and per-round on a retest, so round
+ * two never resurfaces round one's write-ups from this device.
+ */
+function draftKey(tester: UatTesterInfo | null): string {
+  if (!tester) return DRAFT_KEY;
+  const round = tester.round ?? 0;
+  return `${DRAFT_KEY}-${tester.token}${round > 0 ? `-r${round}` : ""}`;
+}
+
 function loadDraft(tester: UatTesterInfo | null): Draft {
   // A personal link keys its own browser copy, so two testers sharing a
   // laptop cannot bleed into each other, or into the anonymous page.
-  const key = tester ? `${DRAFT_KEY}-${tester.token}` : DRAFT_KEY;
+  const key = draftKey(tester);
   const [first = "", ...rest] = (tester?.name ?? "").split(" ");
   const empty: Draft = {
     first,
@@ -185,6 +199,28 @@ export function UatClient({
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hydrated = useRef(false);
 
+  // A retest shows only the checks being retested. Everything else about
+  // the flow is identical on purpose: same page, same link, same habits.
+  const focusSet = useMemo(
+    () => (tester?.focus?.length ? new Set(tester.focus) : null),
+    [tester]
+  );
+  const checks = useMemo(
+    () =>
+      focusSet ? ALL_CHECKS.filter((c) => focusSet.has(c.id)) : ALL_CHECKS,
+    [focusSet]
+  );
+  const sections = useMemo(
+    () =>
+      focusSet
+        ? SECTIONS.map((s) => ({
+            ...s,
+            checks: s.checks.filter((c) => focusSet.has(c.id)),
+          })).filter((s) => s.checks.length > 0)
+        : SECTIONS,
+    [focusSet]
+  );
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate the saved draft once, after mount, so the server render stays deterministic
     setDraft(
@@ -198,8 +234,7 @@ export function UatClient({
   useEffect(() => {
     if (!draft || preview) return;
     try {
-      const key = tester ? `${DRAFT_KEY}-${tester.token}` : DRAFT_KEY;
-      localStorage.setItem(key, JSON.stringify(draft));
+      localStorage.setItem(draftKey(tester), JSON.stringify(draft));
     } catch {
       // Private window. The list still works, it just will not survive the tab.
     }
@@ -222,12 +257,12 @@ export function UatClient({
   }, [draft, tester, preview]);
 
   const tried = useMemo(
-    () => ALL_CHECKS.filter((c) => draft?.items[c.id]?.tried).length,
-    [draft]
+    () => checks.filter((c) => draft?.items[c.id]?.tried).length,
+    [draft, checks]
   );
   const flagged = useMemo(
-    () => ALL_CHECKS.filter((c) => hasText(draft?.items[c.id])).length,
-    [draft]
+    () => checks.filter((c) => hasText(draft?.items[c.id])).length,
+    [draft, checks]
   );
 
   if (!draft) return null;
@@ -242,7 +277,7 @@ export function UatClient({
   // submit action, the scoping prompt, and the admin display all keep
   // working on a single string.
   const findingsJson = JSON.stringify(
-    ALL_CHECKS.map((c) => {
+    checks.map((c) => {
       const it = draft.items[c.id] ?? EMPTY_ITEM;
       const note = [
         it.did.trim() && `What I did: ${it.did.trim()}`,
@@ -438,14 +473,14 @@ export function UatClient({
               {preview ? "Preview" : `${draft.first} ${draft.last}`}
             </p>
             <p className="text-xs text-slate-500">
-              {tried} of {ALL_CHECKS.length} tried · {flagged}{" "}
+              {tried} of {checks.length} tried · {flagged}{" "}
               {flagged === 1 ? "issue" : "issues"}
             </p>
           </div>
           <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
             <div
               className="h-full bg-[var(--brand)] transition-all"
-              style={{ width: `${(tried / ALL_CHECKS.length) * 100}%` }}
+              style={{ width: `${(tried / checks.length) * 100}%` }}
             />
           </div>
         </div>
@@ -453,17 +488,27 @@ export function UatClient({
 
       <div className="mx-auto max-w-3xl py-10">
         <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
-          Punch list{" "}
+          {focusSet ? "Retest" : "Punch list"}{" "}
           <span className="align-middle text-sm font-semibold tracking-normal text-slate-400">
             {PUNCH_LIST_VERSION}
           </span>
         </h1>
-        <p className="mt-2 max-w-2xl text-slate-600">
-          Tick each check once you have tried it. If anything surprised you,
-          press <span className="font-semibold">Found something</span> and say
-          what happened in your own words. Even the boring ones. Especially the
-          boring ones.
-        </p>
+        {focusSet ? (
+          <p className="mt-2 max-w-2xl text-slate-600">
+            A short return visit: just the {checks.length} checks below,
+            covering what got fixed since your last run. Everything you sent
+            before is already in, so this starts blank on purpose. Tick each
+            one, write up anything still wrong, and attach a screenshot
+            where it helps.
+          </p>
+        ) : (
+          <p className="mt-2 max-w-2xl text-slate-600">
+            Tick each check once you have tried it. If anything surprised you,
+            press <span className="font-semibold">Found something</span> and say
+            what happened in your own words. Even the boring ones. Especially the
+            boring ones.
+          </p>
+        )}
         {tester && (
           <p className="mt-3 text-xs text-slate-500">
             Your personal link, good on any device:{" "}
@@ -487,7 +532,7 @@ export function UatClient({
           </p>
         )}
 
-        {SECTIONS.map((section) => (
+        {sections.map((section) => (
           <section key={section.key} className="mt-12">
             <h2 className="text-xl font-bold text-slate-900">{section.title}</h2>
             <p className="mt-1 max-w-2xl text-sm text-slate-500">{section.lede}</p>
