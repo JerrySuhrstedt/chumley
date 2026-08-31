@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { READ_ONLY_MESSAGE } from "@/lib/gate-messages";
 import { fireConfetti } from "@/lib/confetti";
 import {
@@ -433,6 +433,27 @@ export function LeadsBoard({
     setLocalLeads(next);
     persist(destStage, next);
   }
+
+  /**
+   * Open a card straight from a link.
+   *
+   * The new-lead email says "Open the deal" and points at
+   * /pipeline?lead=<id>. Nothing read that parameter, so the link opened
+   * the board and left the rep to find the card themselves, which on a
+   * phone at nine at night is most of the reason they would not bother.
+   *
+   * Runs once per id. Closing the dialog must not reopen it, and neither
+   * must any of the re-renders that dragging a card causes.
+   */
+  const searchParams = useSearchParams();
+  const linkedId = searchParams.get("lead");
+  const openedFromLink = useRef<string | null>(null);
+  useEffect(() => {
+    if (!linkedId || openedFromLink.current === linkedId) return;
+    if (!localLeads.some((l) => l.id === linkedId)) return;
+    openedFromLink.current = linkedId;
+    setSelectedId(linkedId);
+  }, [linkedId, localLeads]);
 
   const selectedLead = localLeads.find((l) => l.id === selectedId) ?? null;
   const activeLead = activeId
