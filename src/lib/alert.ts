@@ -41,12 +41,27 @@ const THROTTLE_MINUTES = 15;
  * both decide they are the one to send.
  */
 async function claim(key: string): Promise<boolean> {
+  return claimThrottle(key, THROTTLE_MINUTES);
+}
+
+/**
+ * The same atomic once-per-window claim, open to callers that want to
+ * rate-limit something other than an alert (e.g. one tracker email per
+ * IP per window). Reuses alert_log rather than a second table: the row
+ * is a timestamp under a key, which is all a throttle is. Returns true
+ * if the caller may proceed, false if somebody already claimed this
+ * window.
+ */
+export async function claimThrottle(
+  key: string,
+  minutes: number
+): Promise<boolean> {
   const rows = await db.execute(sql`
     INSERT INTO alert_log (key, last_sent_at)
     VALUES (${key}, now())
     ON CONFLICT (key) DO UPDATE SET last_sent_at = now()
       WHERE alert_log.last_sent_at
-            < now() - (${THROTTLE_MINUTES} || ' minutes')::interval
+            < now() - (${minutes} || ' minutes')::interval
     RETURNING key
   `);
   return (rows as unknown as unknown[]).length > 0;

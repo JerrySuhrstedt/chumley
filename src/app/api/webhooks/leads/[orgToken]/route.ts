@@ -8,6 +8,7 @@ import { normalizePhone } from "@/lib/phone";
 import { overIngestCap } from "@/lib/ingest-guard";
 import { orgOwnerId } from "@/lib/org-owner";
 import { notifyNewLead } from "@/lib/notify-lead";
+import { isUuid } from "@/lib/token";
 
 function toNullable(value: unknown) {
   if (typeof value !== "string") return null;
@@ -34,6 +35,12 @@ export async function POST(
   { params }: RouteContext<"/api/webhooks/leads/[orgToken]">
 ) {
   const { orgToken } = await params;
+
+  // A non-uuid can never match the uuid column and would 500; treat it as
+  // an unknown URL, same as a well-formed token nobody owns.
+  if (!isUuid(orgToken)) {
+    return NextResponse.json({ error: "Unknown webhook URL" }, { status: 404 });
+  }
 
   const org = await db.query.organizations.findFirst({
     where: eq(organizations.webhookToken, orgToken),
@@ -67,6 +74,11 @@ export async function POST(
     return NextResponse.json({ error: "\"name\" is required" }, { status: 400 });
   }
 
+  // Every other field goes through cap(); source did not, so a webhook
+  // could write a multi-megabyte activity body and notification. Capped
+  // once here and reused everywhere below.
+  const source = cap(toNullable(body.source), 120);
+
   const [lead] = await db
     .insert(leads)
     .values({
@@ -89,9 +101,7 @@ export async function POST(
     orgId: org.id,
     leadId: lead.id,
     type: "form_submission",
-    body: toNullable(body.source)
-      ? `Submitted via ${toNullable(body.source)}`
-      : "Inbound form submission",
+    body: source ? `Submitted via ${source}` : "Inbound form submission",
   });
 
   /**
@@ -106,9 +116,7 @@ export async function POST(
     company: cap(toNullable(body.company), 120),
     email: cap(toNullable(body.email), 200),
     phone: normalizePhone(toNullable(body.phone)),
-    source: toNullable(body.source)
-      ? `${toNullable(body.source)}`
-      : "your webhook",
+    source: source ?? "your webhook",
   });
 
   revalidatePath("/pipeline");

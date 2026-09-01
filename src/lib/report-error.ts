@@ -97,3 +97,35 @@ export function reportError(
 
   alertAsync(key, `Chumley error: ${message.slice(0, 80)}`, lines.join("\n"));
 }
+
+/**
+ * A crash reported by somebody's browser, which means by somebody.
+ *
+ * Server-side reportError keys its throttle on the error message, which
+ * is fine when the message came from our own code and catastrophic when
+ * it came off the wire: every distinct string mints a fresh key, a fresh
+ * key always sends, and a scripted stranger can drain the day's email
+ * quota in a minute, taking magic-link sign-in down with it. So browser
+ * reports share ONE fixed key and a fixed subject. A real flood of
+ * distinct browser bugs becomes one email per throttle window with the
+ * detail in the body, and the rest is in the server log where it always
+ * was.
+ */
+export function reportBrowserError(
+  message: string,
+  path: string,
+  extra?: Record<string, string | undefined>
+): void {
+  console.error(`[browser${path}] ${message}`);
+
+  const lines = [
+    `Where:   browser${path}`,
+    ...Object.entries(extra ?? {})
+      .filter(([, v]) => v)
+      .map(([k, v]) => `${k.padEnd(8)} ${v}`),
+    "",
+    message,
+  ];
+
+  alertAsync("error-browser", "Chumley error: browser report", lines.join("\n"));
+}

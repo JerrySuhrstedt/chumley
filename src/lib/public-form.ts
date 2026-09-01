@@ -6,6 +6,7 @@ import { normalizePhone } from "@/lib/phone";
 import { overIngestCap } from "@/lib/ingest-guard";
 import { orgOwnerId } from "@/lib/org-owner";
 import { notifyNewLead } from "@/lib/notify-lead";
+import { isUuid } from "@/lib/token";
 
 /**
  * One implementation of "a stranger filled in the website form".
@@ -55,6 +56,13 @@ export async function submitPublicLead(
   // Silently accept and discard. Telling a bot it was caught only teaches
   // whoever wrote it what to change.
   if (clean(input.website, "website")) return { ok: true, error: null };
+
+  // A malformed token can never match a uuid column; reject the shape
+  // before the query so it 404s instead of raising a 500. Same message
+  // as an unknown-but-valid token, so a prober learns nothing.
+  if (!isUuid(token)) {
+    return { ok: false, error: "This form is no longer active." };
+  }
 
   const org = await db.query.organizations.findFirst({
     where: eq(organizations.webhookToken, token),

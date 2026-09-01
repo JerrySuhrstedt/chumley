@@ -1,8 +1,11 @@
 "use server";
 
+import { headers } from "next/headers";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { toolSignups } from "@/db/schema";
+import { claimThrottle } from "@/lib/alert";
+import { callerIp } from "@/lib/paddle/ips";
 
 /**
  * Handing over the free tracker in exchange for an email.
@@ -120,27 +123,34 @@ export async function requestTracker(
         target: [toolSignups.email, toolSignups.tool],
         set: { source: sql`COALESCE(${toolSignups.source}, ${source})` },
       })
-      .returning({ token: toolSignups.token });
+      .returning({ token: toolSignups.token, emailedAt: toolSignups.emailedAt });
 
     if (!row) return { error: "Something went wrong. Try again?", link: null };
 
     const link = `${baseUrl()}/tools/${TOOL}/get?t=${row.token}`;
 
-    // Awaited on purpose. A serverless function can be frozen the moment it
-    // responds, so a floating promise here is a coin flip on whether the
-    // email ever leaves.
-    const sent = await emailTheLink(email, link);
-    if (sent) {
-      await db
-        .update(toolSignups)
-        .set({ emailedAt: new Date() })
-        .where(
-          and(eq(toolSignups.email, email), eq(toolSignups.tool, TOOL)),
-        );
+    /**
+     * The email goes out only for an address we have never emailed. This
+     * page used to send on every request, which is an open relay: a
+     * stranger loops arbitrary addresses and each one gets a message from
+     * our own sending domain, and enough of that suspends the domain that
+     * magic-link sign-in also depends on. `emailedAt` already exists to
+     * tell "never sent" from "not opened"; here it is the send gate. A
+     * per-IP window on top caps a distinct-address flood before it starts.
+     * Either way the link comes back on screen, so a real person who lost
+     * their email just reloads the page.
+     */
+    if (!row.emailedAt) {
+      const ip = callerIp(await headers()) ?? "unknown";
+      const mayEmail = await claimThrottle(`tracker-ip-${ip}`, 60);
+      if (mayEmail && (await emailTheLink(email, link))) {
+        await db
+          .update(toolSignups)
+          .set({ emailedAt: new Date() })
+          .where(and(eq(toolSignups.email, email), eq(toolSignups.tool, TOOL)));
+      }
     }
 
-    // The link is returned either way. A failed email must not cost somebody
-    // the thing they just asked for.
     return { error: null, link };
   } catch (e) {
     console.error("[tool signup] failed", e);

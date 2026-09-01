@@ -1,7 +1,7 @@
 "use server";
 
 import { after } from "next/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { backlogItems, uatReports, uatTesters } from "@/db/schema";
 import { scopeBacklogItems } from "@/lib/backlog/scope";
@@ -13,6 +13,23 @@ import {
 } from "./checks";
 
 export type UatSubmitState = { error: string | null; sent: boolean };
+
+/**
+ * A global hourly ceiling on public writes to the punch list. The page is
+ * public and each submission fans out into rows and a paid scoping call,
+ * and each minted token defeats a per-token limit, so the cap is global
+ * and counts the table directly. Real testing days sit in single digits.
+ */
+async function overPunchListCap(
+  table: typeof uatReports | typeof uatTesters,
+  perHour: number
+): Promise<boolean> {
+  const [{ n }] = (await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(table)
+    .where(sql`created_at > now() - interval '1 hour'`)) as { n: number }[];
+  return n >= perHour;
+}
 
 /**
  * Public on purpose: the tester has no account and never will. Everything
@@ -30,6 +47,13 @@ export async function submitUatReport(
   if (!name) return { error: "Your name is missing.", sent: false };
   if (!email.includes("@"))
     return { error: "That email does not look right.", sent: false };
+
+  if (await overPunchListCap(uatReports, 40)) {
+    return {
+      error: "We are getting a lot of submissions right now. Try again shortly.",
+      sent: false,
+    };
+  }
 
   // A personal link, if the run came through one. An unknown token is
   // treated as no token: the report is still worth having.
@@ -182,6 +206,12 @@ export async function startUatRun(
   const cleanEmail = String(email ?? "").trim().slice(0, 200);
   if (!cleanName || !cleanEmail.includes("@"))
     return { error: "Name and email are needed first." };
+
+  // Minting a fresh token per request is how an abuser sidesteps a
+  // per-token limit, so token creation is capped too.
+  if (await overPunchListCap(uatTesters, 40)) {
+    return { error: "Try again in a little while." };
+  }
 
   const { randomBytes } = await import("crypto");
   const token = randomBytes(8).toString("base64url");

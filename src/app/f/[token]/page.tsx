@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { organizations } from "@/db/schema";
+import { isUuid } from "@/lib/token";
 import { PublicForm } from "./public-form";
 
 export const metadata: Metadata = {
@@ -16,6 +17,10 @@ export default async function PublicFormPage({
   params,
 }: PageProps<"/f/[token]">) {
   const { token } = await params;
+
+  // A non-uuid can never match, and querying one raises a 500 instead of
+  // a clean 404.
+  if (!isUuid(token)) notFound();
 
   const org = await db.query.organizations.findFirst({
     where: eq(organizations.webhookToken, token),

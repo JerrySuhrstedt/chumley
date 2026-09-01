@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { reportError } from "@/lib/report-error";
+import { reportBrowserError } from "@/lib/report-error";
 
 /**
  * Where a browser crash gets reported.
@@ -27,12 +27,14 @@ export async function POST(request: Request) {
     const message = String(body.message ?? "").slice(0, 500);
     if (!message) return NextResponse.json({ ok: true });
 
-    const error = new Error(message);
-    error.stack = typeof body.stack === "string" ? body.stack : undefined;
-
-    reportError(error, `browser${String(body.path ?? "")}`.slice(0, 120), {
+    // Everything in this body is attacker-writable, so none of it may
+    // reach the alert throttle's key or the subject line. The dedicated
+    // browser reporter keeps it all in the email body.
+    reportBrowserError(message, String(body.path ?? "").slice(0, 120), {
       digest: typeof body.digest === "string" ? body.digest : undefined,
       agent: request.headers.get("user-agent")?.slice(0, 120) ?? undefined,
+      stack:
+        typeof body.stack === "string" ? body.stack.slice(0, 600) : undefined,
     });
   } catch {
     // A malformed report is not worth an error of its own.

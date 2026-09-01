@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { organizations } from "@/db/schema";
 import { submitPublicLead } from "@/lib/public-form";
+import { isUuid } from "@/lib/token";
 
 /**
  * Where a website form posts to.
@@ -49,6 +50,12 @@ export async function GET(
   { params }: { params: Promise<{ token: string }> },
 ) {
   const { token } = await params;
+  if (!isUuid(token)) {
+    return NextResponse.json(
+      { ok: false, error: "Unknown form." },
+      { status: 404, headers: CORS },
+    );
+  }
   const rows = await db
     .select({ heading: organizations.formHeading })
     .from(organizations)

@@ -2,11 +2,14 @@ import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { and, eq, inArray, notInArray } from "drizzle-orm";
+import { and, desc, eq, inArray, notInArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { backlogItems, type BacklogScope } from "@/db/schema";
 import { ALL_CHECKS } from "@/app/uat/checks";
 import { CODEBASE_MAP } from "./codebase-map";
+
+/** How many items may be auto-scoped in a rolling 24h window. */
+const DAILY_SCOPE_CAP = 300;
 
 /**
  * Turns raw tester findings into reviewable backlog items by asking
@@ -133,9 +136,30 @@ export async function scopeBacklogItems(ids: string[]): Promise<void> {
     return;
   }
 
+  // A daily ceiling on how many items get auto-scoped. The punch list is
+  // public, and each scoping call spends Opus tokens, so a stranger
+  // looping submissions is a spend attack. Over the ceiling the items
+  // still exist and still show a "Scope now" button; only the automatic
+  // paid call is withheld. A real testing day is nowhere near this.
+  const [{ scopedToday }] = (await db.execute(sql`
+    SELECT count(*)::int AS "scopedToday" FROM backlog_items
+    WHERE scope_status = 'scoped'
+      AND updated_at > now() - interval '24 hours'
+  `)) as unknown as { scopedToday: number }[];
+  if (scopedToday >= DAILY_SCOPE_CAP) {
+    console.error(
+      `scopeBacklogItems: daily cap (${DAILY_SCOPE_CAP}) reached, deferring ${rows.length} item(s)`
+    );
+    await fail();
+    return;
+  }
+
   // Open items the new findings could duplicate. Rejected and done items
   // are deliberately included in "not these": a rejected fix reported
   // again by a second tester is worth seeing fresh, not auto-filed.
+  // Capped and newest-first: without the limit every scoping call
+  // re-sends every open item, so cost grows with the square of the
+  // backlog and eventually overflows the context window.
   const existing = await db
     .select({ id: backlogItems.id, scope: backlogItems.scope })
     .from(backlogItems)
@@ -148,7 +172,9 @@ export async function scopeBacklogItems(ids: string[]): Promise<void> {
           rows.map((r) => r.id)
         )
       )
-    );
+    )
+    .orderBy(desc(backlogItems.createdAt))
+    .limit(200);
 
   const openList =
     existing.length === 0
