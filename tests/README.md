@@ -19,11 +19,11 @@ typo away from doing it to real customers, and the guard is in
 
 ## Running the integration tests
 
-Make a second Supabase project, or a local Postgres, and point at it:
+Make a scratch database, a Neon branch or a local Postgres, and point at it:
 
     TEST_DATABASE_URL='postgresql://...' npm run test:run
 
-Push the schema into it once with `drizzle-kit push`, or run the baseline
-migration against it.
+Apply the schema to it once with `npm run db:migrate` (the journal is
+baselined, so migrate now works), or `drizzle-kit push`.
 
 Without that variable the integration files report as skipped, not as passing.

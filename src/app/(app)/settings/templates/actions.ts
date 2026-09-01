@@ -10,10 +10,18 @@ export type FormState = { error: string | null };
 type Channel = (typeof templateChannelEnum.enumValues)[number];
 
 function read(formData: FormData) {
-  const name = String(formData.get("name") ?? "").trim();
-  const body = String(formData.get("body") ?? "").trim();
-  const subject = String(formData.get("subject") ?? "").trim();
-  const channel = String(formData.get("channel") ?? "") as Channel;
+  const name = String(formData.get("name") ?? "").trim().slice(0, 120);
+  const body = String(formData.get("body") ?? "").trim().slice(0, 10_000);
+  const subject = String(formData.get("subject") ?? "").trim().slice(0, 200);
+  // An enum column raises 22P02 on an out-of-vocabulary value, so a
+  // tampered channel would 500 instead of being rejected. Fall back to
+  // sms rather than trusting the cast.
+  const raw = String(formData.get("channel") ?? "");
+  const channel: Channel = (
+    templateChannelEnum.enumValues as readonly string[]
+  ).includes(raw)
+    ? (raw as Channel)
+    : "sms";
   return { name, body, subject, channel };
 }
 

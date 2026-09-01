@@ -28,11 +28,15 @@ export async function GET() {
       { headers: { "cache-control": "no-store" } }
     );
   } catch (e) {
+    // The detail is the most useful thing here at 2am, but Postgres error
+    // text names the DB host and username, and this endpoint is public.
+    // Keep it in the server log; hand the public body a fixed string.
+    console.error("[health] database unreachable", e);
     return NextResponse.json(
       {
         ok: false,
         db: "down",
-        error: e instanceof Error ? e.message : "unknown",
+        error: "database unreachable",
         ms: Date.now() - started,
       },
       { status: 503, headers: { "cache-control": "no-store" } }

@@ -30,20 +30,23 @@ database has. The sibling project `neon-cordovan-ball` is **renchit**
 (Vercel project `sumolab-web-wrench`). Do not confuse them: both are called
 `neondb` and both have a leads-shaped schema.
 
-## Trap 1: drizzle-kit migrate silently does nothing
+## Migrations: baselined 09-01-2026, `db:migrate` now works
 
-`drizzle.__drizzle_migrations` is **empty** while `drizzle/` holds several
-migration files. The schema was pushed, not migrated. So `drizzle-kit
-migrate` replays from 0001, finds the tables already exist, and exits
-reporting success without applying anything.
+The journal (`drizzle.__drizzle_migrations`) was empty for months while
+`drizzle/` held migration files, because the schema was pushed, not
+migrated. `db:migrate` was therefore unusable (it aborted on the first
+`CREATE TYPE` that already existed), so every change went out by hand and
+several objects drifted: `notify_new_leads`, `lead_notice_log`, and
+`retest_at` all lived in production and in no migration.
 
-`tool_signups` was created with raw DDL for this reason. Until the journal
-is baselined or the migration files are dropped in favour of `push`, verify
-every schema change actually landed:
+Fixed: the journal was baselined with the real file hashes for 0000-0006,
+and `0007` captures the three drifted objects (with `IF NOT EXISTS`, so it
+is a no-op against production and correct against a fresh rebuild) plus the
+one-team-per-user unique index. **`db:migrate` works now** and is the way
+to apply schema changes: `db:generate` then `db:migrate`.
 
-```
-SELECT to_regclass('public.your_new_table');
-```
+A boot-time schema check in `src/instrumentation.ts` logs loudly if a
+column the app reads is missing after a deploy, so drift can't hide again.
 
 ## Trap 2: the auth gate eats static files
 
@@ -65,7 +68,12 @@ broken on a Friday evening is unrecoverable by Saturday morning.
 
 ## Leftovers from the Supabase era
 
-`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and
-`SUPABASE_BREAKGLASS_DATABASE_URL` are still set. The first two are public
-and ship in the browser bundle. Check whether anything still reads them
-before assuming they are needed.
+The SDK, its four `src/lib/supabase/` files, the two npm packages, and the
+`migrate-to-neon.mjs` script are all deleted (09-01-2026): nothing read
+them. `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` should
+be removed from Vercel env too, since they baked into the browser bundle.
+
+`SUPABASE_BREAKGLASS_DATABASE_URL` is the only survivor. It is read by no
+code, only pasted into `psql` by a human, and it expires when the Supabase
+project is torn down (target: mid-September 2026). Nothing in code changes
+at that point.

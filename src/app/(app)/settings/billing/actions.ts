@@ -64,7 +64,7 @@ export async function previewSeats(want: number) {
 
   const members = await countMembers(current.org.id);
   const seats = clamp(want, members);
-  const plan = await planFor(sub, seats);
+  const plan = await planFor(sub);
 
   try {
     const preview = await paddle().subscriptions.previewUpdate(sub.id, {
@@ -109,10 +109,7 @@ export async function previewSeats(want: number) {
  * until the trial ends and sync.ts heals it. Quantity changes go through
  * regardless.
  */
-async function planFor(
-  sub: { status: string; priceId: string },
-  seats: number
-) {
+async function planFor(sub: { status: string; priceId: string }) {
   const trialing = sub.status === "trialing";
   const wanted = priceFor();
 
@@ -141,7 +138,7 @@ export async function changeSeats(want: number) {
 
   if (seats === sub.quantity) return { error: null };
 
-  const plan = await planFor(sub, seats);
+  const plan = await planFor(sub);
 
   try {
     await paddle().subscriptions.update(sub.id, {

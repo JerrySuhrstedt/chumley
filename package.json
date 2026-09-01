@@ -23,8 +23,6 @@
     "@next/third-parties": "^16.3.3",
     "@paddle/paddle-js": "^1.6.4",
     "@paddle/paddle-node-sdk": "^3.10.0",
-    "@supabase/ssr": "^0.12.4",
-    "@supabase/supabase-js": "^2.112.3",
     "better-auth": "^1.7.2",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",

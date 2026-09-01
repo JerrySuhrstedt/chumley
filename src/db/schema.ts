@@ -207,7 +207,14 @@ export const memberships = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => [unique().on(table.orgId, table.userId)]
+  (table) => [
+    unique().on(table.orgId, table.userId),
+    // One team per user, enforced where the app has always assumed it.
+    // getCurrentOrg picks a single membership, and every read hangs off
+    // that one org, so a second membership means silently ambiguous
+    // tenancy. The DB is the only place that can make it impossible.
+    uniqueIndex("memberships_user_id_key").on(table.userId),
+  ]
 );
 
 export const orgInvites = pgTable("org_invites", {

@@ -26,6 +26,19 @@ function toNullable(value: FormDataEntryValue | null) {
   return str.length > 0 ? str : null;
 }
 
+/**
+ * A money amount from a form, or null. The field is `type="number"` on
+ * the client, but a server action never sees that, so a tampered request
+ * could post "abc" (Postgres 22P02) or a 30-digit number (22003 overflow)
+ * straight into the numeric column and 500. Anything that is not a
+ * plain, in-range decimal becomes null rather than a crash.
+ */
+function toAmount(value: FormDataEntryValue | null): string | null {
+  const str = String(value ?? "").trim();
+  if (!/^\d{1,10}(\.\d{1,2})?$/.test(str)) return null;
+  return str;
+}
+
 const STAGE_LABELS: Record<string, string> = {
   contact: "Contact",
   new_lead: "New Lead",
@@ -117,7 +130,7 @@ export async function createLead(
       phone: normalizePhone(toNullable(formData.get("phone"))),
       email: toNullable(formData.get("email")),
       companyName: toNullable(formData.get("companyName")),
-      value: toNullable(formData.get("value")),
+      value: toAmount(formData.get("value")),
       stage: await resolveStageKey(org.id, toNullable(formData.get("stage"))),
     })
     .returning({ id: leads.id, name: leads.name, stage: leads.stage });
@@ -150,7 +163,7 @@ export async function updateLead(
       email: toNullable(formData.get("email")),
       companyName: toNullable(formData.get("companyName")),
       title: toNullable(formData.get("title")),
-      value: toNullable(formData.get("value")),
+      value: toAmount(formData.get("value")),
       updatedAt: new Date(),
     })
     .where(and(eq(leads.id, id), eq(leads.orgId, org.id)));
@@ -356,9 +369,23 @@ export async function logActivity(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState & { activityId?: string | null }> {
-  const type = (toNullable(formData.get("type")) as ActivityType) ?? "note";
-  const outcome = toNullable(formData.get("outcome")) as ActivityOutcome | null;
-  const body = toNullable(formData.get("body")) ?? "";
+  // Both are enum columns, so an out-of-vocabulary value would 500 on
+  // insert rather than being rejected. Validate against the enum, don't
+  // trust the cast: an unknown type becomes a plain note, an unknown
+  // outcome becomes none.
+  const rawType = toNullable(formData.get("type"));
+  const type: ActivityType = (
+    activityTypeEnum.enumValues as readonly string[]
+  ).includes(rawType ?? "")
+    ? (rawType as ActivityType)
+    : "note";
+  const rawOutcome = toNullable(formData.get("outcome"));
+  const outcome: ActivityOutcome | null = (
+    activityOutcomeEnum.enumValues as readonly string[]
+  ).includes(rawOutcome ?? "")
+    ? (rawOutcome as ActivityOutcome)
+    : null;
+  const body = (toNullable(formData.get("body")) ?? "").slice(0, 2000);
 
   // A note carries no other information, so it must say something.
   if (type === "note" && !body) {

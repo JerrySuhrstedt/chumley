@@ -50,6 +50,13 @@
       "when": 1788137226780,
       "tag": "0006_long_zarek",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788290092214,
+      "tag": "0007_fluffy_master_mold",
+      "breakpoints": true
     }
   ]
 }
