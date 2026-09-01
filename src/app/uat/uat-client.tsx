@@ -507,15 +507,16 @@ export function UatClient({
               confused: a first-run tester saw "Beta 1.1" beside their
               punch list and reasonably concluded they had been sent the
               round by mistake. */}
-          {focusSet ? "Retest" : "Punch list"}
+          {focusSet ? "Your round" : "Punch list"}
         </h1>
         {focusSet ? (
           <p className="mt-2 max-w-2xl text-slate-600">
-            A short return visit: just the {checks.length} checks below,
-            covering what got fixed since your last run. Everything you sent
-            before is already in, so this starts blank on purpose. Tick each
-            one, write up anything still wrong, and attach a screenshot
-            where it helps.
+            A short focused round: just the {checks.length} checks below.
+            Anything you sent before is already in, so this starts blank on
+            purpose. Tick each one, and press{" "}
+            <span className="font-semibold">Found something</span> to write up
+            anything that was wrong, slow, or just made you pause, even for a
+            second. A screenshot helps where it fits.
           </p>
         ) : (
           <p className="mt-2 max-w-2xl text-slate-600">

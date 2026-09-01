@@ -9,7 +9,7 @@
  * Which punch list this is. Bump it when the checks change materially,
  * so runs in the back office say which list they were run against.
  */
-export const PUNCH_LIST_VERSION = "Beta 1.1";
+export const PUNCH_LIST_VERSION = "Beta 1.2";
 
 export type Check = {
   id: string;
@@ -308,6 +308,76 @@ export const SECTIONS: Section[] = [
         how: "Leave a card open for an hour or two, go do something else, then come back and try to save a change.",
         should:
           "Either saves it or tells you to sign in again. It should not fail quietly.",
+      },
+    ],
+  },
+  {
+    key: "us",
+    title: "The hesitation test",
+    lede: "A different kind of check. These are real jobs, not features. Do each one the way a busy roofer by their truck would, and tell us every spot where you paused, hunted for something, guessed wrong, or felt unsure, even for a second. A pause is the finding here, even when the thing eventually worked. The product is meant to be ridiculously simple, so those little stalls matter more than anything.",
+    checks: [
+      {
+        id: "US-1",
+        what: "First look, no help",
+        how: "Open the board with the three example deals still on it. Before you touch anything, say out loud what the screen is showing you and what you think you are meant to do.",
+        should:
+          "You can tell a card is one person, that cards can be moved, and that the coloured line is the next step, without anyone explaining it. Tell us anywhere you paused or guessed.",
+      },
+      {
+        id: "US-2",
+        what: "Reach one person",
+        how: "Pick a name on the board. Call them, then text a different one, using only what is on the card.",
+        should:
+          "Finding the person and starting the call or text takes no thinking and no second hand. Tell us every spot you had to hunt for a button.",
+      },
+      {
+        id: "US-3",
+        what: "Move a deal, both ways",
+        how: "Move one named deal to the next stage on your phone, then do the same on a laptop.",
+        should:
+          "Obvious on both. On the phone, watch whether you grab the card or the whole column by mistake, and whether a quick swipe ever moves it two stages instead of one.",
+      },
+      {
+        id: "US-4",
+        what: "Add a lead in a hurry",
+        how: "Pretend you just hung up with a new lead. Add them fast, one thumb, name and phone number only. Try a 1-800 number, and one with an extension like 602-555-1234 x22.",
+        should:
+          "It feels quick, not like a form. The phone field takes what you type, including a leading 1 and the extension, without fighting you, and the new deal is clearly there when you finish.",
+      },
+      {
+        id: "US-5",
+        what: "Was that saved?",
+        how: "Open a deal, type a note about how a call went, then tap somewhere else or move on without pressing a save button.",
+        should:
+          "You are certain the note was kept. Nothing you typed disappears, and if it saved, you can see that it did.",
+      },
+      {
+        id: "US-6",
+        what: "Then what?",
+        how: "After each thing you do in these tasks, stop and answer two questions out loud: what just happened, and what would you do next.",
+        should:
+          "The screen already answered both before you had to ask. Flag any action where the screen looked unchanged afterwards.",
+      },
+      {
+        id: "US-7",
+        what: "One thumb, standing up",
+        how: "Redo any two of the tasks above using one thumb only, phone in one hand, standing up. No second hand.",
+        should:
+          "Everything important is in thumb reach, big enough to hit, and readable at arm's length. Tell us anywhere you needed your other hand.",
+      },
+      {
+        id: "US-8",
+        what: "Make it yours",
+        how: "Add a new column for a stage your business has, and rename one you do not like. Try it on the phone first, then a laptop.",
+        should:
+          "You can do both from the phone, not just the laptop, and your existing deals stay exactly where they were.",
+      },
+      {
+        id: "US-9",
+        what: "The rough edges",
+        how: "Two quick pokes at the corners. If you have Firefox on an Android phone, tap Call and cancel the dialer prompt, then tap Call a second time. Separately, in Add lead, type letters into the value or amount box.",
+        should:
+          "Cancelling a call shows the fallback quickly, not after a long frozen wait, and the second tap is just as quick. Letters in an amount are refused cleanly, never a crash or a blank screen.",
       },
     ],
   },
