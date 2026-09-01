@@ -61,7 +61,13 @@ export const accounts = pgTable(
 );
 
 export const verifications = pgTable("verifications", {
-  id: uuid("id").primaryKey(),
+  // Text, not uuid. Better Auth keys a verification row by the token it
+  // put in the magic-link and email-verification URLs, which is a random
+  // base64url string, not a uuid. A uuid column threw 22P02 on the lookup
+  // and 500'd every magic-link and every verification email, which also
+  // meant no account could become verified, so social sign-in kept
+  // failing as account_not_linked. One wrong column type, three symptoms.
+  id: text("id").primaryKey(),
   identifier: text("identifier").notNull(),
   value: text("value").notNull(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
