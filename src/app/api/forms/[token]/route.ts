@@ -1,4 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { organizations } from "@/db/schema";
 import { submitPublicLead } from "@/lib/public-form";
 
 /**
@@ -25,13 +28,42 @@ import { submitPublicLead } from "@/lib/public-form";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
   "Access-Control-Max-Age": "86400",
 };
 
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS });
+}
+
+/**
+ * The form's settings, read by the script embed on every page load. This
+ * is what makes the heading editable from Settings without anyone ever
+ * re-pasting the snippet: the owner saves, the customer's site asks
+ * again, the new words appear. Uncached for the same reason; the owner
+ * checking their site ten seconds after saving must see the change.
+ */
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ token: string }> },
+) {
+  const { token } = await params;
+  const rows = await db
+    .select({ heading: organizations.formHeading })
+    .from(organizations)
+    .where(eq(organizations.webhookToken, token))
+    .limit(1);
+  if (rows.length === 0) {
+    return NextResponse.json(
+      { ok: false, error: "Unknown form." },
+      { status: 404, headers: CORS },
+    );
+  }
+  return NextResponse.json(
+    { ok: true, heading: rows[0].heading ?? "Get in touch" },
+    { headers: { ...CORS, "Cache-Control": "no-store" } },
+  );
 }
 
 export async function POST(

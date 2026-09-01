@@ -6,9 +6,14 @@ import { db } from "@/db";
 import { organizations } from "@/db/schema";
 import { getWritableOrg } from "@/lib/gate";
 
-export async function saveFormHeading(formData: FormData) {
-  const { current } = await getWritableOrg();
-  if (!current) return;
+export type SaveHeadingState = { saved: boolean; error: string | null };
+
+export async function saveFormHeading(
+  _prev: SaveHeadingState,
+  formData: FormData
+): Promise<SaveHeadingState> {
+  const { current, error } = await getWritableOrg();
+  if (!current) return { saved: false, error };
 
   // Plain text only. Anything else and this stops being the simple form.
   const heading = String(formData.get("formHeading") ?? "")
@@ -22,6 +27,7 @@ export async function saveFormHeading(formData: FormData) {
     .where(eq(organizations.id, current.org.id));
 
   revalidatePath("/settings/form");
+  return { saved: true, error: null };
 }
 
 /**

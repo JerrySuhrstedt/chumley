@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -12,7 +10,8 @@ import {
 import { getCurrentOrg } from "@/lib/org";
 import { getOrigin } from "@/lib/site-url";
 import { EmbedCode } from "./embed-code";
-import { saveFormHeading, setLeadNotifications } from "./actions";
+import { HeadingForm } from "./heading-form";
+import { setLeadNotifications } from "./actions";
 
 export default async function WebsiteFormPage() {
   const current = await getCurrentOrg();
@@ -30,9 +29,9 @@ export default async function WebsiteFormPage() {
 
   <label>First name<input name="firstName" required></label>
   <label>Last name<input name="lastName" required></label>
+  <label>Company<input name="company"></label>
   <label>Email<input name="email" type="email" required></label>
   <label>Phone<input name="phone" type="tel"></label>
-  <label>Company<input name="company"></label>
 
   <input name="website" tabindex="-1" style="position:absolute;left:-9999px" aria-hidden="true">
 
@@ -65,27 +64,7 @@ export default async function WebsiteFormPage() {
             <CardTitle>Your heading</CardTitle>
           </CardHeader>
           <CardContent>
-            <form action={saveFormHeading} className="flex flex-col gap-3">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="formHeading">
-                  The words above the form
-                </Label>
-                <Input
-                  id="formHeading"
-                  name="formHeading"
-                  defaultValue={heading}
-                  maxLength={80}
-                  placeholder="Get in touch"
-                />
-                <p className="text-xs text-slate-500">
-                  Plain words only. Leave it empty and it says &quot;Get in
-                  touch&quot;.
-                </p>
-              </div>
-              <Button type="submit" className="self-start">
-                Save
-              </Button>
-            </form>
+            <HeadingForm heading={heading} />
           </CardContent>
         </Card>
 

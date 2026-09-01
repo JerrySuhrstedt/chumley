@@ -42,6 +42,9 @@
   var origin = new URL(current.src, window.location.href).origin;
 
   var accent = current.getAttribute("data-accent") || "#f16522";
+  // data-heading wins where a customer sets it; otherwise the words come
+  // from the server, so the owner edits them in Settings and every site
+  // that ever pasted the snippet shows the new ones on its next load.
   var heading = current.getAttribute("data-heading");
   var button = current.getAttribute("data-button") || "Send";
   var thanks =
@@ -98,23 +101,40 @@
     );
   }
 
-  wrap.innerHTML =
-    (heading ? "<h3>" + escapeHtml(heading) + "</h3>" : "") +
-    '<form class="f" novalidate>' +
-    '<div class="r">' +
-    field("firstName", "First name", "text", true) +
-    field("lastName", "Last name", "text", true) +
-    "</div>" +
-    field("email", "Email", "email", true) +
-    '<div class="r">' +
-    field("phone", "Phone", "tel", false) +
-    field("company", "Company", "text", false) +
-    "</div>" +
-    '<input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">' +
-    '<p class="err" hidden></p>' +
-    "<button type=submit>" + escapeHtml(button) + "</button>" +
-    "</form>";
+  function render() {
+    wrap.innerHTML =
+      (heading ? "<h3>" + escapeHtml(heading) + "</h3>" : "") +
+      '<form class="f" novalidate>' +
+      '<div class="r">' +
+      field("firstName", "First name", "text", true) +
+      field("lastName", "Last name", "text", true) +
+      "</div>" +
+      field("company", "Company", "text", false) +
+      field("email", "Email", "email", true) +
+      field("phone", "Phone", "tel", false) +
+      '<input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">' +
+      '<p class="err" hidden></p>' +
+      "<button type=submit>" + escapeHtml(button) + "</button>" +
+      "</form>";
+    wire();
+  }
 
+  if (heading) {
+    render();
+  } else {
+    // Ask the server for the owner's words first, so the heading never
+    // pops in above an already-painted form. One small same-server round
+    // trip; on any failure the form still renders, just untitled.
+    fetch(origin + "/api/forms/" + encodeURIComponent(token))
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (res && res.ok && res.heading) heading = res.heading;
+      })
+      .catch(function () {})
+      .then(render);
+  }
+
+  function wire() {
   var form = wrap.querySelector("form");
   var err = wrap.querySelector(".err");
   var btn = wrap.querySelector("button");
@@ -164,6 +184,7 @@
         btn.textContent = label;
       });
   });
+  }
 
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, function (c) {

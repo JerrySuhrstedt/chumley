@@ -74,18 +74,20 @@ export function PublicForm({
           </div>
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="email" className={LABEL}>
-            Email
-          </label>
-          <input id="email" name="email" type="email" required autoComplete="email" className={FIELD} />
-        </div>
-
+        {/* Company rides directly under the name it belongs to; contact
+            details follow. Same order as the script embed. */}
         <div className="flex flex-col gap-1.5">
           <label htmlFor="company" className={LABEL}>
             Company <span className="font-normal text-slate-400">(optional)</span>
           </label>
           <input id="company" name="company" autoComplete="organization" className={FIELD} />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="email" className={LABEL}>
+            Email
+          </label>
+          <input id="email" name="email" type="email" required autoComplete="email" className={FIELD} />
         </div>
 
         <div className="flex flex-col gap-1.5">
