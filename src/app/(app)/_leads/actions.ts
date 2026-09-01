@@ -67,6 +67,24 @@ async function requireOrg() {
   return requireWritableOrg();
 }
 
+/**
+ * A lead belongs to this team, or it does not exist for us.
+ *
+ * Every activity insert takes a `leadId` straight off the browser, and a
+ * server action is reachable by anyone with a session, so without this a
+ * signed-in user holding another team's lead id could write onto that
+ * team's timeline. `logActivity`/`logCallTouch` inline this check; the
+ * two note/message writers that skipped it now share this helper.
+ */
+async function ownsLead(orgId: string, leadId: string): Promise<boolean> {
+  const [row] = await db
+    .select({ id: leads.id })
+    .from(leads)
+    .where(and(eq(leads.id, leadId), eq(leads.orgId, orgId)))
+    .limit(1);
+  return Boolean(row);
+}
+
 export type CreateLeadState = FormState & {
   /**
    * The row that was just made, so the board can point at it: switch the
@@ -144,9 +162,15 @@ export async function updateLead(
 export async function updateLeadStage(id: string, stage: LeadStage) {
   const { org } = await requireOrg();
 
+  // The stage arrives as a bare string from the client. resolveStageKey
+  // pins anything the team does not actually have to its first bucket, so
+  // a tampered request can't park a lead on a key no column renders,
+  // where it goes invisible and is unrecoverable from the UI.
+  const resolved = await resolveStageKey(org.id, stage);
+
   await db
     .update(leads)
-    .set({ stage, updatedAt: new Date() })
+    .set({ stage: resolved, updatedAt: new Date() })
     .where(and(eq(leads.id, id), eq(leads.orgId, org.id)));
 
   revalidatePath("/pipeline");
@@ -177,6 +201,11 @@ export async function reorderStage(stage: LeadStage, orderedIds: string[]) {
   const names = Object.fromEntries(
     (await getStages(org.id)).map((s) => [s.key, s.label]),
   );
+
+  // The destination must be one this team actually has. Without this a
+  // tampered request could strand every listed lead on a bogus key that
+  // no column renders and no UI can rescue.
+  if (!names[stage]) return;
 
   await db.transaction(async (tx) => {
     for (const [index, id] of orderedIds.entries()) {
@@ -520,6 +549,8 @@ export async function addLeadNote(
   if (!current) return { error: refused };
   const { org } = current;
 
+  if (!(await ownsLead(org.id, leadId))) return { error: "That lead is gone." };
+
   await db.insert(activities).values({ orgId: org.id, leadId, body });
   revalidatePath("/pipeline");
   return { error: null };
@@ -607,6 +638,13 @@ export async function logSentMessage(
   body: string,
 ) {
   const { org, userId } = await requireOrg();
+
+  // Same ownership gate as every other activity write. Without it a
+  // fabricated text/email touchpoint could be planted on another team's
+  // lead. The board catches a throw and reloads.
+  if (!(await ownsLead(org.id, leadId))) {
+    throw new Error("That lead is gone.");
+  }
 
   await db.insert(activities).values({
     orgId: org.id,

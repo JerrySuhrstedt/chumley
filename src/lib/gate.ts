@@ -1,3 +1,6 @@
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { organizations } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
 import { getBillingState } from "@/lib/paddle/access";
 import {
@@ -86,6 +89,18 @@ export async function seatCheck(
   | { ok: true; cap: number | null; error: null }
   | { ok: false; cap: null; error: string }
 > {
+  // An administrator switch-off outranks billing, exactly as it does for
+  // writes. Without this a deactivated team could keep seating members
+  // through an invite link, since billing alone never sees the switch.
+  const [org] = await db
+    .select({ deactivatedAt: organizations.deactivatedAt })
+    .from(organizations)
+    .where(eq(organizations.id, orgId))
+    .limit(1);
+  if (!org || org.deactivatedAt) {
+    return { ok: false, cap: null, error: DEACTIVATED_MESSAGE };
+  }
+
   const billing = await getBillingState(orgId);
 
   if (billing.readOnly) {
