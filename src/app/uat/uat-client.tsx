@@ -490,8 +490,8 @@ export function UatClient({
           {/* The list version is deliberately not shown. It exists so the
               back office can say which list a run was against, and it is
               recorded on the report server-side. On screen it only ever
-              confused: a first-run tester saw "Beta 1.1" beside her punch
-              list and reasonably concluded she had been sent the second
+              confused: a first-run tester saw "Beta 1.1" beside their
+              punch list and reasonably concluded they had been sent the
               round by mistake. */}
           {focusSet ? "Retest" : "Punch list"}
         </h1>

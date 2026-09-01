@@ -35,7 +35,7 @@ export function GettingStartedButton({ collapsed }: { collapsed: boolean }) {
  * was real and it was on a surface a phone never renders, which for a
  * product built to be used from a phone is the same as not having one.
  *
- * She asked for it "under the user avatar menu or top bar". That is
+ * He asked for it "under the user avatar menu or top bar". That is
  * exactly right, and it is the one control a phone always has.
  */
 export function reopenChecklist(): void {

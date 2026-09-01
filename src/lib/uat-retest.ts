@@ -6,7 +6,7 @@ import { db } from "@/db";
  *
  * The obvious trigger is "they submitted, so send them round two". That is
  * wrong, and we have the evidence: Joudi's second run included CL-1 and
- * CL-2 while both were still open, so she re-reported bugs nobody had
+ * CL-2 while both were still open, so he re-reported bugs nobody had
  * touched and two backlog items arrived as duplicates of two others.
  *
  * A retest is only worth a tester's evening once the things they found have

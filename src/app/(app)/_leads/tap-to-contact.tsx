@@ -191,7 +191,7 @@ export function TapToContact({
          * Either way the answer is the same and it is not a toast: show
          * the number so they can dial it, and let them log it afterwards.
          * A toast that disappears is what left the tester "locked out with
-         * zero prompt", as she put it.
+         * zero prompt", as he put it.
          */
         if (dialCapable) noteDialRefused();
         setNoDialer(true);
