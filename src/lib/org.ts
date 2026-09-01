@@ -24,6 +24,10 @@ export const getCurrentOrg = cache(async () => {
 
   const membership = await db.query.memberships.findFirst({
     where: eq(memberships.userId, user.id),
+    // Deterministic: the app is one-team-per-user, but if a row ever
+    // slips past that, always land on the team they joined first rather
+    // than whichever the scan happens to return.
+    orderBy: (m, { asc }) => asc(m.createdAt),
     with: { org: true },
   });
 
@@ -134,21 +138,38 @@ function starterLeads(orgId: string) {
 }
 
 export async function createOrgForUser(userId: string, name: string) {
-  const [org] = await db.insert(organizations).values({ name }).returning();
-
-  await db.insert(memberships).values({
-    orgId: org.id,
-    userId,
-    role: "owner",
+  // A user already on a team gets that team back, not a second one. An
+  // onboarding form resubmitted in a second tab or after a hiccup used to
+  // mint a duplicate org; combined with the partial-tenant retry loop the
+  // non-atomic version below could cause, that is how a user ended up with
+  // ambiguous tenancy.
+  const existing = await db.query.memberships.findFirst({
+    where: eq(memberships.userId, userId),
+    orderBy: (m, { asc }) => asc(m.createdAt),
+    with: { org: true },
   });
+  if (existing) return existing.org;
 
-  await db
-    .insert(templates)
-    .values(STARTER_TEMPLATES.map((t) => ({ ...t, orgId: org.id })));
+  // All four inserts as one unit. A failure partway used to leave an org
+  // with no membership, which sent the user back to onboarding to make
+  // another one; or a team with no starter content that looked broken.
+  return db.transaction(async (tx) => {
+    const [org] = await tx.insert(organizations).values({ name }).returning();
 
-  await db.insert(leads).values(starterLeads(org.id));
+    await tx.insert(memberships).values({
+      orgId: org.id,
+      userId,
+      role: "owner",
+    });
 
-  return org;
+    await tx
+      .insert(templates)
+      .values(STARTER_TEMPLATES.map((t) => ({ ...t, orgId: org.id })));
+
+    await tx.insert(leads).values(starterLeads(org.id));
+
+    return org;
+  });
 }
 
 export type TeamMember = {
