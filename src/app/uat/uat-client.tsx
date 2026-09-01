@@ -195,6 +195,20 @@ export function UatClient({
   // whoever opens it first introduces themselves and it becomes theirs.
   const claimed = Boolean(tester?.name);
   const [state, formAction, pending] = useActionState(submitUatReport, INITIAL);
+  /**
+   * Set when somebody tries to send a run with nothing written up.
+   *
+   * Three of the first four testers sent a complete thirty-three check run
+   * reporting nothing at all, on a build where the fourth found nineteen
+   * defects including one that stopped him. They were not saying the app
+   * was perfect. They ticked the boxes, because the box is what looks like
+   * the task and the progress bar rewards filling it, and "Found
+   * something" is a small orange link underneath.
+   *
+   * So an empty run asks once before it goes. It is a question, not a
+   * gate: somebody who genuinely hit nothing presses send again.
+   */
+  const [confirmingEmpty, setConfirmingEmpty] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hydrated = useRef(false);
 
@@ -505,10 +519,17 @@ export function UatClient({
           </p>
         ) : (
           <p className="mt-2 max-w-2xl text-slate-600">
-            Tick each check once you have tried it. If anything surprised you,
-            press <span className="font-semibold">Found something</span> and say
-            what happened in your own words. Even the boring ones. Especially the
-            boring ones.
+            {/* The tick and the write-up were doing the same job in
+                testers' heads, and the tick won: three of the first four
+                sent a full run reporting nothing. Saying plainly what the
+                box means, before they start, is half the fix. */}
+            <span className="font-semibold text-slate-900">
+              Ticking a box means you tried it, not that it was fine.
+            </span>{" "}
+            When something is wrong, or slow, or just made you pause, press{" "}
+            <span className="font-semibold">Found something</span> on that check
+            and say what happened in your own words. Even the boring ones.
+            Especially the boring ones.
           </p>
         )}
         {tester && (
@@ -744,7 +765,17 @@ export function UatClient({
             Send. Testers see a Send button in this spot.
           </p>
         ) : (
-        <form action={formAction} className="mt-14 border-t-2 border-slate-900 pt-6">
+        <form
+          action={formAction}
+          onSubmit={(e) => {
+            // Only ever asks once, and only when there is a run to speak of.
+            if (tried > 0 && flagged === 0 && !confirmingEmpty) {
+              e.preventDefault();
+              setConfirmingEmpty(true);
+            }
+          }}
+          className="mt-14 border-t-2 border-slate-900 pt-6"
+        >
           <input type="hidden" name="testerName" value={`${draft.first} ${draft.last}`.trim()} />
           <input type="hidden" name="testerEmail" value={draft.email} />
           {tester && <input type="hidden" name="testerToken" value={tester.token} />}
@@ -757,6 +788,26 @@ export function UatClient({
             <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
               {state.error}
             </p>
+          )}
+          {confirmingEmpty && (
+            <div className="mt-4 rounded-lg border border-orange-300 bg-orange-50 p-4">
+              <p className="font-bold text-orange-950">
+                You tried {tried} {tried === 1 ? "check" : "checks"} and did not
+                write anything up.
+              </p>
+              <p className="mt-1.5 text-sm text-orange-950">
+                That happens, and it is fine to send. But ticking a box only
+                means you tried it, not that it was good. If anything was slow,
+                confusing, ugly, or just made you pause, press{" "}
+                <span className="font-semibold">Found something</span> on that
+                check and say so in your own words. The small stuff is the most
+                useful thing you can send us.
+              </p>
+              <p className="mt-2 text-sm font-semibold text-orange-950">
+                Go back and add anything, or press Send again to send it as it
+                is.
+              </p>
+            </div>
           )}
           <button
             type="submit"
