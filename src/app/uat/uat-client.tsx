@@ -11,11 +11,7 @@ import {
   submitUatReport,
   type UatSubmitState,
 } from "./actions";
-import {
-  ALL_CHECKS,
-  SECTIONS,
-  SEVERITIES,
-} from "./checks";
+import { SECTIONS, SEVERITIES } from "./checks";
 
 type ItemState = {
   tried: boolean;
@@ -218,11 +214,6 @@ export function UatClient({
     () => (tester?.focus?.length ? new Set(tester.focus) : null),
     [tester]
   );
-  const checks = useMemo(
-    () =>
-      focusSet ? ALL_CHECKS.filter((c) => focusSet.has(c.id)) : ALL_CHECKS,
-    [focusSet]
-  );
   const sections = useMemo(
     () =>
       focusSet
@@ -230,9 +221,16 @@ export function UatClient({
             ...s,
             checks: s.checks.filter((c) => focusSet.has(c.id)),
           })).filter((s) => s.checks.length > 0)
-        : SECTIONS,
+        : // The default walk-in list is the bug sweep only. The usability
+          // and regression rounds are long and only ever handed out as a
+          // focused link, so they stay out of the everyday list.
+          SECTIONS.filter((s) => !s.round),
     [focusSet]
   );
+  // Everything counted and submitted comes from the sections actually
+  // shown, so a hidden round never inflates the progress bar or rides
+  // along as untried findings.
+  const checks = useMemo(() => sections.flatMap((s) => s.checks), [sections]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate the saved draft once, after mount, so the server render stays deterministic

@@ -30,6 +30,13 @@ export type Section = {
   title: string;
   lede: string;
   checks: Check[];
+  /**
+   * A round, not part of the default walk-in punch list. These sections
+   * (usability, regression) are long and are only ever handed out as a
+   * focused round via a tester's link, so they are hidden from the
+   * everyday /uat list to keep it the tight bug sweep it was.
+   */
+  round?: boolean;
 };
 
 export const SEVERITIES = [
@@ -314,6 +321,7 @@ export const SECTIONS: Section[] = [
   {
     key: "us",
     title: "The hesitation test",
+    round: true,
     lede: "A different kind of check. These are real jobs, not features. Do each one the way a busy roofer by their truck would, and tell us every spot where you paused, hunted for something, guessed wrong, or felt unsure, even for a second. A pause is the finding here, even when the thing eventually worked. The product is meant to be ridiculously simple, so those little stalls matter more than anything.",
     checks: [
       {
@@ -379,6 +387,146 @@ export const SECTIONS: Section[] = [
         should:
           "Cancelling a call shows the fallback quickly, not after a long frozen wait, and the second tap is just as quick. Letters in an amount are refused cleanly, never a crash or a blank screen.",
       },
+    ],
+  },
+  {
+    key: "reg-si",
+    title: "Regression: sign up and sign in",
+    round: true,
+    lede: "The release-gate sweep. Tick each one that still works. If one fails, it means something we shipped is now broken, which is more urgent than a new bug. Note the check and what happened.",
+    checks: [
+      { id: "SI-1", what: "Sign up from nothing", how: "Brand-new email, name the team, land on the board.", should: "Board appears with three example deals, under two minutes." },
+      { id: "SI-2", what: "Email and password", how: "Sign in with an existing email/password account.", should: "Lands on the board, no error." },
+      { id: "SI-3", what: "Google", how: "Sign in with Google.", should: "Completes and lands on the board." },
+      { id: "SI-4", what: "LinkedIn", how: "Sign in with LinkedIn.", should: "Completes and lands on the board. No 403." },
+      { id: "SI-5", what: "Magic link", how: "Request a sign-in link, open it from the email.", should: "Signs you in. No 500." },
+      { id: "SI-6", what: "Social on a password account", how: "Use Google or LinkedIn on an email that already has a password account.", should: "Lands on the login page with a plain message, never the marketing homepage with a raw error code." },
+      { id: "SI-7", what: "Sign out and back in", how: "Sign out, close the browser, reopen, sign back in.", should: "Asks to sign in, then restores the board exactly as left." },
+    ],
+  },
+  {
+    key: "reg-bd",
+    title: "Regression: board and deals",
+    round: true,
+    lede: "Every deal action that already works.",
+    checks: [
+      { id: "BD-1", what: "Add a deal", how: "Add one with just a name and a phone number.", should: "Appears in the first column, with a toast and a flash pointing at it." },
+      { id: "BD-2", what: "Edit a deal", how: "Change name, company, value, phone, email.", should: "Saves and shows the new values." },
+      { id: "BD-3", what: "Move on a laptop", how: "Drag a deal one stage forward, then refresh.", should: "Lands in the new stage and stays." },
+      { id: "BD-4", what: "Move on a phone", how: "Swipe or use the arrow to move a deal.", should: "Moves exactly one stage, never two." },
+      { id: "BD-5", what: "Next step due today", how: "Set a next action dated today.", should: "The Due today counter goes up by one." },
+      { id: "BD-6", what: "Money won", how: "Set a value and move the deal to Won.", should: "Money won rises by exactly that amount." },
+      { id: "BD-7", what: "Temperature sticks", how: "Change a lead's temperature, close, refresh.", should: "The temperature held." },
+      { id: "BD-8", what: "Search", how: "Search by partial name and by phone number.", should: "The right leads show for each." },
+      { id: "BD-9", what: "Delete a deal", how: "Delete one, then refresh.", should: "It goes and does not reappear." },
+    ],
+  },
+  {
+    key: "reg-rc",
+    title: "Regression: reaching people",
+    round: true,
+    lede: "Calling, texting, emailing, and logging.",
+    checks: [
+      { id: "RC-1", what: "Real call from a phone", how: "Tap Call, complete it, return.", should: "Dialer opens; the call auto-logs to history." },
+      { id: "RC-2", what: "Cancel a call on a phone", how: "Tap Call, cancel at the dial prompt. Try Firefox for Android too.", should: "Nothing logs; a not-logged notice appears quickly with a log-it-anyway option." },
+      { id: "RC-3", what: "Real call from a laptop", how: "Call, let it ring, pick an outcome.", should: "Auto-logs with the chosen outcome shown." },
+      { id: "RC-4", what: "Text a template", how: "Text using a saved message.", should: "Messaging app opens with the message filled and the real first name in it." },
+      { id: "RC-5", what: "Email a deal", how: "Tap Email.", should: "Mail opens addressed to them; the touch is logged." },
+      { id: "RC-6", what: "Undo a logged call", how: "After a call logs, press Undo on the toast.", should: "The activity is removed from history." },
+      { id: "RC-7", what: "Note saves on click-away", how: "Type a note, tap away without pressing save.", should: "The note is saved, with an undo. Nothing typed is lost." },
+    ],
+  },
+  {
+    key: "reg-co",
+    title: "Regression: columns and stages",
+    round: true,
+    lede: "Customizing the board.",
+    checks: [
+      { id: "CO-1", what: "Rename a column", how: "Rename one.", should: "New name sticks; cards stay put." },
+      { id: "CO-2", what: "Add and reorder on a laptop", how: "Add a column, drag it somewhere.", should: "Inserts before Won/Lost; existing cards do not move." },
+      { id: "CO-3", what: "Add a column on a phone", how: "Add a column from the mobile board.", should: "The Add control is reachable in the mobile stage row." },
+      { id: "CO-4", what: "Delete the viewed column on mobile", how: "On a phone, delete the bucket you are looking at.", should: "The board does not go blank; it falls back to another stage." },
+    ],
+  },
+  {
+    key: "reg-on",
+    title: "Regression: onboarding",
+    round: true,
+    lede: "The first-run experience.",
+    checks: [
+      { id: "ON-1", what: "Coach-mark tips appear", how: "Fresh account, look at the board.", should: "Both tip bubbles show and point at the card and the Add button, on screen." },
+      { id: "ON-2", what: "Checklist works", how: "Work the getting-started checklist steps.", should: "Each step's button starts its action; steps tick as done; it celebrates at the end." },
+      { id: "ON-3", what: "Reopen the checklist", how: "Dismiss the checklist, then bring it back.", should: "A Getting started entry in the account menu reopens it, on phone and laptop." },
+      { id: "ON-4", what: "Clear the examples", how: "Clear the three sample deals.", should: "The samples go; the banner disappears." },
+    ],
+  },
+  {
+    key: "reg-tb",
+    title: "Regression: team and billing",
+    round: true,
+    lede: "Money and members. Do not place a real charge; the preview step is safe.",
+    checks: [
+      { id: "TB-1", what: "Invite and join", how: "Open an invite link while signed in.", should: "Shows a Join this team? confirmation, does not auto-join, and joining shows the board, never an error page." },
+      { id: "TB-2", what: "Seat preview", how: "Preview a seat change.", should: "The quote shows first; nothing is charged until a second button." },
+      { id: "TB-3", what: "Cancel and resume", how: "Cancel a subscription, then resume it.", should: "Cancel schedules for period end; resume clears it. Board stays readable throughout." },
+      { id: "TB-4", what: "Remove a member", how: "Remove a teammate.", should: "They leave; the seat frees." },
+    ],
+  },
+  {
+    key: "reg-wf",
+    title: "Regression: website form and webhook",
+    round: true,
+    lede: "The ways a lead arrives on its own.",
+    checks: [
+      { id: "WF-1", what: "Hosted form", how: "Submit the form at the /f/ link.", should: "A lead lands on the board; the thank-you shows." },
+      { id: "WF-2", what: "Script embed", how: "Paste the embed snippet on a test page and submit it.", should: "The form renders with fields in order (name, company, email, phone) and a lead arrives." },
+      { id: "WF-3", what: "Editable heading", how: "Change the form heading in Settings, reload the embed.", should: "Settings confirms Saved; the new heading shows above the form." },
+      { id: "WF-4", what: "Webhook", how: "Post to the webhook URL with a name.", should: "Returns the lead id; the lead appears with a form-submission activity." },
+      { id: "WF-5", what: "New-lead email", how: "Send an inbound lead with notifications on.", should: "One email arrives, with the number to call back." },
+    ],
+  },
+  {
+    key: "reg-bo",
+    title: "Regression: back office",
+    round: true,
+    lede: "The owner's own tools. Requires an admin account.",
+    checks: [
+      { id: "BO-1", what: "Runs group by tester", how: "Open Testing.", should: "Tester runs stack under one heading per tester, with their link." },
+      { id: "BO-2", what: "View a full form", how: "Open a run's full form.", should: "Shows every check, ticks, notes, seconds, and screenshots as submitted." },
+      { id: "BO-3", what: "Approve and reject", how: "Approve and reject backlog items.", should: "They move to the folded groups; the count updates." },
+      { id: "BO-4", what: "Read a problem report", how: "Send one from Report a problem, then read it.", should: "It shows in the back office." },
+    ],
+  },
+  {
+    key: "reg-xc",
+    title: "Regression: across everything",
+    round: true,
+    lede: "The things that cut across screens.",
+    checks: [
+      { id: "XC-1", what: "One-handed", how: "Do a full add-and-move one-handed on a phone.", should: "No grip change needed; targets are reachable." },
+      { id: "XC-2", what: "Large text", how: "Turn up the phone's system text size, return.", should: "Text scales and stays usable." },
+      { id: "XC-3", what: "No zoom on search", how: "Tap the search box on iOS Safari.", should: "The page does not auto-zoom." },
+      { id: "XC-4", what: "Offline save", how: "Start a save, go offline, save, come back online.", should: "Tells you it could not save; never says saved and loses it." },
+      { id: "XC-5", what: "Back button", how: "Press back after adding a lead and after opening a card.", should: "Sensible page, no blank screens, no duplicates." },
+      { id: "XC-6", what: "Idle then save", how: "Leave a card open for hours, come back, save a change.", should: "Saves, or asks you to sign in again. Never fails silently." },
+    ],
+  },
+  {
+    key: "reg-rg",
+    title: "Regression guards: bugs that must stay fixed",
+    round: true,
+    lede: "Every bug already fixed. These are the ones that creep back, and the ones a normal pass never thinks to try. Each must still be true. A failure here is a re-opened bug, not a new one.",
+    checks: [
+      { id: "RG-1", what: "Leading 1 in the phone field", how: "Type a 1-800 number digit by digit.", should: "The leading 1 is not swallowed; it types cleanly." },
+      { id: "RG-2", what: "Phone extension survives", how: "Save a number with an extension like x22.", should: "The extension is kept; the tel: link dials the base number only." },
+      { id: "RG-3", what: "No number, no call", how: "Open a lead that has no phone number.", should: "Call and Text are greyed out and do nothing." },
+      { id: "RG-4", what: "Clean initials", how: "Add a deal named Hall and Sons (with an ampersand).", should: "The avatar reads HS, not H and the ampersand, everywhere." },
+      { id: "RG-5", what: "Letters in the value field", how: "Type letters into a deal's value, then save.", should: "Refused cleanly, never a crash or blank screen." },
+      { id: "RG-6", what: "Very long phone number", how: "Add a 13-plus digit phone number.", should: "Capped or rejected, not stored raw." },
+      { id: "RG-7", what: "Junk token, not a crash", how: "Open /f/nonsense and post a webhook with a junk token.", should: "A clean not-found, never a 500." },
+      { id: "RG-8", what: "Mobile banner and cards", how: "On the sample board on a narrow phone, read the examples banner.", should: "One tidy line; cards start near the top, not pushed off-screen." },
+      { id: "RG-9", what: "Screenshot upload", how: "Attach a screenshot to a punch-list finding.", should: "It uploads and shows on the backlog card." },
+      { id: "RG-10", what: "Firefox cancel is quick", how: "On Firefox for Android, tap Call and cancel the prompt, then tap Call again.", should: "The fallback appears quickly both times, not after a long frozen wait." },
     ],
   },
 ];
