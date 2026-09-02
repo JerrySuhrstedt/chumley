@@ -165,16 +165,20 @@ async function settle(page) {
 /**
  * Ring the thing the paragraph is talking about.
  *
- * A tutorial screenshot of a full application is mostly not the subject, and
- * a reader should not have to hunt for the one control a sentence refers to.
- * This draws a brand-coloured ring, and optionally a label, over the element
- * a shot names, then removes it so a later shot in the same page is clean.
+ * A tutorial screenshot of a whole application is mostly not the subject, so
+ * the control a sentence refers to gets a ring and everything else is dimmed
+ * behind it.
  *
- * It measures the live element rather than taking coordinates, so a layout
- * change moves the ring instead of leaving it pointing at empty space.
+ * The dim is the ring's own outward box-shadow, which is why a mark that
+ * fails to find its element used to be worse than no mark at all: an early
+ * version matched a hidden zero-size input, drew an invisible ring in the
+ * top left corner, and dimmed the entire screenshot while highlighting
+ * nothing. So an element only counts if it is actually on screen and big
+ * enough to see, `targets` may list several candidates in preference order,
+ * and a mark that lands nothing is reported rather than silently swallowed.
  */
 async function highlight(page, marks) {
-  await page.evaluate((items) => {
+  const landed = await page.evaluate((items) => {
     const layer = document.createElement("div");
     layer.id = "__shot_marks";
     Object.assign(layer.style, {
@@ -184,53 +188,123 @@ async function highlight(page, marks) {
       pointerEvents: "none",
     });
 
-    for (const { selector, label } of items) {
-      const el = document.querySelector(selector);
-      if (!el) continue;
+    /** On screen, laid out, and larger than an icon's worth of nothing. */
+    const usable = (el) => {
+      if (!el) return false;
       const r = el.getBoundingClientRect();
-      const pad = 6;
+      if (r.width < 12 || r.height < 12) return false;
+      if (r.bottom < 0 || r.right < 0) return false;
+      if (r.top > window.innerHeight || r.left > window.innerWidth) return false;
+      const cs = getComputedStyle(el);
+      return cs.visibility !== "hidden" && cs.display !== "none" && cs.opacity !== "0";
+    };
+
+    const found = [];
+
+    for (const mark of items) {
+      let el = null;
+
+      if (mark.text) {
+        const all = [...document.querySelectorAll("h1,h2,h3,h4,p,button,label,span,div,a")];
+        const hits = all.filter((n) => n.textContent?.trim() === mark.text && usable(n));
+        el = hits[hits.length - 1] ?? null;
+        /**
+         * Walk up to the panel the text sits in. Matching on a heading rings
+         * the heading, which is never the thing being taught; the reader
+         * needs the whole block it introduces. Semantic selectors are tried
+         * first, then a plain size walk, because not every panel in the app
+         * is a <section> or a card component.
+         */
+        if (el && mark.card) {
+          const semantic = el.closest("[data-slot='card'], section, form, dialog");
+          if (semantic && usable(semantic)) {
+            el = semantic;
+          } else {
+            let up = el;
+            for (let i = 0; i < 6 && up.parentElement; i += 1) {
+              up = up.parentElement;
+              const r = up.getBoundingClientRect();
+              if (r.width >= 300 && r.height >= 60) break;
+            }
+            if (usable(up)) el = up;
+          }
+        }
+      } else {
+        // Preference order, first visible candidate wins.
+        for (const sel of [].concat(mark.targets ?? mark.selector ?? [])) {
+          const candidates = [...document.querySelectorAll(sel)].filter(usable);
+          if (candidates.length) {
+            el = candidates[0];
+            break;
+          }
+        }
+      }
+
+      if (!usable(el)) continue;
+
+      // Optionally widen to cover a run of siblings, so "these three fields"
+      // reads as one region rather than three separate rings.
+      let box = el.getBoundingClientRect();
+      if (mark.through) {
+        const last = [...document.querySelectorAll(mark.through)].filter(usable).pop();
+        if (last) {
+          const lb = last.getBoundingClientRect();
+          box = {
+            left: Math.min(box.left, lb.left),
+            top: Math.min(box.top, lb.top),
+            right: Math.max(box.right, lb.right),
+            bottom: Math.max(box.bottom, lb.bottom),
+          };
+          box.width = box.right - box.left;
+          box.height = box.bottom - box.top;
+        }
+      }
+
+      found.push(mark.label ?? "mark");
+      const pad = 8;
 
       const ring = document.createElement("div");
       Object.assign(ring.style, {
         position: "absolute",
-        left: `${r.left - pad}px`,
-        top: `${r.top - pad}px`,
-        width: `${r.width + pad * 2}px`,
-        height: `${r.height + pad * 2}px`,
-        border: "3px solid #E8590C",
-        borderRadius: "10px",
-        boxShadow: "0 0 0 9999px rgba(15,23,42,0.35)",
+        left: `${box.left - pad}px`,
+        top: `${box.top - pad}px`,
+        width: `${box.width + pad * 2}px`,
+        height: `${box.height + pad * 2}px`,
+        border: "4px solid #E8590C",
+        borderRadius: "12px",
+        boxShadow: "0 0 0 9999px rgba(15,23,42,0.55), 0 0 22px 4px rgba(232,89,12,0.55)",
       });
       layer.appendChild(ring);
 
-      if (label) {
+      if (mark.label) {
         const tag = document.createElement("div");
-        tag.textContent = label;
-        /**
-         * Below by default. A label above a control tends to land on the
-         * sentence explaining that control, which is exactly the text a
-         * reader needs. Flip above only when there is no room underneath.
-         */
-        const below = r.bottom + pad + 44 < window.innerHeight;
+        tag.textContent = mark.label;
+        const room = box.bottom + pad + 48 < window.innerHeight;
         Object.assign(tag.style, {
           position: "absolute",
-          left: `${r.left - pad}px`,
-          [below ? "top" : "bottom"]: below
-            ? `${r.bottom + pad + 8}px`
-            : `${window.innerHeight - r.top + pad + 8}px`,
+          left: `${Math.max(12, Math.min(box.left - pad, window.innerWidth - 460))}px`,
+          top: room
+            ? `${box.bottom + pad + 10}px`
+            : `${Math.max(12, box.top - pad - 46)}px`,
           background: "#E8590C",
           color: "#fff",
-          font: "600 15px/1.3 ui-sans-serif, system-ui, sans-serif",
-          padding: "6px 10px",
-          borderRadius: "8px",
+          font: "600 16px/1.3 ui-sans-serif, system-ui, sans-serif",
+          padding: "8px 12px",
+          borderRadius: "9px",
           whiteSpace: "nowrap",
+          boxShadow: "0 6px 18px rgba(0,0,0,0.35)",
         });
         layer.appendChild(tag);
       }
     }
-    document.body.appendChild(layer);
+
+    // No ring means no subject, and a dim with no subject is just a ruined
+    // screenshot. Leave the image clean instead.
+    if (found.length) document.body.appendChild(layer);
+    return found.length;
   }, marks);
-  await page.waitForTimeout(150);
+
+  return landed;
 }
 
 async function clearMarks(page) {
@@ -245,7 +319,12 @@ const SHOTS = [
   {
     name: "pipeline-board",
     caption: "The pipeline board with three example deals",
-    marks: [{ selector: '[aria-label="Proposal Sent options"]', label: "Column menu: rename, reorder, delete" }],
+    marks: [
+      {
+        targets: ['[aria-label="Proposal Sent options"]'],
+        label: "Column menu: rename, reorder, delete",
+      },
+    ],
     async take(page) {
       await page.goto(`${BASE}/pipeline`, { waitUntil: "networkidle" });
       await settle(page);
@@ -254,7 +333,13 @@ const SHOTS = [
   {
     name: "add-a-deal",
     caption: "The Add a deal dialog",
-    marks: [{ selector: '[role="dialog"] input', label: "Name, phone, email. Everything else can wait" }],
+    marks: [
+      {
+        targets: ['[role="dialog"] input[name="name"]', '[role="dialog"] label'],
+        through: '[role="dialog"] input',
+        label: "Name, phone, email. Everything else can wait",
+      },
+    ],
     async take(page) {
       await page.goto(`${BASE}/pipeline`, { waitUntil: "networkidle" });
       await settle(page);
@@ -265,7 +350,13 @@ const SHOTS = [
   {
     name: "lead-detail",
     caption: "A lead open, showing the next step",
-    marks: [{ selector: '[role="dialog"] input, [role="dialog"] textarea', label: "The next step is the part that earns its keep" }],
+    marks: [
+      {
+        text: "Mark done",
+        card: true,
+        label: "One next step, with a date. This is what turns the card red",
+      },
+    ],
     async take(page) {
       await page.goto(`${BASE}/pipeline`, { waitUntil: "networkidle" });
       await settle(page);
@@ -276,7 +367,12 @@ const SHOTS = [
   {
     name: "rename-bucket",
     caption: "Clicking a column name to rename it",
-    marks: [{ selector: 'input[value="Proposal Sent"]', label: "Click the name, type the new one" }],
+    marks: [
+      {
+        targets: ['input[value="Proposal Sent"]', '[aria-label="Proposal Sent options"]'],
+        label: "Click the name, type the new one",
+      },
+    ],
     async take(page) {
       await page.goto(`${BASE}/pipeline`, { waitUntil: "networkidle" });
       await settle(page);
@@ -287,7 +383,7 @@ const SHOTS = [
   {
     name: "column-menu",
     caption: "The column menu, where a bucket is deleted",
-    marks: [{ selector: '[role="menuitem"]', label: "Delete bucket" }],
+    marks: [{ targets: ['[role="menuitem"]'], label: "The only item in here" }],
     async take(page) {
       await page.goto(`${BASE}/pipeline`, { waitUntil: "networkidle" });
       await settle(page);
@@ -298,7 +394,12 @@ const SHOTS = [
   {
     name: "delete-bucket",
     caption: "Deleting a bucket asks where its deals should go",
-    marks: [{ selector: '[role="dialog"] button, [role="dialog"] select', label: "Pick where the deals land. Nothing is deleted" }],
+    marks: [
+      {
+        targets: ['[role="dialog"] [role="radiogroup"]', '[role="dialog"] button'],
+        label: "Pick where the deals land. Nothing is deleted",
+      },
+    ],
     async take(page) {
       await page.goto(`${BASE}/pipeline`, { waitUntil: "networkidle" });
       await settle(page);
@@ -311,7 +412,12 @@ const SHOTS = [
   {
     name: "add-bucket",
     caption: "Naming a new bucket",
-    marks: [{ selector: 'input[placeholder="Name this bucket"]', label: "Name it after something that happens in your week" }],
+    marks: [
+      {
+        targets: ['input[placeholder="Name this bucket"]'],
+        label: "Name it after something that happens in your week",
+      },
+    ],
     async take(page) {
       await page.goto(`${BASE}/pipeline`, { waitUntil: "networkidle" });
       await settle(page);
@@ -325,7 +431,12 @@ const SHOTS = [
   {
     name: "import-mapping",
     caption: "The column mapping screen during an import",
-    marks: [{ selector: "select, [role='combobox']", label: "Chumley guessed these. Fix any that are wrong" }],
+    marks: [
+      {
+        targets: ["select", "[role='combobox']", "button[aria-haspopup='listbox']"],
+        label: "Chumley guessed these. Fix any that are wrong",
+      },
+    ],
     async take(page) {
       await page.goto(`${BASE}/settings/import`, { waitUntil: "networkidle" });
       await settle(page);
@@ -338,9 +449,26 @@ const SHOTS = [
     },
   },
   {
+    name: "lead-notifications",
+    caption: "The setting that emails you when a lead arrives",
+    marks: [
+      { text: "Tell me when a lead comes in", card: true, label: "On by default. This is the switch" },
+    ],
+    async take(page) {
+      await page.goto(`${BASE}/settings/form`, { waitUntil: "networkidle" });
+      await settle(page);
+      await page
+        .getByText("Tell me when a lead comes in", { exact: true })
+        .first()
+        .scrollIntoViewIfNeeded()
+        .catch(() => {});
+      await page.waitForTimeout(400);
+    },
+  },
+  {
     name: "website-form",
     caption: "The website form settings, where the embed code lives",
-    marks: [{ selector: "code, pre", label: "Copy this one line" }],
+    marks: [{ targets: ["pre", "code", "textarea"], label: "Copy this one line" }],
     async take(page) {
       await page.goto(`${BASE}/settings/form`, { waitUntil: "networkidle" });
       await settle(page);
@@ -389,11 +517,18 @@ async function main() {
     for (const shot of wanted) {
       try {
         await shot.take(page);
-        if (shot.marks) await highlight(page, shot.marks);
+        let landed = 0;
+        if (shot.marks) landed = await highlight(page, shot.marks);
         await page.screenshot({ path: path.join(OUT, `${shot.name}.png`) });
         if (shot.marks) await clearMarks(page);
         done.push(shot.name);
-        console.log(`  captured  ${shot.name}.png`);
+        const missed = shot.marks ? shot.marks.length - landed : 0;
+        console.log(
+          `  captured  ${shot.name}.png` +
+            (shot.marks ? `  (${landed}/${shot.marks.length} highlighted)` : "") +
+            (missed ? "  <-- CHECK THIS" : ""),
+        );
+        if (missed) process.exitCode = 1;
       } catch (e) {
         console.error(`  FAILED    ${shot.name}: ${e.message.split("\n")[0]}`);
       }
