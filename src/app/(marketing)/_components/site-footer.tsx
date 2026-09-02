@@ -13,6 +13,7 @@ const PRODUCT = [
 const COMPANY_LINKS = [
   { href: "/login", label: "Log in" },
   { href: "/login?mode=signup", label: "Create an account" },
+  { href: "/support", label: "Support" },
   { href: "mailto:info@sumolab.co", label: "Contact" },
 ];
 
@@ -23,7 +24,8 @@ const LEGAL = [
 ];
 
 const FOR = [
-  { href: "/for/solo-sales-reps", label: "Solo & independent reps" },
+  { href: "/for/solo-sales-reps", label: "Solo reps & teams of one" },
+  { href: "/for/independent-sales-reps", label: "Independent & 1099 reps" },
   { href: "/for/small-sales-teams", label: "Small sales teams" },
   { href: "/for/contractors", label: "Contractors" },
   { href: "/for/wedding-vendors", label: "Wedding vendors" },
@@ -34,6 +36,13 @@ const COMPARE = [
   { href: "/compare/less-annoying-crm", label: "vs Less Annoying CRM" },
   { href: "/compare/pipedrive", label: "vs Pipedrive" },
   { href: "/compare/onepagecrm", label: "vs OnePageCRM" },
+];
+
+const HELP = [
+  { href: "/support", label: "Support & help center" },
+  { href: "/support/how-calling-works", label: "How calling works" },
+  { href: "/support/add-your-first-lead", label: "Add your first lead" },
+  { href: "/support/import-leads-from-a-spreadsheet", label: "Import a spreadsheet" },
 ];
 
 const GUIDES = [
@@ -136,11 +145,12 @@ export function SiteFooter() {
           every one is reachable and passes a little authority from every
           page it appears on. */}
       <div className="border-t border-white/10">
-        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 px-5 py-10 sm:grid-cols-3 lg:px-8">
+        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 px-5 py-10 sm:grid-cols-2 lg:grid-cols-4 lg:px-8">
           {[
             { title: "Who it's for", links: FOR },
             { title: "Compare", links: COMPARE },
             { title: "Guides", links: GUIDES },
+            { title: "Help", links: HELP },
           ].map((group) => (
             <div key={group.title}>
               <h3 className="text-xs font-bold tracking-widest text-white/50 uppercase">

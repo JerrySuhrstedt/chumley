@@ -58,6 +58,8 @@ export function gate(request: NextRequest) {
     pathname.startsWith("/for/") ||
     pathname === "/guides" ||
     pathname.startsWith("/guides/") ||
+    pathname === "/support" ||
+    pathname.startsWith("/support/") ||
     // Free tools. Same reasoning, and more so: the whole point of a
     // giveaway is that a stranger can reach it without an account.
     pathname === "/tools" ||
