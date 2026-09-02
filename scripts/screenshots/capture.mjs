@@ -177,8 +177,8 @@ async function settle(page) {
  * enough to see, `targets` may list several candidates in preference order,
  * and a mark that lands nothing is reported rather than silently swallowed.
  */
-async function highlight(page, marks) {
-  const landed = await page.evaluate((items) => {
+async function highlight(page, marks, tour = false) {
+  const result = await page.evaluate(({ items, tour }) => {
     const layer = document.createElement("div");
     layer.id = "__shot_marks";
     Object.assign(layer.style, {
@@ -200,14 +200,29 @@ async function highlight(page, marks) {
     };
 
     const found = [];
+    const missed = [];
 
     for (const mark of items) {
       let el = null;
 
       if (mark.text) {
         const all = [...document.querySelectorAll("h1,h2,h3,h4,p,button,label,span,div,a")];
-        const hits = all.filter((n) => n.textContent?.trim() === mark.text && usable(n));
-        el = hits[hits.length - 1] ?? null;
+        const exact = all.filter((n) => n.textContent?.trim() === mark.text && usable(n));
+        /**
+         * Fall back to a prefix match, because a heading is often not alone
+         * in its element: "What needs doing" sits beside its overdue badge
+         * and "Open pipeline" beside its figure, so both read as one longer
+         * string. Shortest match wins, which is the heading rather than the
+         * panel wrapping it.
+         */
+        const near = exact.length
+          ? exact
+          : all
+              .filter((n) => n.textContent?.trim().startsWith(mark.text) && usable(n))
+              .sort(
+                (a, b) => a.textContent.trim().length - b.textContent.trim().length,
+              );
+        el = (exact.length ? near[near.length - 1] : near[0]) ?? null;
         /**
          * Walk up to the panel the text sits in. Matching on a heading rings
          * the heading, which is never the thing being taught; the reader
@@ -232,7 +247,14 @@ async function highlight(page, marks) {
       } else {
         // Preference order, first visible candidate wins.
         for (const sel of [].concat(mark.targets ?? mark.selector ?? [])) {
-          const candidates = [...document.querySelectorAll(sel)].filter(usable);
+          let candidates = [];
+          try {
+            candidates = [...document.querySelectorAll(sel)].filter(usable);
+          } catch {
+            // Playwright-only syntax such as :has-text() is not valid CSS in
+            // the page. Skip it rather than failing the whole shot.
+            continue;
+          }
           if (candidates.length) {
             el = candidates[0];
             break;
@@ -240,7 +262,10 @@ async function highlight(page, marks) {
         }
       }
 
-      if (!usable(el)) continue;
+      if (!usable(el)) {
+        missed.push(mark.label ?? mark.text ?? "mark");
+        continue;
+      }
 
       // Optionally widen to cover a run of siblings, so "these three fields"
       // reads as one region rather than three separate rings.
@@ -270,13 +295,39 @@ async function highlight(page, marks) {
         top: `${box.top - pad}px`,
         width: `${box.width + pad * 2}px`,
         height: `${box.height + pad * 2}px`,
-        border: "4px solid #E8590C",
+        border: "3px solid #E8590C",
         borderRadius: "12px",
-        boxShadow: "0 0 0 9999px rgba(15,23,42,0.55), 0 0 22px 4px rgba(232,89,12,0.55)",
+        /**
+         * A tour marks several regions at once, so the single-subject dim is
+         * wrong: every ring's shadow would darken every other ring. Tour
+         * rings are outlines only, and the numbers do the pointing.
+         */
+        boxShadow: tour
+          ? "0 0 0 2px rgba(255,255,255,0.9)"
+          : "0 0 0 9999px rgba(15,23,42,0.55), 0 0 22px 4px rgba(232,89,12,0.55)",
       });
       layer.appendChild(ring);
 
-      if (mark.label) {
+      if (tour) {
+        const pin = document.createElement("div");
+        pin.textContent = String(found.length);
+        Object.assign(pin.style, {
+          position: "absolute",
+          left: `${box.left - pad - 17}px`,
+          top: `${box.top - pad - 17}px`,
+          width: "34px",
+          height: "34px",
+          borderRadius: "999px",
+          background: "#E8590C",
+          color: "#fff",
+          font: "700 18px/34px ui-sans-serif, system-ui, sans-serif",
+          textAlign: "center",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.4), 0 0 0 3px #fff",
+        });
+        layer.appendChild(pin);
+      }
+
+      if (mark.label && !tour) {
         const tag = document.createElement("div");
         tag.textContent = mark.label;
         const room = box.bottom + pad + 48 < window.innerHeight;
@@ -301,10 +352,10 @@ async function highlight(page, marks) {
     // No ring means no subject, and a dim with no subject is just a ruined
     // screenshot. Leave the image clean instead.
     if (found.length) document.body.appendChild(layer);
-    return found.length;
-  }, marks);
+    return { landed: found.length, missed };
+  }, { items: marks, tour });
 
-  return landed;
+  return result;
 }
 
 async function clearMarks(page) {
@@ -449,6 +500,40 @@ const SHOTS = [
     },
   },
   {
+    name: "dashboard-tour",
+    caption: "The dashboard, numbered",
+    tour: true,
+    marks: [
+      { targets: ['input[placeholder*="Search people"]'], label: "1" },
+      { text: "Dashboard", label: "2" },
+      { text: "Deals working", card: true, label: "3" },
+      { text: "What needs doing", card: true, label: "4" },
+      { text: "Open pipeline", card: true, label: "5" },
+      { text: "Recent activity", card: true, label: "6" },
+    ],
+    async take(page) {
+      await page.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
+      await settle(page);
+    },
+  },
+  {
+    name: "pipeline-tour",
+    caption: "The pipeline board, numbered",
+    tour: true,
+    marks: [
+      { text: "Pipeline", label: "1" },
+      { text: "Deals working", card: true, label: "2" },
+      { targets: ['input[placeholder*="Search leads"]'], label: "3" },
+      { text: "Add lead", label: "4" },
+      { text: "Proposal Sent", card: true, label: "5" },
+      { text: "Dale Whitaker", card: true, label: "6" },
+    ],
+    async take(page) {
+      await page.goto(`${BASE}/pipeline`, { waitUntil: "networkidle" });
+      await settle(page);
+    },
+  },
+  {
     name: "team",
     caption: "The team page, with the invite link and the seat count",
     mask: ["[data-invite-url], code, pre"],
@@ -546,7 +631,12 @@ async function main() {
       try {
         await shot.take(page);
         let landed = 0;
-        if (shot.marks) landed = await highlight(page, shot.marks);
+        let missedLabels = [];
+        if (shot.marks) {
+          const r = await highlight(page, shot.marks, shot.tour === true);
+          landed = r.landed;
+          missedLabels = r.missed;
+        }
         /**
          * Anything secret is blacked out before the shutter, not cropped
          * afterwards. The team page shows a live join link: publish that
@@ -575,7 +665,7 @@ async function main() {
         console.log(
           `  captured  ${shot.name}.png` +
             (shot.marks ? `  (${landed} highlighted, ${required} required)` : "") +
-            (missed ? "  <-- CHECK THIS" : ""),
+            (missed ? `  <-- MISSED: ${missedLabels.join(", ")}` : ""),
         );
         if (missed) process.exitCode = 1;
       } catch (e) {

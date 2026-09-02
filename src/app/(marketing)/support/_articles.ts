@@ -346,6 +346,68 @@ export const ARTICLES: Article[] = [
     related: ["add-your-first-lead", "add-the-lead-form-to-your-website"],
   },
   {
+    slug: "a-tour-of-the-screens",
+    title: "A tour of the screens: dashboard, pipeline and the rest",
+    description:
+      "What every part of the dashboard and the pipeline board is for, numbered on the actual screens, so nothing on either page is a mystery.",
+    minutes: 4,
+    topic: "Getting started",
+    hook: "There are four screens in Chumley and you will use two of them. This is a walk around both, with everything numbered, so you know what each part is for before you need it.",
+    beats: [
+      {
+        title: "The dashboard: what today looks like",
+        say: [
+          "This is the answer to what should I do today, and it is the first thing you see when you sign in. Six things on it.",
+          "One, the search box. It looks across everybody you have, by name, by company, and by phone number. If somebody rings you and you do not recognise the number, paste it in here and you will know who it is before you pick up.",
+          "Two, the four sections of the app. Dashboard, Pipeline, Contacts and Calendar. That is the entire navigation and there is nothing hidden behind it.",
+          "Three, your four numbers. How many deals are in play, what they are worth altogether, what you have actually won, and how many next steps are due today. That last one is the number to look at first.",
+          "Four, what needs doing. The next steps that are due or late, with the person's name attached. If there is a red overdue badge, that is where your morning starts.",
+          "Five, the funnel. Every open deal, stacked by which column it is in, with the money for each. Open pipeline is everything added up. Weighted forecast is that same money adjusted for how likely each stage is to close, which is a more honest number to plan around. Click a band, or a row in the key, and the deals in it appear beside it.",
+          "Six, recent activity. Every call, email and note logged across the team, newest first. On your own it is a record of what you did. With a team, it is how you know what everyone else did without asking them.",
+        ],
+        image: {
+          src: "/support/dashboard-tour.png",
+          alt: "The Chumley dashboard with six numbered regions marked",
+        },
+      },
+      {
+        title: "The pipeline: where the work happens",
+        say: [
+          "This is the screen you will live in. Same six-part tour.",
+          "One, Pipeline in the sidebar. This is home once you are actually working.",
+          "Two, the same three numbers as the dashboard, kept at the top so you never have to leave the board to see where you are.",
+          "Three, search and the two filters beside it. Search narrows the board as you type. Temp filters by how hot a lead is, and Next step filters by what is due, which together answer show me the warm ones I am late on.",
+          "Four, Add lead. Name, phone and email, and you are done. Everything else is optional.",
+          "Five, a column. The name on the left, which you click to rename. The count and the total value on the right, so you can see what each stage is worth at a glance. Then the three dot menu, which is where a column gets deleted.",
+          "Six, a deal. The coloured strip is its next step, and it turns red when that step is late. Under the name are three buttons for call, text and email, and the coloured square on the right is how hot the lead is. Click anywhere else on the card to open it.",
+        ],
+        image: {
+          src: "/support/pipeline-tour.png",
+          alt: "The Chumley pipeline board with six numbered regions marked",
+        },
+      },
+      {
+        title: "The other two screens",
+        say: [
+          "Contacts is everybody you have ever put in, whether or not they are in a live deal. The point of keeping it separate is that your pipeline stays the handful of things actually in play rather than a wall of every name you have collected. Somebody in Contacts can be pushed onto the board when they turn into a real opportunity.",
+          "Calendar is your next steps laid out by date, rather than by which deal they belong to. Same information as what needs doing on the dashboard, arranged for planning a week instead of getting through a morning.",
+          "That is the whole application. Four screens, and no settings you have to understand before it works.",
+        ],
+      },
+    ],
+    gotcha: {
+      title: "The one worth knowing early",
+      say: [
+        "Weighted forecast is not a smaller version of open pipeline, and treating the two as interchangeable is how people talk themselves into a bad month.",
+        "Open pipeline is what you would make if every single deal closed, which has never happened to anybody. Weighted forecast discounts each deal by how likely its stage is to close, so a proposal counts for more than a brand new enquiry. It is the number to take to a bank, a spouse, or a hiring decision.",
+        "If those two numbers are far apart, it is not a bug. It means most of your money is sitting in early stages and has not been earned yet.",
+      ],
+    },
+    outro:
+      "The dashboard tells you what today looks like. The pipeline is where you move deals along. Contacts is everyone else and the calendar is the same work by date. Two screens do almost all of it.",
+    related: ["add-your-first-lead", "edit-your-pipeline-columns"],
+  },
+  {
     slug: "invite-your-team",
     title: "Invite your team",
     description:
