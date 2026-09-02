@@ -46,6 +46,7 @@ export const PUBLIC_ROUTES: PublicRoute[] = [
   // Legal.
   { path: "/support", priority: 0.7, changeFrequency: "weekly", summary: "Help with Chumley: short guides, and a form that reaches a person the same day." },
   { path: "/support/how-calling-works", priority: 0.6, changeFrequency: "monthly", summary: "Why the Call button works on a phone and often not on a desktop, with a platform matrix." },
+  { path: "/support/edit-your-pipeline-columns", priority: 0.6, changeFrequency: "monthly", summary: "Rename, reorder and delete pipeline columns without losing the deals in them." },
   { path: "/support/add-your-first-lead", priority: 0.6, changeFrequency: "monthly", summary: "Add a deal, give it a next step, move it across the board." },
   { path: "/support/import-leads-from-a-spreadsheet", priority: 0.6, changeFrequency: "monthly", summary: "Import an existing list, including the CSV step people miss." },
   { path: "/support/add-the-lead-form-to-your-website", priority: 0.6, changeFrequency: "monthly", summary: "Paste one line of code and website leads land on your board." },

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { pageMeta } from "@/lib/seo/meta";
@@ -92,8 +93,24 @@ export default async function ArticlePage({
           ))}
           {beat.table && (
             <div className="mt-6">
-              <CompareTable columns={beat.table.columns} rows={beat.table.rows} />
+              <CompareTable
+                columns={beat.table.columns}
+                rows={beat.table.rows}
+                tone={beat.table.tone}
+              />
             </div>
+          )}
+          {beat.image && (
+            <figure className="mt-6">
+              <Image
+                src={beat.image.src}
+                alt={beat.image.alt}
+                width={1440}
+                height={900}
+                className="w-full rounded-xl border border-[var(--rule)] shadow-sm"
+                sizes="(max-width: 768px) 100vw, 768px"
+              />
+            </figure>
           )}
         </Section>
       ))}

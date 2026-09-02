@@ -31,7 +31,14 @@ export type Beat = {
   table?: {
     columns: string[];
     rows: { label: string; values: (boolean | string)[] }[];
+    /** "good" for a capability matrix, where a green tick means it works. */
+    tone?: "brand" | "good";
   };
+  /**
+   * A screenshot from the real app, in public/support. Regenerate every one
+   * of them with: node scripts/screenshots/capture.mjs
+   */
+  image?: { src: string; alt: string };
 };
 
 export type Article = {
@@ -87,57 +94,29 @@ export const ARTICLES: Article[] = [
           "This is the full picture. Find your row.",
         ],
         table: {
-          columns: ["Clicking Call does this", "What it needs"],
+          tone: "good",
+          columns: [
+            "Built-in dialer",
+            "Apple FaceTime",
+            "Windows Phone Link",
+            "Microsoft Teams",
+            "RingCentral, Aircall, Dialpad",
+          ],
           rows: [
-            {
-              label: "iPhone",
-              values: ["Confirms, then dials", "Nothing, it is built in"],
-            },
-            {
-              label: "Android",
-              values: ["Dialer opens, number filled in", "Nothing, it is built in"],
-            },
-            {
-              label: "Mac or iPad",
-              values: [
-                "FaceTime relays the call through your iPhone",
-                "An iPhone on the same Apple ID, nearby, with Calls from iPhone switched on",
-              ],
-            },
-            {
-              label: "Windows, nothing installed",
-              values: ["Usually nothing at all", "One of the rows below"],
-            },
-            {
-              label: "Windows with Phone Link",
-              values: [
-                "Calls out through your paired phone",
-                "Phone Link, paired with your handset",
-              ],
-            },
-            {
-              label: "Microsoft Teams",
-              values: [
-                "Teams opens. Whether it can reach a normal phone number depends on your licence",
-                "Teams Phone plus a calling plan. Plain Teams cannot dial regular numbers",
-              ],
-            },
-            {
-              label: "RingCentral, Aircall, Dialpad, Zoom Phone, OpenPhone",
-              values: [
-                "Their desktop app opens and dials over the internet",
-                "A paid seat, and their desktop app installed",
-              ],
-            },
-            {
-              label: "Google Voice",
-              values: [
-                "Depends. Voice runs in a browser tab rather than claiming the job system-wide",
-                "Their Chrome extension, or copy the number across by hand",
-              ],
-            },
+            { label: "iPhone", values: [true, true, false, true, true] },
+            { label: "Android", values: [true, false, false, true, true] },
+            { label: "Windows laptop or desktop", values: [false, false, true, true, true] },
+            { label: "Mac", values: [false, true, false, true, true] },
           ],
         },
+      },
+      {
+        title: "Reading that table",
+        say: [
+          "Two things in it need a sentence each, because a tick on its own would mislead you.",
+          "Microsoft Teams ticks every row, and that is true in the sense that Teams will open. Whether it can then ring an ordinary phone number is a licensing question. Plain Teams, the kind that comes with Office, cannot. You need Teams Phone and a calling plan on top. If your Teams opens and then refuses to dial a customer, that is what is missing, and it is a conversation with whoever runs your Microsoft account rather than with us.",
+          "The Mac row is the one people are most often pleased about. FaceTime can place a real call to any phone number, not just to other Apple users, but only by relaying it through your own iPhone. The phone has to be switched on, nearby, on the same Apple ID, with Calls from iPhone turned on. Leave the phone at home and the Mac row quietly becomes the Windows row.",
+        ],
       },
       {
         title: "What to do if your computer does nothing",
@@ -170,6 +149,87 @@ export const ARTICLES: Article[] = [
     related: ["add-your-first-lead"],
   },
   {
+    slug: "edit-your-pipeline-columns",
+    title: "Rename, reorder and delete your pipeline columns",
+    description:
+      "Make the board match how you actually sell. Rename a column in two clicks, drag them into your order, and delete one without losing the deals in it.",
+    minutes: 3,
+    topic: "Day to day",
+    hook: "The board arrives with four columns because a blank board is useless on day one. They are not the columns you have to keep. If your process has a step called Waiting on permits, the board should say Waiting on permits.",
+    beats: [
+      {
+        title: "The columns are yours",
+        say: [
+          "A lot of CRMs make this a settings page, three menus deep, with a warning about affecting your reporting. Here it is on the board itself. Everything in this tutorial happens on the pipeline screen, and none of it needs a save button.",
+          "Each column has a name on the left, a running count and total on the right, and a small three dot menu next to that. Almost everything lives in that menu.",
+        ],
+        image: {
+          src: "/support/pipeline-board.png",
+          alt: "The Chumley pipeline board with four columns and three example deals, with the column menu button ringed",
+        },
+      },
+      {
+        title: "Rename one",
+        say: [
+          "Click the column name. It turns into a text box. Type the new name and press enter, or click away, and it is saved.",
+          "Nothing else happens, and that is deliberate. Renaming changes the label and nothing underneath it. Your deals keep their history, your reports keep counting the same things, and every card that was in that column is still in it. So if New Lead should say Enquiry, or Proposal Sent should say Bid Out, just change it. You are not going to break a report.",
+        ],
+        image: {
+          src: "/support/rename-bucket.png",
+          alt: "A pipeline column name turned into an editable text box, ready to be renamed",
+        },
+      },
+      {
+        title: "Add one",
+        say: [
+          "Most people find the default four are one short. There is usually a real step between talking to somebody and sending them a price, and it is worth its own column because it is where deals get stuck.",
+          "Add a bucket, name it, and it appears on the board. Name it after something that actually happens in your week, not after a stage in a sales methodology. Site Visit Booked is a good column. Qualification is not, because nobody can tell you what has to be true for a deal to leave it.",
+        ],
+        image: {
+          src: "/support/add-bucket.png",
+          alt: "Naming a new pipeline bucket",
+        },
+      },
+      {
+        title: "Put them in your order",
+        say: [
+          "Grab the handle at the top of a column and drag it left or right. The board reorders and stays that way for everybody on your team.",
+          "Won and Lost do not move, and they cannot be dragged into the middle. They are the end of the board on purpose, because a deal that has landed in one of them has stopped moving, and letting them float around in the middle would make the board lie about what is in play.",
+        ],
+      },
+      {
+        title: "Delete one without losing the deals",
+        say: [
+          "Open the three dot menu on the column and choose Delete bucket. This is the part people are nervous about, and they should not be.",
+          "If there are deals in that column, Chumley asks you where they should go before it removes anything. It suggests the column to its left, which is usually right, and you can pick any other one. Nothing is deleted. The deals move, then the column goes.",
+          "If the column is empty it just goes, with no question, because there is nothing to decide.",
+        ],
+        image: {
+          src: "/support/delete-bucket.png",
+          alt: "The delete bucket dialog asking which column the deals should move to",
+        },
+      },
+      {
+        title: "Two things it will not let you do",
+        say: [
+          "You cannot delete Won or Lost. Every board needs somewhere for finished deals to land, and the dashboard numbers are built on them.",
+          "You cannot delete your last working column either. A board with nowhere to put a live deal is not a board, so Chumley keeps at least one.",
+        ],
+      },
+    ],
+    gotcha: {
+      title: "The mistake almost everybody makes",
+      say: [
+        "Building nine columns in the first week. It feels thorough and it is the fastest way to end up back in a spreadsheet.",
+        "Every extra column is a decision you have to make about every single deal, several times a week, forever. Nine columns means a board you avoid opening because updating it is a chore. Four or five is plenty for most people, and the honest test is whether you could explain to somebody else exactly what has to happen for a deal to move from one column to the next. If you cannot, that column is decoration.",
+        "Start with what you have, work it for two weeks, and add a column only when you notice deals piling up at a step the board does not show.",
+      ],
+    },
+    outro:
+      "Click a name to rename it, drag the handle to reorder, three dot menu to delete, and deleting always asks where the deals go. Make it look like how you actually sell, then leave it alone.",
+    related: ["add-your-first-lead", "import-leads-from-a-spreadsheet"],
+  },
+  {
     slug: "add-your-first-lead",
     title: "Add your first lead and move it across the board",
     description:
@@ -180,6 +240,10 @@ export const ARTICLES: Article[] = [
     beats: [
       {
         title: "Add a deal",
+        image: {
+          src: "/support/add-a-deal.png",
+          alt: "The Add a deal dialog, asking for name, phone and email",
+        },
         say: [
           "Open the pipeline and hit Add a deal. It asks for a name, a phone number and an email, and that is on purpose. Those three things are everything you need to start working somebody. Company, value, job title, all of that is optional and you can fill it in later, or never.",
           "There is a Where does this go question underneath. That picks which column the card lands in. If you are not sure, leave it on the first one. Moving it later takes one drag.",
@@ -187,6 +251,10 @@ export const ARTICLES: Article[] = [
       },
       {
         title: "Give it a next step",
+        image: {
+          src: "/support/lead-detail.png",
+          alt: "A lead open, showing the next step field and its due date",
+        },
         say: [
           "Open the card and you will see a field called Next step. Type what you are actually going to do and put a date on it. Call him back Thursday. Send the quote. Whatever it is.",
           "This is the part that earns the subscription, so do not skip it. When that date passes, the card turns red on your board. You will see it without looking for it, which is the difference between following up and meaning to follow up.",
@@ -242,6 +310,10 @@ export const ARTICLES: Article[] = [
       },
       {
         title: "Check the columns it guessed",
+        image: {
+          src: "/support/import-mapping.png",
+          alt: "The import screen asking which spreadsheet column is which field",
+        },
         say: [
           "Now you get a screen called Which column is which, and Chumley has already had a go at matching them. It knows that a column called Full Name, or Contact, or Lead Name is a name. It knows that Mobile and Cell and Work Phone are all phone numbers. Most of the time the guesses are right.",
           "Your job is to read down the list and fix the ones that are wrong. Anything you do not want, set it to Skip this column. You do not have to import everything just because it is in the file.",
@@ -278,6 +350,10 @@ export const ARTICLES: Article[] = [
     beats: [
       {
         title: "Get your code",
+        image: {
+          src: "/support/website-form.png",
+          alt: "The website form settings page with the one line embed code ringed",
+        },
         say: [
           "Go to Settings, then the website form page. There is a section called The code with a single line in it. Copy it.",
           "That line is yours specifically. It has a token in it that tells Chumley which account the lead belongs to, so do not share it around or paste somebody else's.",

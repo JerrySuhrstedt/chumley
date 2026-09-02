@@ -164,10 +164,18 @@ export function CheckList({ items }: { items: string[] }) {
 export function CompareTable({
   columns,
   rows,
+  tone = "brand",
 }: {
   columns: string[];
   rows: { label: string; values: (boolean | string)[] }[];
+  /**
+   * "good" paints the ticks green, for a capability matrix where a tick
+   * means works rather than ours. Comparison tables keep the brand colour,
+   * where the first column is us and a brand tick is the point.
+   */
+  tone?: "brand" | "good";
 }) {
+  const tick = tone === "good" ? "text-[#15803d]" : "text-[var(--brand)]";
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[34rem] border-collapse text-left text-[15px]">
@@ -178,7 +186,9 @@ export function CompareTable({
               <th
                 key={c}
                 className={`px-4 py-3 font-bold ${
-                  i === 0 ? "text-[var(--brand)]" : "text-[var(--ink)]"
+                  i === 0 && tone === "brand"
+                    ? "text-[var(--brand)]"
+                    : "text-[var(--ink)]"
                 }`}
               >
                 {c}
@@ -196,7 +206,7 @@ export function CompareTable({
                 <td key={i} className="px-4 py-3 align-top text-[var(--ink-soft)]">
                   {typeof v === "boolean" ? (
                     v ? (
-                      <Check className="size-5 text-[var(--brand)]" aria-label="Yes" />
+                      <Check className={`size-5 ${tick}`} aria-label="Yes" />
                     ) : (
                       <X className="size-5 text-[var(--ink-muted)] opacity-50" aria-label="No" />
                     )

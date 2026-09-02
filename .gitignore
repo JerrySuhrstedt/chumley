@@ -42,3 +42,7 @@ next-env.d.ts
 
 # Vitest coverage output
 /coverage
+
+# The screenshot tool is a sidecar package with its own deps.
+scripts/screenshots/node_modules
+scripts/screenshots/.auth.json

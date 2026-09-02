@@ -42,7 +42,7 @@ const HELP = [
   { href: "/support", label: "Support & help center" },
   { href: "/support/how-calling-works", label: "How calling works" },
   { href: "/support/add-your-first-lead", label: "Add your first lead" },
-  { href: "/support/import-leads-from-a-spreadsheet", label: "Import a spreadsheet" },
+  { href: "/support/edit-your-pipeline-columns", label: "Edit pipeline columns" },
 ];
 
 const GUIDES = [

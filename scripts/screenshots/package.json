@@ -1,0 +1,11 @@
+{
+  "name": "chumley-screenshots",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Regenerates the support article screenshots from the running app.",
+  "type": "module",
+  "dependencies": {
+    "playwright": "^1.49.0",
+    "postgres": "^3.4.9"
+  }
+}

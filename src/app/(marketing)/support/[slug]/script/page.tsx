@@ -96,10 +96,11 @@ export default async function ScriptPage({
         <div key={beat.title}>
           <Cue>{beat.title}</Cue>
           <Say lines={beat.say} />
-          {beat.table && (
+          {(beat.table || beat.image) && (
             <p className="mt-4 rounded-xl border border-dashed border-[var(--rule)] px-4 py-3 text-[15px] text-[var(--ink-muted)]">
-              On screen here: the comparison table from the article. Hold it
-              while you read the lines above.
+              {beat.image
+                ? `On screen: ${beat.image.src.split("/").pop()}. Hold it while you read the lines above.`
+                : "On screen: the comparison table from the article. Hold it while you read the lines above."}
             </p>
           )}
         </div>
