@@ -243,6 +243,82 @@ export const ARTICLES: Article[] = [
     related: ["add-your-first-lead", "import-leads-from-a-spreadsheet"],
   },
   {
+    slug: "start-in-three-moves",
+    title: "Start using Chumley in 3 moves",
+    description:
+      "The whole app in three simple moves. Add someone, tell it what to do next, and slide the card over when the deal moves. That is it.",
+    minutes: 2,
+    topic: "Getting started",
+    hook: "Chumley is three moves. Not thirty. Add someone, say what happens next, and slide the card over when the deal moves forward. Do those three things and you are using it properly. Here they are.",
+    beats: [
+      {
+        title: "The whole app, in three moves",
+        say: [
+          "That is the entire list. Everything else you will ever read about Chumley is just a nicer way of doing one of these three.",
+        ],
+        steps: [
+          "Add someone.",
+          "Tell the app what you will do next, and when.",
+          "Slide the card over when the deal moves forward.",
+        ],
+      },
+      {
+        title: "Move 1: Add someone",
+        say: [
+          "Open Pipeline. Press the Add lead button in the corner.",
+          "Type three things. Their name. Their phone number. Their email. That is all you need. You can skip everything else.",
+          "Press the button at the bottom. They are now a card on your board. You just added your first lead.",
+        ],
+        image: {
+          src: "/support/add-a-deal.png",
+          alt: "The Add a deal box, asking for a name, a phone number and an email",
+        },
+      },
+      {
+        title: "Move 2: Say what happens next",
+        say: [
+          "Click the card you just made. It opens up.",
+          "Find the box called What is next. Type what you are going to do. Like: Call him on Friday. Then pick the day.",
+          "This is the important part, so do not skip it. When that day comes, the card turns red. Now you cannot forget. The app remembers for you.",
+        ],
+        image: {
+          src: "/support/lead-detail.png",
+          alt: "A lead opened up, showing the What is next box where you type your next step",
+        },
+      },
+      {
+        title: "Move 3: Slide the card over",
+        say: [
+          "Your board has columns. A deal starts in the first one. As it gets closer to a yes, you move it to the right.",
+          "On a computer, drag the card with your mouse. On a phone, put your finger on it and flick it to the right.",
+          "That is how you show a deal is moving forward. When it is a win, slide it all the way to Won.",
+        ],
+        image: {
+          src: "/support/quickstart-move.png",
+          alt: "A lead card on the board, marked to show you drag it to the right when the deal moves ahead",
+        },
+      },
+      {
+        title: "That is really all of it",
+        say: [
+          "Add someone. Say what happens next. Slide the card when it moves. Do those three and you are running your sales in Chumley.",
+          "Everything else is a helper on top. One tap to call. A reminder when a follow up is late. A place to keep people who are not ready yet. You can learn those later. You do not need them today.",
+        ],
+      },
+    ],
+    gotcha: {
+      title: "The one thing not to skip",
+      say: [
+        "Move 2. Always give a card a next step.",
+        "It is tempting to add ten people fast and skip the next step every time. Do not. A card with no next step is just a name. It will not turn red, it will not remind you, and in two weeks you will forget all about it.",
+        "So every time you add someone, tell the app the one thing you will do next. Even if it is just: Decide if this is real. That one habit is the whole difference between using Chumley and just looking at it.",
+      ],
+    },
+    outro:
+      "Add someone. Say what happens next. Slide the card when it moves. That is Chumley. Go add one real person right now and try it.",
+    related: ["add-your-first-lead", "a-tour-of-the-screens"],
+  },
+  {
     slug: "add-your-first-lead",
     title: "Add your first lead and move it across the board",
     description:
@@ -870,8 +946,8 @@ export function articleBySlug(slug: string): Article | undefined {
 
 /** The hub groups by topic, in this order. */
 export const TOPICS: Article["topic"][] = [
-  "Calling",
   "Getting started",
+  "Calling",
   "Day to day",
   "Leads from your website",
   "Your team",

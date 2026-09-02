@@ -416,6 +416,15 @@ const SHOTS = [
     },
   },
   {
+    name: "quickstart-move",
+    caption: "Drag a card to the next column",
+    marks: [{ text: "Dale Whitaker", card: true, label: "Drag this card to the right when the deal moves ahead" }],
+    async take(page) {
+      await page.goto(`${BASE}/pipeline`, { waitUntil: "networkidle" });
+      await settle(page);
+    },
+  },
+  {
     name: "call-fallback",
     caption: "What a computer with no dialer shows instead of a dead button",
     marks: [{ text: "I made the call, log it", card: true, label: "No dialer answered, so nothing was logged" }],
