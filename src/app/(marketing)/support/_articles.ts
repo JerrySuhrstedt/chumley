@@ -39,6 +39,13 @@ export type Beat = {
    * of them with: node scripts/screenshots/capture.mjs
    */
   image?: { src: string; alt: string };
+  /**
+   * Numbered points that correspond to the numbered pins on this beat's
+   * screenshot. Rendered with the same orange discs the pins use, so the
+   * reader matches copy to image without counting paragraphs. The order
+   * here is the order of the pins, so the two cannot drift apart silently.
+   */
+  steps?: string[];
 };
 
 export type Article = {
@@ -346,6 +353,119 @@ export const ARTICLES: Article[] = [
     related: ["add-your-first-lead", "add-the-lead-form-to-your-website"],
   },
   {
+    slug: "saved-messages-for-text-and-email",
+    title: "Saved messages for the texts you send every week",
+    description:
+      "Write your follow-up once, then send it in two taps with their name filled in. What the placeholder does, and the one thing that makes it read wrong.",
+    minutes: 3,
+    topic: "Day to day",
+    hook: "You send roughly the same four messages over and over. The follow up, the nice to meet you, the still interested, the here is your quote. Write each one once and stop retyping it on a phone keyboard in a van.",
+    beats: [
+      {
+        title: "Where they live",
+        say: [
+          "Settings, then Saved messages. You start with two already written, one text and one email, so you can see the shape of it before you write your own.",
+          "Each one has a name that only you see, so call it what you would call it out loud. Quick follow up. Quote chaser. Not Template 3.",
+        ],
+        image: {
+          src: "/support/templates.png",
+          alt: "The saved messages settings page in Chumley",
+        },
+      },
+      {
+        title: "Writing one",
+        say: [
+          "Pick whether it is a text or an email, because they behave differently. An email gets a subject line as well as a body. A text is just the message.",
+          "Then write it the way you would actually say it. The best saved message sounds like you had thirty spare seconds, not like it came out of a system. Short, specific, and ending in a question is usually the whole recipe.",
+        ],
+      },
+      {
+        title: "The name placeholder",
+        say: [
+          "Put two curly braces around the word name in your message and Chumley swaps in their first name when you send it. Hi {{name}}, just following up.",
+          "That is the only placeholder there is, and that is on purpose. A template with six merge fields in it is a form letter, and everybody can tell. One first name is enough to stop it reading like a broadcast.",
+        ],
+      },
+      {
+        title: "Sending one",
+        say: [
+          "Open a lead, tap Text or Email, and the saved messages appear as buttons at the top of the sheet. Tap one and the message fills in, name already swapped, ready to send or to edit before you do.",
+          "On a phone, sending hands off to your messaging app or your email app with the message already in it. On a computer there is a copy button instead, because a desktop has nothing to hand it to. Copy it, paste it into whatever you actually use.",
+        ],
+        image: {
+          src: "/support/compose-sheet.png",
+          alt: "The text compose sheet in Chumley with a saved message ready to pick",
+        },
+      },
+    ],
+    gotcha: {
+      title: "The one that makes you look silly",
+      say: [
+        "The placeholder takes the first word of whatever is in the name field. Nothing cleverer than that.",
+        "So if you imported a list and a row came in as Whitaker Mechanical, your carefully written message goes out saying Hi Whitaker. If somebody is saved as D. Whitaker it says Hi D. If the field holds an email address because a form was filled in oddly, it says Hi dale@example.com, which is the sort of thing people screenshot.",
+        "Two minutes of prevention: after any import, sort your contacts by name and skim the top of the list for anything that is not a human first name. Fix those few, and every saved message you ever send afterwards is safe.",
+      ],
+    },
+    outro:
+      "Write your four messages once, in Settings under Saved messages, with {{name}} where their name goes. Then it is two taps from a lead card instead of thumbing it out again.",
+    related: ["how-call-logging-works", "add-your-first-lead"],
+  },
+  {
+    slug: "contacts-versus-your-pipeline",
+    title: "Contacts and the pipeline are not the same list",
+    description:
+      "Why Chumley keeps everyone you know separate from the deals you are working, how to move somebody between the two, and the button you should be careful with.",
+    minutes: 3,
+    topic: "Day to day",
+    hook: "Chumley keeps two lists. The pipeline is the deals you are working right now. Contacts is everybody else. Understanding why is the difference between a board you look at every morning and one you start avoiding.",
+    beats: [
+      {
+        title: "Why they are split",
+        say: [
+          "A pipeline with four hundred names on it is not a pipeline, it is a phone book with columns. You cannot look at it and know what to do, so after a fortnight you stop looking at it, and then you are back to working from memory.",
+          "So the board is deliberately the handful of things actually in play. Everyone else waits in Contacts until they are worth working. That is the entire idea, and every other decision here follows from it.",
+        ],
+      },
+      {
+        title: "What is in Contacts",
+        say: [
+          "Everybody. People you met once, old customers, the enquiry from March that went cold, everyone you imported. Nothing is lost, it is just not cluttering the board.",
+          "You can search it by name, company or phone number, and sort it. It is also what the search box at the top of the app looks through, so if somebody rings and you do not recognise the number, paste it in and you will know who it is before you answer.",
+        ],
+        image: {
+          src: "/support/contacts.png",
+          alt: "The Chumley contacts list with its search box ringed",
+        },
+      },
+      {
+        title: "Moving somebody onto the board",
+        say: [
+          "Open them and press Add to board. They land in your first column as a live deal and you work them like anything else.",
+          "This is the move to make when an old contact goes warm again. They ring you, or you see their name and think, actually, I should chase that. One button and they are back in play with all their old history attached.",
+        ],
+      },
+      {
+        title: "Taking somebody off it",
+        say: [
+          "Open the deal and press Remove from board. They go back to Contacts, keeping every note, call and email you ever logged against them.",
+          "Use this more than you think. A deal that is genuinely not happening this quarter should not sit on your board making the numbers look better than they are. Take it off, and when it comes back, put it back. The board should be true, not flattering.",
+        ],
+      },
+    ],
+    gotcha: {
+      title: "Two buttons that sound similar and are not",
+      say: [
+        "At the bottom of an open lead there is Remove from board, and there is Delete. They are not variations on the same thing.",
+        "Remove from board is reversible and loses nothing. The person stays in Contacts with their entire history and you can put them back in one click.",
+        "Delete destroys the record. The person, their notes, every call you logged, the lot. Chumley asks you to confirm and tells you it cannot be undone, and it means it.",
+        "So unless somebody is a genuine mistake, a duplicate or a bot submission, the button you want is almost always Remove from board. Deleting a real person to tidy up your board is the one action in Chumley you can actually regret.",
+      ],
+    },
+    outro:
+      "The board is what you are working. Contacts is everyone else. Move people between the two freely, keep the board honest rather than impressive, and reach for Remove from board rather than Delete.",
+    related: ["add-your-first-lead", "edit-your-pipeline-columns"],
+  },
+  {
     slug: "how-call-logging-works",
     title: "How Chumley decides a call actually happened",
     description:
@@ -431,13 +551,15 @@ export const ARTICLES: Article[] = [
       {
         title: "The dashboard: what today looks like",
         say: [
-          "This is the answer to what should I do today, and it is the first thing you see when you sign in. Six things on it.",
-          "One, the search box. It looks across everybody you have, by name, by company, and by phone number. If somebody rings you and you do not recognise the number, paste it in here and you will know who it is before you pick up.",
-          "Two, the four sections of the app. Dashboard, Pipeline, Contacts and Calendar. That is the entire navigation and there is nothing hidden behind it.",
-          "Three, your four numbers. How many deals are in play, what they are worth altogether, what you have actually won, and how many next steps are due today. That last one is the number to look at first.",
-          "Four, what needs doing. The next steps that are due or late, with the person's name attached. If there is a red overdue badge, that is where your morning starts.",
-          "Five, the funnel. Every open deal, stacked by which column it is in, with the money for each. Open pipeline is everything added up. Weighted forecast is that same money adjusted for how likely each stage is to close, which is a more honest number to plan around. Click a band, or a row in the key, and the deals in it appear beside it.",
-          "Six, recent activity. Every call, email and note logged across the team, newest first. On your own it is a record of what you did. With a team, it is how you know what everyone else did without asking them.",
+          "This is the answer to what should I do today, and it is the first thing you see when you sign in. Six things on it, numbered on the picture below.",
+        ],
+        steps: [
+          "The search box. It looks across everybody you have, by name, by company, and by phone number. If somebody rings you and you do not recognise the number, paste it in here and you will know who it is before you pick up.",
+          "The four sections of the app. Dashboard, Pipeline, Contacts and Calendar. That is the entire navigation, and there is nothing hidden behind it.",
+          "Your four numbers. How many deals are in play, what they are worth altogether, what you have actually won, and how many next steps are due today. That last one is the number to look at first.",
+          "What needs doing. The next steps that are due or late, with the person's name attached. If there is a red overdue badge, that is where your morning starts.",
+          "The funnel. Every open deal, stacked by which column it is in, with the money for each. Open pipeline is everything added up. Weighted forecast is that same money adjusted for how likely each stage is to close, which is a more honest number to plan around. Click a band, or a row in the key, and the deals in it appear beside it.",
+          "Recent activity. Every call, email and note logged across the team, newest first. On your own it is a record of what you did. With a team, it is how you know what everyone else did without asking them.",
         ],
         image: {
           src: "/support/dashboard-tour.png",
@@ -448,12 +570,14 @@ export const ARTICLES: Article[] = [
         title: "The pipeline: where the work happens",
         say: [
           "This is the screen you will live in. Same six-part tour.",
-          "One, Pipeline in the sidebar. This is home once you are actually working.",
-          "Two, the same three numbers as the dashboard, kept at the top so you never have to leave the board to see where you are.",
-          "Three, search and the two filters beside it. Search narrows the board as you type. Temp filters by how hot a lead is, and Next step filters by what is due, which together answer show me the warm ones I am late on.",
-          "Four, Add lead. Name, phone and email, and you are done. Everything else is optional.",
-          "Five, a column. The name on the left, which you click to rename. The count and the total value on the right, so you can see what each stage is worth at a glance. Then the three dot menu, which is where a column gets deleted.",
-          "Six, a deal. The coloured strip is its next step, and it turns red when that step is late. Under the name are three buttons for call, text and email, and the coloured square on the right is how hot the lead is. Click anywhere else on the card to open it.",
+        ],
+        steps: [
+          "Pipeline in the sidebar. This is home once you are actually working.",
+          "The same three numbers as the dashboard, kept at the top so you never have to leave the board to see where you are.",
+          "Search, and the two filters beside it. Search narrows the board as you type. Temp filters by how hot a lead is, and Next step filters by what is due, which together answer show me the warm ones I am late on.",
+          "Add lead. Name, phone and email, and you are done. Everything else is optional.",
+          "A column. The name on the left, which you click to rename. The count and the total value on the right, so you can see what each stage is worth at a glance. Then the three dot menu, which is where a column gets deleted.",
+          "A deal. The coloured strip is its next step, and it turns red when that step is late. Under the name are three buttons for call, text and email, and the coloured square on the right is how hot the lead is. Click anywhere else on the card to open it.",
         ],
         image: {
           src: "/support/pipeline-tour.png",

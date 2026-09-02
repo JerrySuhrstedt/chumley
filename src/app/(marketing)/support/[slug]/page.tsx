@@ -100,6 +100,23 @@ export default async function ArticlePage({
               />
             </div>
           )}
+          {beat.steps && (
+            <ol className="mt-6 flex flex-col gap-4">
+              {beat.steps.map((step, j) => (
+                <li key={j} className="flex gap-4">
+                  <span
+                    aria-hidden="true"
+                    className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-[var(--brand)] text-[15px] font-bold text-white"
+                  >
+                    {j + 1}
+                  </span>
+                  <span className="text-[17px] leading-relaxed text-[var(--ink-soft)]">
+                    {step}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
           {beat.image && (
             <figure className="mt-6">
               <Image

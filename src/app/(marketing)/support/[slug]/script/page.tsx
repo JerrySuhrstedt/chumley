@@ -64,7 +64,7 @@ export default async function ScriptPage({
 
   const words = [
     article.hook,
-    ...article.beats.flatMap((b) => b.say),
+    ...article.beats.flatMap((b) => [...b.say, ...(b.steps ?? [])]),
     ...article.gotcha.say,
     article.outro,
   ]
@@ -96,6 +96,20 @@ export default async function ScriptPage({
         <div key={beat.title}>
           <Cue>{beat.title}</Cue>
           <Say lines={beat.say} />
+          {beat.steps && (
+            <ol className="mt-4 flex flex-col gap-4">
+              {beat.steps.map((step, j) => (
+                <li key={j} className="flex gap-3">
+                  <span className="mt-1 shrink-0 text-[15px] font-bold text-[var(--ink-muted)]">
+                    {j + 1}.
+                  </span>
+                  <span className="text-[19px] leading-[1.75] text-[var(--ink)]">
+                    {step}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
           {(beat.table || beat.image) && (
             <p className="mt-4 rounded-xl border border-dashed border-[var(--rule)] px-4 py-3 text-[15px] text-[var(--ink-muted)]">
               {beat.image

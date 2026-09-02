@@ -559,6 +559,37 @@ const SHOTS = [
     },
   },
   {
+    name: "templates",
+    caption: "Saved messages, in settings",
+    marks: [{ text: "Saved messages", card: true, label: "Text and email templates live here" }],
+    async take(page) {
+      await page.goto(`${BASE}/settings/templates`, { waitUntil: "networkidle" });
+      await settle(page);
+    },
+  },
+  {
+    name: "compose-sheet",
+    caption: "Picking a saved message before sending",
+    marks: [{ text: "Start from a saved message", card: true, label: "Two taps instead of retyping it" }],
+    async take(page) {
+      await page.goto(`${BASE}/pipeline`, { waitUntil: "networkidle" });
+      await settle(page);
+      await page.getByText("Dale Whitaker", { exact: true }).first().click();
+      await page.waitForTimeout(1000);
+      await page.getByRole("button", { name: /^Text$/ }).first().click();
+      await page.waitForTimeout(1200);
+    },
+  },
+  {
+    name: "contacts",
+    caption: "The contacts list, separate from the board",
+    marks: [{ targets: ['input[placeholder*="Search name"]'], label: "Everyone you have, whether or not they are a live deal" }],
+    async take(page) {
+      await page.goto(`${BASE}/contacts`, { waitUntil: "networkidle" });
+      await settle(page);
+    },
+  },
+  {
     name: "team",
     caption: "The team page, with the invite link and the seat count",
     mask: ["[data-invite-url], code, pre"],
