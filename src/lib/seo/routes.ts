@@ -25,7 +25,8 @@ export const PUBLIC_ROUTES: PublicRoute[] = [
   { path: "/compare/onepagecrm", priority: 0.7, changeFrequency: "monthly", summary: "How Chumley compares to OnePageCRM for solo reps and small teams." },
 
   // Audience and use-case pages.
-  { path: "/for/solo-sales-reps", priority: 0.8, changeFrequency: "monthly", summary: "A sales CRM for one person: solo and independent reps who buy their own tools." },
+  { path: "/for/solo-sales-reps", priority: 0.8, changeFrequency: "monthly", summary: "A sales CRM for one person: a team of one, with nothing to administer." },
+  { path: "/for/independent-sales-reps", priority: 0.8, changeFrequency: "monthly", summary: "A CRM for 1099 and independent reps: your book stays yours, and several lines share one board." },
   { path: "/for/small-sales-teams", priority: 0.8, changeFrequency: "monthly", summary: "A simple CRM a small, non-technical sales team will actually use." },
   { path: "/for/contractors", priority: 0.7, changeFrequency: "monthly", summary: "A lead and follow-up tracker for contractors who hate CRMs." },
 

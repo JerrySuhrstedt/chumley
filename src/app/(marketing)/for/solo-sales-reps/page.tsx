@@ -13,7 +13,7 @@ import {
 import { PRICE } from "../../pricing/plans";
 
 export const metadata: Metadata = pageMeta({
-  title: "A Sales CRM for Solo and Independent Reps",
+  title: "A Sales CRM for Solo Reps and Teams of One",
   description:
     "A CRM for one person. If you run your own book and pay for your own tools, Chumley is $14 a month flat, runs from your phone, and has nothing to administer.",
   path: "/for/solo-sales-reps",
@@ -48,8 +48,8 @@ export default function SoloSalesRepsPage() {
 
       <Breadcrumbs crumbs={CRUMBS} />
       <PageHero
-        eyebrow="For solo and independent reps"
-        title="A Sales CRM for Solo and Independent Reps"
+        eyebrow="For solo reps and teams of one"
+        title="A Sales CRM for Solo Reps and Teams of One"
         sub="You run your own book and you pay for your own tools. This one is yours, not your company's. Fourteen dollars a month, everything included, run from the phone in your pocket."
       />
 
@@ -117,6 +117,7 @@ export default function SoloSalesRepsPage() {
 
       <RelatedLinks
         links={[
+          { title: "A CRM for independent and 1099 sales reps", path: "/for/independent-sales-reps" },
           { title: "A simple CRM your small sales team will actually use", path: "/for/small-sales-teams" },
           { title: "A Less Annoying CRM alternative, honestly compared", path: "/compare/less-annoying-crm" },
           { title: "How to keep track of sales leads without losing half of them", path: "/guides/how-to-keep-track-of-sales-leads" },
