@@ -449,6 +449,16 @@ const SHOTS = [
     },
   },
   {
+    name: "team",
+    caption: "The team page, with the invite link and the seat count",
+    mask: ["[data-invite-url], code, pre"],
+    marks: [{ text: "Invite teammates", card: true, label: "Copy this link and send it however you like" }],
+    async take(page) {
+      await page.goto(`${BASE}/settings/team`, { waitUntil: "networkidle" });
+      await settle(page);
+    },
+  },
+  {
     name: "billing",
     caption: "The billing page, where plans and seats are changed",
     /**
@@ -537,7 +547,21 @@ async function main() {
         await shot.take(page);
         let landed = 0;
         if (shot.marks) landed = await highlight(page, shot.marks);
-        await page.screenshot({ path: path.join(OUT, `${shot.name}.png`) });
+        /**
+         * Anything secret is blacked out before the shutter, not cropped
+         * afterwards. The team page shows a live join link: publish that
+         * screenshot and any reader can add themselves to the docs team.
+         * Playwright masks by locator, so the block tracks the element.
+         */
+        await page.screenshot({
+          path: path.join(OUT, `${shot.name}.png`),
+          ...(shot.mask
+            ? {
+                mask: shot.mask.map((sel) => page.locator(sel)),
+                maskColor: "#0f172a",
+              }
+            : {}),
+        });
         if (shot.marks) await clearMarks(page);
         done.push(shot.name);
         /**

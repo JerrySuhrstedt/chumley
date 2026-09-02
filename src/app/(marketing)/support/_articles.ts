@@ -54,6 +54,7 @@ export type Article = {
     | "Getting started"
     | "Day to day"
     | "Leads from your website"
+    | "Your team"
     | "Billing";
   /** The problem in one line, spoken before anything else. */
   hook: string;
@@ -345,6 +346,76 @@ export const ARTICLES: Article[] = [
     related: ["add-your-first-lead", "add-the-lead-form-to-your-website"],
   },
   {
+    slug: "invite-your-team",
+    title: "Invite your team",
+    description:
+      "Add people with a link, understand what they can see and change, and know which link you should never post in a group chat.",
+    minutes: 3,
+    topic: "Your team",
+    hook: "Adding somebody to Chumley takes about ten seconds. There is no invite email to chase, no pending state, and nothing for them to accept twice. You copy a link and send it to them however you already talk to them.",
+    beats: [
+      {
+        title: "Copy the link, send the link",
+        say: [
+          "Settings, then Team. There is a link there. Copy it and send it to whoever you want on your board, by text, WhatsApp, email, whatever you already use.",
+          "They open it, sign in with their own email address, and they are in. That is the whole process. They land on the same board you are looking at.",
+        ],
+        image: {
+          src: "/support/team.png",
+          alt: "The Chumley team settings page, with the invite link section ringed. The link itself is blacked out",
+        },
+      },
+      {
+        title: "What they can see",
+        say: [
+          "Everything. The whole pipeline, every deal, every contact, all the history and notes.",
+          "There are no per-rep walls, and that is a deliberate decision rather than a missing feature. A board where each rep sees only their own deals stops being a board, and the small teams this is built for want to see the whole picture in one place. If you need reps who cannot see each other's work, Chumley is the wrong tool and I would rather say so here than have you find out in month two.",
+        ],
+      },
+      {
+        title: "Owner and team member",
+        say: [
+          "Whoever created the account is the Owner. Everybody who joins by the link is a Team member.",
+          "Team members can do the daily work. Add leads, work the board, call people, log activity, edit deals, change the columns.",
+          "Three things are the owner's alone. Removing somebody from the team, anything to do with billing, and renaming the team. So a rep cannot accidentally cancel your subscription, which is the only part of this that really matters.",
+        ],
+      },
+      {
+        title: "Seats and what they cost",
+        say: [
+          "You are billed per person, per month, so a second person means a second seat. The team page tells you how many seats you have and how many are left.",
+          "If you are out of seats, the invite link stops working and points you at Billing to add one. Add the seat and it works again immediately. Adding somebody mid-month costs a part month rather than a full one.",
+        ],
+      },
+      {
+        title: "Removing somebody",
+        say: [
+          "On the same page, next to their name. It asks you to confirm and then they are out.",
+          "Their work stays. Every deal they added, every note they wrote, every call they logged is still on the board, because that is your business record and not theirs to take with them. They simply lose access.",
+          "Removing somebody does not drop your seat count on its own. If you are not replacing them, go to Billing and take the seat off, otherwise you keep paying for it.",
+        ],
+      },
+      {
+        title: "One person, one team",
+        say: [
+          "Somebody can only be on one Chumley team. If a rep already has their own account from a previous job and tries your link, Chumley tells them they are already on a different team rather than quietly moving them.",
+          "They need to use a different email address, or leave the old team first. This catches people out often enough to be worth knowing before you send the link.",
+        ],
+      },
+    ],
+    gotcha: {
+      title: "The one that catches people out",
+      say: [
+        "That invite link is a standing key to your business. It is not addressed to one person and it does not expire when somebody uses it. Anybody holding it can join your board and read every deal and every phone number in your pipeline.",
+        "So do not paste it into a group chat, a shared document, or a job advert. Send it to one person at a time. The moment somebody forwards it, the person they forwarded it to can walk in, and depending on your seats it may quietly cost you money too.",
+        "Send it directly, and check the members list on that page every so often to see who is actually on your team. It takes five seconds and it is the only place that tells you the truth.",
+      ],
+    },
+    outro:
+      "Copy the link, send it to one person, they sign in and they are on the board. Everybody sees everything, only the owner touches billing, and the link is a key rather than an invitation, so treat it like one.",
+    related: ["cancel-or-change-your-plan", "add-your-first-lead"],
+  },
+  {
     slug: "cancel-or-change-your-plan",
     title: "Cancel or change your plan",
     description:
@@ -543,5 +614,6 @@ export const TOPICS: Article["topic"][] = [
   "Getting started",
   "Day to day",
   "Leads from your website",
+  "Your team",
   "Billing",
 ];
