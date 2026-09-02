@@ -153,6 +153,70 @@ describe("observeDial", () => {
     expect(seen).toEqual([]);
   });
 
+  it("nudges early when nothing has taken the screen (JM-21)", () => {
+    // Ten silent seconds before the fallback read as a frozen app. The
+    // nudge fires well under a second so the number goes up immediately.
+    const clock = fakeClock();
+    const seen: DialOutcome[] = [];
+    let nudged = 0;
+    observeDial((o) => seen.push(o), clock.now, () => nudged++);
+
+    vi.advanceTimersByTime(DIAL_TIMINGS.SLOW_DIALER_MS + 50);
+    expect(nudged).toBe(1);
+    // Advisory, not a verdict: the watch is still running.
+    expect(seen).toEqual([]);
+
+    vi.advanceTimersByTime(DIAL_TIMINGS.NO_HANDOFF_MS);
+    expect(seen).toEqual(["no-handoff"]);
+    expect(nudged).toBe(1);
+  });
+
+  it("does not nudge when the dialer takes over promptly", () => {
+    const clock = fakeClock();
+    const seen: DialOutcome[] = [];
+    let nudged = 0;
+    observeDial((o) => seen.push(o), clock.now, () => nudged++);
+
+    clock.advance(300);
+    setVisibility("hidden");
+    vi.advanceTimersByTime(DIAL_TIMINGS.SLOW_DIALER_MS + 1_000);
+    clock.advance(45_000);
+    setVisibility("visible");
+
+    expect(nudged).toBe(0);
+    expect(seen).toEqual(["dialed"]);
+  });
+
+  it("still settles a real call after the nudge has fired", () => {
+    // A slow dialer: the fallback goes up at 600ms, the dialer opens at
+    // two seconds anyway, and the call must still log itself.
+    const clock = fakeClock();
+    const seen: DialOutcome[] = [];
+    let nudged = 0;
+    observeDial((o) => seen.push(o), clock.now, () => nudged++);
+
+    vi.advanceTimersByTime(DIAL_TIMINGS.SLOW_DIALER_MS + 50);
+    expect(nudged).toBe(1);
+
+    clock.advance(2_000);
+    setVisibility("hidden");
+    clock.advance(45_000);
+    setVisibility("visible");
+
+    expect(seen).toEqual(["dialed"]);
+  });
+
+  it("never nudges after being cancelled", () => {
+    const clock = fakeClock();
+    let nudged = 0;
+    const cancel = observeDial(() => {}, clock.now, () => nudged++);
+
+    cancel();
+    vi.advanceTimersByTime(DIAL_TIMINGS.SLOW_DIALER_MS + 1_000);
+
+    expect(nudged).toBe(0);
+  });
+
   it("treats the boundary as not-a-call, so the rep is asked", () => {
     // A guess either way is wrong here, and the cost is asymmetric: a
     // missed log costs one tap, a false log puts fiction on the record.

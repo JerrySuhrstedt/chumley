@@ -182,6 +182,42 @@ export function normalizePhone(
 }
 
 /**
+ * What is wrong with this number, said once, or null when nothing is.
+ *
+ * AT-28: "5051234567890" saved without complaint. Thirteen digits with no
+ * plus is not a NANP number (eleven at most, and only with a leading 1)
+ * and not a diallable international one (those are written with +), so it
+ * is a typo or a paste gone wrong, and the honest thing is to say so at
+ * save time rather than store a number nobody can call.
+ *
+ * Deliberately checks only "too long". A short value may be a half-typed
+ * number mid-edit, and rejecting those turns every keystroke into an
+ * error state.
+ */
+export function phoneProblem(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const trimmed = sanitizePhoneInput(value).trim();
+  if (!trimmed) return null;
+
+  const { base } = splitExtension(trimmed);
+  const d = digits(base);
+
+  // Written with a + or the 00 dial-out prefix, so international: E.164
+  // allows fifteen digits after the prefix.
+  if (isForeign(trimmed) || d.startsWith("00")) {
+    const overhead = d.startsWith("00") ? 2 : 0;
+    return d.length > MAX_DIGITS + overhead
+      ? "That's more digits than any phone number has."
+      : null;
+  }
+  // Without either prefix, eleven digits (a leading 1 plus the ten) is
+  // the ceiling.
+  return d.length > 11
+    ? "That's too many digits. International numbers start with +."
+    : null;
+}
+
+/**
  * Dialable form for tel:/sms: links — punctuation confuses some handlers,
  * and an extension appended to the digits mis-dials, so it stops at the
  * base number.

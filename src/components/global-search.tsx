@@ -87,7 +87,9 @@ export function GlobalSearch() {
         onKeyDown={onKeyDown}
         placeholder="Search people, companies, phone..."
         aria-label="Search contacts"
-        className="h-10 w-full rounded-lg border border-white/20 bg-white/10 pr-8 pl-9 text-sm text-white outline-none transition-colors placeholder:text-white/60 focus:border-white/40 focus:bg-white/15"
+        /* 16px at the phone breakpoint, or iOS Safari zooms the page into
+           the field and leaves it zoomed (AT-47). */
+        className="h-10 w-full rounded-lg border border-white/20 bg-white/10 pr-8 pl-9 text-base text-white outline-none transition-colors placeholder:text-white/60 focus:border-white/40 focus:bg-white/15 md:text-sm"
       />
       {query && (
         <button

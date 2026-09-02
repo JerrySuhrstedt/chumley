@@ -11,7 +11,7 @@ import {
 } from "@/db/schema";
 import { getCurrentOrg } from "@/lib/org";
 import { getWritableOrg, requireWritableOrg } from "@/lib/gate";
-import { normalizePhone } from "@/lib/phone";
+import { normalizePhone, phoneProblem } from "@/lib/phone";
 import { defaultStageKey, resolveStageKey } from "@/lib/stages";
 
 export type FormState = { error: string | null };
@@ -116,6 +116,11 @@ export async function createLead(
     return { error: "Name is required." };
   }
 
+  // The form sanitizes as you type, but this is the last gate and values
+  // do not only arrive by keyboard (AT-28).
+  const phoneError = phoneProblem(toNullable(formData.get("phone")));
+  if (phoneError) return { error: phoneError };
+
   const { current, error: refused } = await getWritableOrg();
   if (!current) return { error: refused };
   const { org } = current;
@@ -154,6 +159,24 @@ export async function updateLead(
   const { current, error: refused } = await getWritableOrg();
   if (!current) return { error: refused };
   const { org } = current;
+
+  /**
+   * Over-length numbers are refused, but only when the phone actually
+   * changed. A record that predates this check must stay editable: fixing
+   * a typo in the company name cannot be held hostage by a phone field
+   * nobody touched (AT-28).
+   */
+  const phoneRaw = toNullable(formData.get("phone"));
+  const phoneError = phoneProblem(phoneRaw);
+  if (phoneError) {
+    const [existing] = await db
+      .select({ phone: leads.phone })
+      .from(leads)
+      .where(and(eq(leads.id, id), eq(leads.orgId, org.id)));
+    if (normalizePhone(phoneRaw) !== (existing?.phone ?? null)) {
+      return { error: phoneError };
+    }
+  }
 
   await db
     .update(leads)

@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useDndContext } from "@dnd-kit/core";
 import { Archive, ArrowLeft, ArrowRight } from "lucide-react";
 import type { LeadStage } from "./actions";
 
@@ -45,6 +46,24 @@ export function SwipeableCard({
   const start = useRef<{ x: number; y: number } | null>(null);
   const locked = useRef<"none" | "x" | "y">("none");
 
+  /**
+   * Whether dnd-kit owns the current gesture, readable from inside the
+   * touch handlers.
+   *
+   * BT-54: press-hold a card for 250ms and the board's TouchSensor starts
+   * a drag, but these touch handlers kept tracking the same finger. The
+   * swipe threshold and the drop each moved the lead one stage, so one
+   * gesture advanced it two. A drag can only activate while the finger has
+   * moved less than the sensor's 8px tolerance, which is also less than
+   * this component's own lock threshold, so standing down the moment a
+   * drag is live is enough: the swipe never locks and never fires.
+   */
+  const { active } = useDndContext();
+  const dragOwns = useRef(false);
+  useEffect(() => {
+    dragOwns.current = active !== null;
+  }, [active]);
+
   function onTouchStart(e: React.TouchEvent) {
     const t = e.touches[0];
     start.current = { x: t.clientX, y: t.clientY };
@@ -53,6 +72,7 @@ export function SwipeableCard({
   }
 
   function onTouchMove(e: React.TouchEvent) {
+    if (dragOwns.current) return;
     if (!start.current) return;
     const t = e.touches[0];
     const moveX = t.clientX - start.current.x;
@@ -71,6 +91,14 @@ export function SwipeableCard({
   }
 
   function onTouchEnd() {
+    if (dragOwns.current) {
+      // The drag's drop already decided where the card goes. Anything this
+      // handler did on top of that would be the double-move.
+      setDx(0);
+      start.current = null;
+      locked.current = "none";
+      return;
+    }
     if (locked.current === "x") {
       if (dx > THRESHOLD && forward) {
         onForward();

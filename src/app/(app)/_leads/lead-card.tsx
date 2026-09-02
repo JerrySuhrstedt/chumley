@@ -14,7 +14,7 @@ import type { Lead, Template } from "@/db/schema";
 import { LeadAvatar } from "./lead-avatar";
 import { initialsOf, useOwners } from "./owners-context";
 import { TapToContact } from "./tap-to-contact";
-import { nextActionStatus } from "./stages";
+import { nextActionStatus, nextStage } from "./stages";
 import { useBoardStages } from "./stages-context";
 import { temperature } from "./temperature";
 import type { LeadStage } from "./actions";
@@ -163,37 +163,84 @@ export function LeadCardView({
         </div>
 
         {/* Dragging is fine with a mouse and miserable with a thumb, so on
-            a phone every bucket is one tap away, in any direction. */}
+            a phone every bucket is one tap away, in any direction.
+
+            AT-48: the row used to be one control reading "Move to..." with
+            a bare arrow, and a tester who used it still could not say what
+            the arrow did. The most common move by far is forward, so that
+            one is now its own button and says where it goes. The menu
+            keeps every other destination. */}
         {onMove && (
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              onClick={(e) => e.stopPropagation()}
-              className="flex items-center justify-between rounded px-1 py-1.5 text-xs font-medium text-[var(--board-ink-muted)] transition-colors hover:bg-[var(--board-column-hover)] md:hidden"
-            >
-              Move to...
-              <MoveRight className="size-3.5" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-44">
-              {elsewhere.map((s) => (
-                <DropdownMenuItem
-                  key={s.key}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onMove(s.key);
-                  }}
-                >
-                  <span
-                    className="mr-2 size-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: s.color }}
-                  />
-                  {s.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-1 md:hidden">
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                onClick={(e) => e.stopPropagation()}
+                aria-label={`Move ${lead.name} to another stage`}
+                className="flex flex-1 items-center justify-start gap-1 rounded px-1 py-1.5 text-xs font-medium text-[var(--board-ink-muted)] transition-colors hover:bg-[var(--board-column-hover)]"
+              >
+                Move to...
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-44">
+                {elsewhere.map((s) => (
+                  <DropdownMenuItem
+                    key={s.key}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onMove(s.key);
+                    }}
+                  >
+                    <span
+                      className="mr-2 size-2.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: s.color }}
+                    />
+                    {s.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <NextStageButton lead={lead} onMove={onMove} />
+          </div>
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * One tap forward, named for where it lands.
+ *
+ * "To Quoted →" instead of an arrow that means nothing until pressed. On
+ * the last open bucket there is nowhere forward, so it renders nothing
+ * rather than a dead button.
+ */
+function NextStageButton({
+  lead,
+  onMove,
+}: {
+  lead: Lead;
+  onMove: (stage: LeadStage) => void;
+}) {
+  const boardStages = useBoardStages();
+  const nextKey = nextStage(lead.stage, boardStages);
+  const next = nextKey
+    ? boardStages.find((s) => s.key === nextKey)
+    : null;
+  if (!next) return null;
+
+  return (
+    <button
+      type="button"
+      aria-label={`Move ${lead.name} to ${next.label}`}
+      onClick={(e) => {
+        e.stopPropagation();
+        onMove(next.key);
+      }}
+      className="flex max-w-[60%] shrink-0 items-center gap-1 rounded px-1.5 py-1.5 text-xs font-semibold text-[var(--board-ink)] transition-colors hover:bg-[var(--board-column-hover)]"
+    >
+      <span className="truncate">To {next.label}</span>
+      <MoveRight className="size-3.5 shrink-0" />
+    </button>
   );
 }
 

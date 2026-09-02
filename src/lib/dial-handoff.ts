@@ -36,6 +36,20 @@ const MIN_CALL_MS = 12_000;
 /** Focus never left, so nothing on this machine answered. */
 const NO_HANDOFF_MS = 8_000;
 
+/**
+ * How long a working dialer is given to take the screen before the rep is
+ * shown the number anyway.
+ *
+ * JM-21: waiting the full eight seconds before saying anything reads as a
+ * frozen app, because for eight seconds a tap on Call changes nothing on
+ * screen. A dialer that is going to open does it in well under a second,
+ * so at 600ms the honest thing to show is the fallback: the number, and a
+ * way to log the call by hand. This is a nudge, not a verdict — the
+ * watcher keeps running, and a dialer that opens late still settles the
+ * outcome and takes the fallback down.
+ */
+const SLOW_DIALER_MS = 600;
+
 export type DialOutcome =
   /** Away long enough that a call plausibly happened. */
   | "dialed"
@@ -47,11 +61,17 @@ export type DialOutcome =
 /**
  * Watch one tap on Call and report what became of it, exactly once.
  *
+ * `onNoDialerYet` fires once, early, if nothing has taken the screen after
+ * SLOW_DIALER_MS — the cue to show the number rather than a dead button.
+ * It is advisory: the watch keeps running, and the final outcome still
+ * arrives through `onOutcome`.
+ *
  * Returns a cancel function. After cancelling, nothing fires.
  */
 export function observeDial(
   onOutcome: (outcome: DialOutcome, awayMs: number) => void,
   now: () => number = Date.now,
+  onNoDialerYet?: () => void,
 ): () => void {
   const tappedAt = now();
   let hiddenAt: number | null = null;
@@ -93,10 +113,25 @@ export function observeDial(
     if (hiddenAt === null) settle("no-handoff", 0);
   }, NO_HANDOFF_MS);
 
+  /**
+   * The early nudge shares the idle timer's lifetime rules: it only has to
+   * survive a visible page, and a page that hides before it fires means
+   * the dialer did open, so it must not fire at all.
+   */
+  let slow: ReturnType<typeof setTimeout> | null = onNoDialerYet
+    ? setTimeout(() => {
+        if (hiddenAt === null && !settled) onNoDialerYet();
+      }, SLOW_DIALER_MS)
+    : null;
+
   const clearIdle = () => {
     if (idle !== null) {
       clearTimeout(idle);
       idle = null;
+    }
+    if (slow !== null) {
+      clearTimeout(slow);
+      slow = null;
     }
   };
 
@@ -132,6 +167,7 @@ export const DIAL_TIMINGS = {
   HANDOFF_WINDOW_MS,
   MIN_CALL_MS,
   NO_HANDOFF_MS,
+  SLOW_DIALER_MS,
 };
 
 /**

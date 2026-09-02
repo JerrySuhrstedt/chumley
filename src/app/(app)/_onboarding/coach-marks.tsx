@@ -22,7 +22,16 @@ import { createPortal } from "react-dom";
  * hard-coded coordinate would be wrong on most screens.
  */
 
-const SEEN_KEY = "chumley.coach.v1";
+/**
+ * Keyed per user, not per browser.
+ *
+ * AT-22..24: a tester signed up twice in the same Chrome. The first
+ * account's tour set a browser-wide flag, so the second brand-new account
+ * never saw the tips at all. The flag exists to stop replays at the same
+ * person, so it carries the user id; a veteran on a new device is already
+ * protected by the board gate, because their board holds real leads.
+ */
+const seenKey = (userId: string) => `chumley.coach.v1:${userId}`;
 
 /**
  * Set by the checklist's "Show me around again", read once on mount.
@@ -141,7 +150,14 @@ function nextAvailableStep(from: number): number {
   return -1;
 }
 
-export function CoachMarks({ enabled }: { enabled: boolean }) {
+export function CoachMarks({
+  enabled,
+  userId,
+}: {
+  enabled: boolean;
+  /** Scopes the seen flag, so a second account in the same browser still gets its tour. */
+  userId: string;
+}) {
   const [step, setStep] = useState(0);
   const [box, setBox] = useState<Box | null>(null);
   const [running, setRunning] = useState(false);
@@ -164,7 +180,7 @@ export function CoachMarks({ enabled }: { enabled: boolean }) {
     if (replay) sessionStorage.removeItem(REPLAY_KEY);
     if (!replay) {
       if (!enabled) return;
-      if (localStorage.getItem(SEEN_KEY) === "1") return;
+      if (localStorage.getItem(seenKey(userId)) === "1") return;
     }
     const t = setTimeout(() => {
       const first = nextAvailableStep(0);
@@ -173,7 +189,7 @@ export function CoachMarks({ enabled }: { enabled: boolean }) {
       setRunning(true);
     }, 450);
     return () => clearTimeout(t);
-  }, [enabled]);
+  }, [enabled, userId]);
 
   // The same replay, requested while the board is already the page on
   // screen, where no remount will happen to read the sessionStorage flag.
@@ -252,9 +268,9 @@ export function CoachMarks({ enabled }: { enabled: boolean }) {
   }, [running, measure]);
 
   const finish = useCallback(() => {
-    localStorage.setItem(SEEN_KEY, "1");
+    localStorage.setItem(seenKey(userId), "1");
     setRunning(false);
-  }, []);
+  }, [userId]);
 
   const next = () => {
     const upcoming = nextAvailableStep(step + 1);

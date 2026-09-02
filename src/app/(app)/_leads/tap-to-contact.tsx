@@ -159,46 +159,73 @@ export function TapToContact({
     callWatch.current = null;
 
     watch((done) => {
-      const cancel = observeDial((outcome, awayMs) => {
-        done();
-        callWatch.current = null;
+      const cancel = observeDial(
+        (outcome, awayMs) => {
+          done();
+          callWatch.current = null;
 
-        if (outcome === "dialed") {
-          startLog(async () => {
-            const { activityId, error } = await logCallTouch(lead.id);
-            if (error) {
-              toast.error(error);
-              return;
-            }
-            if (activityId) announce(activityId);
-          });
-          return;
-        }
+          if (outcome === "dialed") {
+            // The early fallback may be up if the dialer was slow to take
+            // the screen. A call happened, so it has nothing left to say.
+            setNoDialer(false);
+            startLog(async () => {
+              const { activityId, error } = await logCallTouch(lead.id);
+              if (error) {
+                toast.error(error);
+                return;
+              }
+              if (activityId) announce(activityId);
+            });
+            return;
+          }
 
-        if (outcome === "too-short") {
-          offerToLog(
-            `You were away ${Math.max(1, Math.round(awayMs / 1000))} seconds, so it looked like it never connected.`
-          );
-          return;
-        }
+          if (outcome === "too-short") {
+            setNoDialer(false);
+            offerToLog(
+              `You were away ${Math.max(1, Math.round(awayMs / 1000))} seconds, so it looked like it never connected.`
+            );
+            return;
+          }
 
+          /**
+           * Nothing took the screen at all.
+           *
+           * On a desktop that means no tel: handler exists. On a phone it
+           * means the browser refused, which on Firefox for Android is a
+           * permission the rep denied and will be asked about never again.
+           * Either way the answer is the same and it is not a toast: show
+           * the number so they can dial it, and let them log it afterwards.
+           * A toast that disappears is what left the tester "locked out with
+           * zero prompt", as he put it.
+           */
+          if (dialCapable) noteDialRefused();
+          setNoDialer(true);
+        },
+        undefined,
         /**
-         * Nothing took the screen at all.
-         *
-         * On a desktop that means no tel: handler exists. On a phone it
-         * means the browser refused, which on Firefox for Android is a
-         * permission the rep denied and will be asked about never again.
-         * Either way the answer is the same and it is not a toast: show
-         * the number so they can dial it, and let them log it afterwards.
-         * A toast that disappears is what left the tester "locked out with
-         * zero prompt", as he put it.
+         * JM-21: the eight-second verdict above is fine, but eight silent
+         * seconds before it reads as a frozen app. A dialer that is going
+         * to open does it in well under a second, so past 600ms the number
+         * goes up right away. The watch keeps running underneath: a slow
+         * but real handoff still settles as "dialed" and takes this down.
          */
-        if (dialCapable) noteDialRefused();
-        setNoDialer(true);
-      });
+        () => setNoDialer(true)
+      );
       callWatch.current = cancel;
       return cancel;
     });
+  };
+
+  /**
+   * Dismissing the fallback ends the attempt. Without this, the watcher
+   * kept running and its eight-second verdict reopened the dialog the rep
+   * had just closed, which reads as the app refusing to take no.
+   */
+  const closeNoDialer = () => {
+    callWatch.current?.();
+    callWatch.current = null;
+    setNoDialer(false);
+    setCopied(false);
   };
 
   const stop = stopPropagation
@@ -255,8 +282,7 @@ export function TapToContact({
           open
           onOpenChange={(next) => {
             if (!next) {
-              setNoDialer(false);
-              setCopied(false);
+              closeNoDialer();
               /**
                * Forget the refusal on the way out. If they went and
                * changed their browser settings, the next tap has to be
@@ -274,12 +300,12 @@ export function TapToContact({
                   somebody stop trusting the rest of the screen. */}
               <DialogTitle>
                 {dialCapable
-                  ? "Your browser blocked the dialer"
+                  ? "Your browser didn't open the dialer"
                   : "This computer can't place the call"}
               </DialogTitle>
               <DialogDescription>
                 {dialCapable
-                  ? "Nothing has been logged. Dial the number below, then log the call when you are done. To let the browser open your dialer again, allow it in your browser's site settings."
+                  ? "Nothing has been logged. Dial the number below, then log the call when you are done. If the browser asked and you said no, you can allow it again in your browser's site settings."
                   : "Nothing here answered the dial, so the call has not been logged. Call from your phone, then log it below."}
               </DialogDescription>
             </DialogHeader>
@@ -311,8 +337,7 @@ export function TapToContact({
               <Button
                 className="flex-1"
                 onClick={() => {
-                  setNoDialer(false);
-                  setCopied(false);
+                  closeNoDialer();
                   logNow();
                 }}
               >

@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, type ComponentProps } from "react";
+import { useRef, useState, type ComponentProps } from "react";
 import { Input } from "@/components/ui/input";
-import { formatPhoneInput, sanitizePhoneInput } from "@/lib/phone";
+import { formatPhoneInput, phoneProblem, sanitizePhoneInput } from "@/lib/phone";
 
 const countDigits = (s: string) => s.replace(/\D/g, "").length;
 
@@ -32,12 +32,22 @@ function caretAfterDigit(formatted: string, n: number): number {
  */
 export function PhoneInput(props: ComponentProps<typeof Input>) {
   const lastValue = useRef<string | null>(null);
+  /**
+   * Too many digits, said while it is being typed rather than at save
+   * time (AT-28). The server refuses these too; this is the polite copy
+   * of the same rule.
+   */
+  const [problem, setProblem] = useState<string | null>(() =>
+    props.defaultValue ? phoneProblem(String(props.defaultValue)) : null
+  );
   return (
+    <>
     <Input
       type="tel"
       inputMode="tel"
       autoComplete="tel"
       placeholder="(555) 123-4567"
+      aria-invalid={problem ? true : undefined}
       {...props}
       defaultValue={
         props.defaultValue
@@ -80,8 +90,15 @@ export function PhoneInput(props: ComponentProps<typeof Input>) {
           const pos = caretAfterDigit(formatted, digitsBefore);
           input.setSelectionRange(pos, pos);
         }
+        setProblem(phoneProblem(formatted));
         props.onChange?.(event);
       }}
     />
+    {problem && (
+      <p className="text-xs text-destructive" role="alert">
+        {problem}
+      </p>
+    )}
+    </>
   );
 }

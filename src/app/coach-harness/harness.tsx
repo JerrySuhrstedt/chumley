@@ -86,7 +86,7 @@ export function Harness() {
         </Column>
       </div>
 
-      <CoachMarks enabled />
+      <CoachMarks enabled userId="harness" />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import {
   formatPhoneInput,
   isDialable,
   normalizePhone,
+  phoneProblem,
   telDigits,
 } from "@/lib/phone";
 
@@ -216,5 +217,36 @@ describe("numbers that are not ours", () => {
   it("still formats a real US number", () => {
     expect(formatPhoneInput("6025551234")).toBe("(602) 555-1234");
     expect(normalizePhone("602-555-1234")).toBe("(602) 555-1234");
+  });
+});
+
+describe("phoneProblem", () => {
+  // AT-28: "5051234567890" saved without complaint. Thirteen digits with
+  // no plus is not a number anyone can dial, so it is refused with a
+  // reason instead of stored.
+  it("refuses the reported thirteen-digit paste", () => {
+    expect(phoneProblem("5051234567890")).toMatch(/too many digits/i);
+  });
+
+  it("accepts everything a rep legitimately types", () => {
+    expect(phoneProblem("")).toBeNull();
+    expect(phoneProblem(null)).toBeNull();
+    expect(phoneProblem("(602) 555-1234")).toBeNull();
+    expect(phoneProblem("1 (800) 555-1234")).toBeNull();
+    expect(phoneProblem("(602) 555-1234 x4412")).toBeNull();
+    // A half-typed number mid-edit is not an error state.
+    expect(phoneProblem("602 55")).toBeNull();
+  });
+
+  it("gives international numbers their full fifteen digits", () => {
+    expect(phoneProblem("+971 50 123 4567")).toBeNull();
+    expect(phoneProblem("+44 20 7946 0958")).toBeNull();
+    // The 00 dial-out prefix counts as international, not as extra digits.
+    expect(phoneProblem("00971 50 123 4567")).toBeNull();
+  });
+
+  it("does not punish an extension for its digits", () => {
+    // Eleven base digits plus a six-digit extension is still a number.
+    expect(phoneProblem("1 (800) 555-1234 ext 123456")).toBeNull();
   });
 });

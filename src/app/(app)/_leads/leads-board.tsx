@@ -499,7 +499,10 @@ export function LeadsBoard({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search leads"
-                className="h-10 w-full rounded-lg border-0 bg-white pr-3 pl-8 text-sm text-[var(--board-ink)] shadow-sm outline-none placeholder:text-[var(--board-ink-muted)] focus:ring-2 focus:ring-white/80 md:h-9"
+                /* text-base at the phone breakpoint on purpose: iOS Safari
+                   zooms the whole page into any input under 16px, and the
+                   zoom does not undo itself when the field blurs (AT-47). */
+                className="h-10 w-full rounded-lg border-0 bg-white pr-3 pl-8 text-base text-[var(--board-ink)] shadow-sm outline-none placeholder:text-[var(--board-ink-muted)] focus:ring-2 focus:ring-white/80 md:h-9 md:text-sm"
               />
             </div>
           </div>
@@ -518,6 +521,7 @@ export function LeadsBoard({
             localLeads.some((l) => l.isSample) &&
             !localLeads.some((l) => !l.isSample)
           }
+          userId={currentUserId}
         />
 
         <BoardFilters
