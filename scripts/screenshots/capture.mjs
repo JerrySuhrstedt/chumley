@@ -416,6 +416,31 @@ const SHOTS = [
     },
   },
   {
+    name: "call-fallback",
+    caption: "What a computer with no dialer shows instead of a dead button",
+    marks: [{ text: "I made the call, log it", card: true, label: "No dialer answered, so nothing was logged" }],
+    async take(page) {
+      await page.goto(`${BASE}/pipeline`, { waitUntil: "networkidle" });
+      await settle(page);
+      await page.getByText("Dale Whitaker", { exact: true }).first().click();
+      await page.waitForTimeout(1000);
+      await page.getByRole("button", { name: /^Call$/ }).first().click();
+      // Past SLOW_DIALER_MS, so the fallback has replaced the dead button.
+      await page.waitForTimeout(2500);
+    },
+  },
+  {
+    name: "log-a-call",
+    caption: "Logging a call by hand",
+    marks: [{ text: "Add what happened", card: true, label: "Log it yourself, any time" }],
+    async take(page) {
+      await page.goto(`${BASE}/pipeline`, { waitUntil: "networkidle" });
+      await settle(page);
+      await page.getByText("Dale Whitaker", { exact: true }).first().click();
+      await page.waitForTimeout(1200);
+    },
+  },
+  {
     name: "rename-bucket",
     caption: "Clicking a column name to rename it",
     marks: [
