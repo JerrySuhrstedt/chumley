@@ -49,7 +49,12 @@ export type Article = {
   /** Roughly how long this runs spoken, in minutes. */
   minutes: number;
   /** Which group it sits under on the hub. */
-  topic: "Calling" | "Getting started" | "Day to day" | "Leads from your website";
+  topic:
+    | "Calling"
+    | "Getting started"
+    | "Day to day"
+    | "Leads from your website"
+    | "Billing";
   /** The problem in one line, spoken before anything else. */
   hook: string;
   beats: Beat[];
@@ -340,6 +345,70 @@ export const ARTICLES: Article[] = [
     related: ["add-your-first-lead", "add-the-lead-form-to-your-website"],
   },
   {
+    slug: "cancel-or-change-your-plan",
+    title: "Cancel or change your plan",
+    description:
+      "Cancel in one click from inside the app, add or remove seats, and understand what happens to your data afterwards. Nothing is deleted and you can always export it.",
+    minutes: 3,
+    topic: "Billing",
+    hook: "You can cancel Chumley yourself, in one click, from inside the app. Nobody is going to try to talk you out of it, there is no retention call, and you do not have to email anyone. Here is exactly what happens when you do.",
+    beats: [
+      {
+        title: "Where all of this lives",
+        say: [
+          "Settings, then Billing. Everything to do with money is on that one page. What you are paying, how many seats you have, changing that number, and cancelling.",
+          "You are billed per person, per month. If you are on your own that is one seat, and one seat is the whole bill.",
+        ],
+        image: {
+          src: "/support/billing.png",
+          alt: "The Chumley billing page, with the seat control ringed",
+        },
+      },
+      {
+        title: "Cancelling",
+        say: [
+          "One button on that page. It asks you to confirm and that is the end of it.",
+          "Your plan does not stop that second. It stops at the end of the month you have already paid for, and you keep working normally until then. We do not offer a cancel-right-now-and-give-me-the-rest-back option, because you paid for that month and taking it off you the moment you press a button is not a favour.",
+          "You can undo it any time before that date, from the same page. If you cancel on the second and change your mind on the twentieth, click resume and nothing ever happened.",
+        ],
+      },
+      {
+        title: "What happens to your data",
+        say: [
+          "Nothing is deleted. Not on the day you cancel, not on the day it takes effect.",
+          "After the date, your board becomes read-only. Everything is still there, your deals, your contacts, your notes, your whole history. You can open it, read it, and search it. You just cannot add or change anything until you subscribe again.",
+          "You can export the lot to a spreadsheet at any point, before or after. Your data is not the thing we hold over you to make you stay, and if you come back in six months it is all exactly where you left it.",
+        ],
+      },
+      {
+        title: "Adding or removing seats",
+        say: [
+          "Same page. Change the number and Chumley works out the money before you commit to anything, showing you what you are charged today and what your bill becomes after that.",
+          "Adding somebody part way through a month costs a part month, not a full one. Removing somebody takes effect at your next renewal, and the seat keeps working until then, because you already paid for it.",
+        ],
+      },
+      {
+        title: "Refunds",
+        say: [
+          "There is a thirty day money-back guarantee on your first payment. If you pay, use it properly, and decide it is not for you, tell us inside thirty days and we refund the whole thing. You do not have to justify it.",
+          "After that first month it works the way most software does. A renewal or a seat charge can be refunded within fourteen days, and further if the law where you live says so. Ask, and if it is fair we will sort it out.",
+          "Refunds go back the way they came, to the card you paid with, and they take a few days to appear because that part is the bank's timetable rather than ours.",
+        ],
+      },
+    ],
+    gotcha: {
+      title: "The one that catches people out",
+      say: [
+        "Look at your bank statement and you will not see the word Chumley. You will see PADDLE.NET.",
+        "That is not a mistake and it is not a scam. Paddle is our merchant of record, which means they are legally the seller and they handle the payment, the sales tax and the invoicing. Plenty of software you already use works the same way. But if you have forgotten that, an unfamiliar charge is exactly the sort of thing you report to your bank as fraud.",
+        "Please do not do that first. A dispute takes the money out of our hands and into a process that is slower for both of us, and once it is open we cannot simply refund you, which is what you actually wanted. Email us instead and we will sort it out the same day. If you genuinely cannot place a charge, we can tell you what it was for in about a minute.",
+      ],
+    },
+    outro:
+      "Cancel yourself from Settings and Billing, keep working until the month you paid for runs out, and undo it any time before then. Nothing is deleted, your board goes read-only rather than dark, and you can export everything whenever you like.",
+    related: ["add-your-first-lead", "edit-your-pipeline-columns"],
+  },
+  {
     slug: "lead-notification-emails",
     title: "Get an email the moment a lead comes in",
     description:
@@ -474,4 +543,5 @@ export const TOPICS: Article["topic"][] = [
   "Getting started",
   "Day to day",
   "Leads from your website",
+  "Billing",
 ];

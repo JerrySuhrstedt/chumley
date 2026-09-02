@@ -449,6 +449,24 @@ const SHOTS = [
     },
   },
   {
+    name: "billing",
+    caption: "The billing page, where plans and seats are changed",
+    /**
+     * Two states, one shot. A subscribed account shows "Add or remove
+     * seats"; an account still on trial shows the seat picker inside the
+     * checkout card instead. Both are the seat control the article is about,
+     * so either landing is correct.
+     */
+    marks: [
+      { text: "Add or remove seats", card: true, optional: true, label: "Seats, and what changing them costs" },
+      { text: "How many people?", card: true, optional: true, label: "Seats. You are billed per person, per month" },
+    ],
+    async take(page) {
+      await page.goto(`${BASE}/settings/billing`, { waitUntil: "networkidle" });
+      await settle(page);
+    },
+  },
+  {
     name: "lead-notifications",
     caption: "The setting that emails you when a lead arrives",
     marks: [
@@ -522,10 +540,17 @@ async function main() {
         await page.screenshot({ path: path.join(OUT, `${shot.name}.png`) });
         if (shot.marks) await clearMarks(page);
         done.push(shot.name);
-        const missed = shot.marks ? shot.marks.length - landed : 0;
+        /**
+         * A mark can be optional, for a screen with two valid states: a
+         * trialing account shows a different seat control from a subscribed
+         * one, and only one of the two can ever land. Required marks are
+         * what a miss is measured against.
+         */
+        const required = shot.marks?.filter((m) => !m.optional).length ?? 0;
+        const missed = Math.max(0, required - landed);
         console.log(
           `  captured  ${shot.name}.png` +
-            (shot.marks ? `  (${landed}/${shot.marks.length} highlighted)` : "") +
+            (shot.marks ? `  (${landed} highlighted, ${required} required)` : "") +
             (missed ? "  <-- CHECK THIS" : ""),
         );
         if (missed) process.exitCode = 1;

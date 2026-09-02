@@ -49,6 +49,7 @@ export const PUBLIC_ROUTES: PublicRoute[] = [
   { path: "/support/edit-your-pipeline-columns", priority: 0.6, changeFrequency: "monthly", summary: "Rename, reorder and delete pipeline columns without losing the deals in them." },
   { path: "/support/add-your-first-lead", priority: 0.6, changeFrequency: "monthly", summary: "Add a deal, give it a next step, move it across the board." },
   { path: "/support/import-leads-from-a-spreadsheet", priority: 0.6, changeFrequency: "monthly", summary: "Import an existing list, including the CSV step people miss." },
+  { path: "/support/cancel-or-change-your-plan", priority: 0.6, changeFrequency: "monthly", summary: "Cancel in one click, change seats, and what happens to your data afterwards." },
   { path: "/support/lead-notification-emails", priority: 0.6, changeFrequency: "monthly", summary: "The email Chumley sends when a website lead arrives, who gets it, and how to switch it off." },
   { path: "/support/add-the-lead-form-to-your-website", priority: 0.6, changeFrequency: "monthly", summary: "Paste one line of code and website leads land on your board." },
   { path: "/privacy", priority: 0.2, changeFrequency: "yearly", summary: "Privacy policy." },
