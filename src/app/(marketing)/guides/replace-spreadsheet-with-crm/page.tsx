@@ -5,7 +5,10 @@ import { JsonLd, breadcrumbLd, articleLd, faqPageLd } from "@/lib/seo/jsonld";
 import {
   Breadcrumbs,
   PageHero,
+  Section,
+  H2,
   Prose,
+  CompareTable,
   RelatedLinks,
   CtaClose,
 } from "@/app/(marketing)/_components/page-kit";
@@ -14,7 +17,7 @@ import { PRICE } from "@/app/(marketing)/pricing/plans";
 const PATH = "/guides/replace-spreadsheet-with-crm";
 const TITLE = "When a Spreadsheet Stops Working for Sales, and What Replaces It";
 const DESC =
-  "A spreadsheet is fine until it is not. The exact signs your sales spreadsheet has stopped working, and how to switch to a simple CRM in an afternoon by importing a CSV.";
+  "CRM vs Excel, compared honestly. A spreadsheet is fine until it is not. The exact signs your sales spreadsheet has stopped working, and how to switch to a simple CRM in an afternoon by importing a CSV.";
 
 export const metadata: Metadata = pageMeta({
   title: TITLE,
@@ -29,6 +32,10 @@ const CRUMBS = [
 ];
 
 const FAQS = [
+  {
+    q: "Is a CRM better than Excel for sales?",
+    a: "For the selling itself, yes. Excel and Google Sheets are cheaper and you already know them, and that is a real advantage. But a spreadsheet cannot remind you a follow-up is late, cannot keep a history of every call and text on a deal, and turns into a mess the moment two people edit it. A CRM does those three things, which are the three that actually lose deals.",
+  },
   {
     q: "Is a spreadsheet good enough for tracking sales?",
     a: "For a while, yes. If you have a short list of deals, work alone, and do the follow-up from memory, a spreadsheet is honestly fine and free. It stops working when you need reminders, a history of each deal, more than one person editing it, or access from your phone.",
@@ -110,7 +117,33 @@ export default function ReplaceSpreadsheetGuide() {
           spreadsheet is now costing you more in lost follow-ups than a tool
           would cost in dollars.
         </p>
+      </Prose>
 
+      <Section>
+        <H2>CRM vs Excel, side by side</H2>
+        <p className="mt-4 text-[17px] leading-relaxed text-[var(--ink-soft)]">
+          If you are weighing CRM vs Excel head to head, here is the honest
+          version. Excel and Google Sheets win on price and on the fact that you
+          already know them. A CRM wins on everything that touches the actual
+          selling.
+        </p>
+        <div className="mt-6">
+          <CompareTable
+            columns={["A simple CRM", "Excel or Google Sheets"]}
+            rows={[
+              { label: "Price", values: [`$${PRICE} a month`, "Free"] },
+              { label: "You already know how to use it", values: [false, true] },
+              { label: "Setup", values: ["About an afternoon", "None"] },
+              { label: "Reminds you when a follow-up is late", values: [true, false] },
+              { label: "Full history of calls, texts and emails", values: [true, false] },
+              { label: "Actually usable on a phone", values: [true, "Barely"] },
+              { label: "Two people working it at once", values: [true, "Overwrites"] },
+            ]}
+          />
+        </div>
+      </Section>
+
+      <Prose>
         <h2>What replaces it</h2>
         <p>
           Not a giant enterprise CRM with a setup project and a training manual.
