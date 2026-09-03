@@ -15,6 +15,7 @@ import { PRICE } from "@/app/(marketing)/pricing/plans";
 import { SheetPreview } from "./sheet-preview";
 import { GetForm } from "./get-form";
 import { Brush } from "./brush";
+import { PipelineFlow, SpreadsheetBreaks } from "./visuals";
 
 /**
  * The free tool page.
@@ -31,9 +32,9 @@ import { Brush } from "./brush";
  */
 
 const PATH = "/tools/sales-pipeline-tracker";
-const TITLE = "Free Sales Pipeline Tracker for Google Sheets and Excel";
+const TITLE = "Free Sales Pipeline Template (Google Sheets + Excel)";
 const DESC =
-  "A free sales pipeline template that tracks deals, values and follow-ups, and turns a row pink when a next step is late. Download it for Excel, or open it in Google Sheets. No account needed.";
+  "A free sales pipeline template and sales tracker spreadsheet in one. Tracks deals, values and follow-ups, and turns a row pink when a next step is late. Works in Google Sheets or Excel.";
 
 export const metadata: Metadata = pageMeta({
   title: TITLE,
@@ -92,8 +93,8 @@ export default function SalesPipelineTrackerPage() {
         titleLarge
         title={
           <>
-            A <Brush>free</Brush> sales pipeline tracker that tells you who to
-            call today
+            The <Brush>free</Brush> sales pipeline template that tells you who
+            to call today
           </>
         }
         sub="Track deals, values and follow-ups. Late next steps turn pink so nothing quietly rots. Downloads for Excel, works in Google Sheets, and we email you a copy too."
@@ -108,6 +109,21 @@ export default function SalesPipelineTrackerPage() {
         <H2>What the sheet already does</H2>
         <CheckList items={DOES} />
       </Section>
+
+      <Section>
+        <H2>Six stages, not twelve</H2>
+        <Prose>
+          <p>
+            The Stage column is a dropdown with six options, and that is the
+            whole list. A deal starts at New Lead and you move it right as it
+            gets closer to a yes. Every extra stage you could add is a decision
+            you then have to make about every deal, forever, so this template
+            does not give you the rope.
+          </p>
+        </Prose>
+      </Section>
+
+      <PipelineFlow />
 
       <Section>
         <H2>The column most templates leave out</H2>
@@ -140,22 +156,13 @@ export default function SalesPipelineTrackerPage() {
             is you, take the sheet and go, with our blessing.
           </p>
           <p>It gives out for three reasons, and none of them is fixable with a better spreadsheet.</p>
-          <p>
-            <strong>You cannot really use it on a phone.</strong> Which is where
-            you are standing when the call ends and the details are still fresh.
-            By the time you are back at a desk you are writing down what you
-            remember, not what happened.
-          </p>
-          <p>
-            <strong>It cannot tap you on the shoulder.</strong> The pink row only
-            helps if you happen to open the file. A follow-up you forgot is
-            invisible until you go looking for it.
-          </p>
-          <p>
-            <strong>It breaks with two people.</strong> The moment somebody else
-            needs to work from it, you get overwritten cells, a second copy
-            named final-v3, and two versions of the truth.
-          </p>
+        </Prose>
+      </Section>
+
+      <SpreadsheetBreaks />
+
+      <Section>
+        <Prose>
           <p>
             That is the point where a simple CRM earns its keep. Chumley is one
             screen, deals are cards you move as they move, and tapping a card to
