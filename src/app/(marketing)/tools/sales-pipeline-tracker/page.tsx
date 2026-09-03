@@ -14,6 +14,7 @@ import {
 import { PRICE } from "@/app/(marketing)/pricing/plans";
 import { SheetPreview } from "./sheet-preview";
 import { GetForm } from "./get-form";
+import Link from "next/link";
 import { Brush } from "./brush";
 import { PipelineFlow, SpreadsheetBreaks } from "./visuals";
 
@@ -97,7 +98,7 @@ export default function SalesPipelineTrackerPage() {
             to call today
           </>
         }
-        sub="Track deals, values and follow-ups. Late next steps turn pink so nothing quietly rots. Downloads for Excel, works in Google Sheets, and we email you a copy too."
+        sub="A sales tracker spreadsheet that chases the follow-up for you. Deals, values and next steps in one place, and a row turns pink when it goes late. Works in Excel or Google Sheets, and doubles as a free CRM template. We email you a copy too."
         cta={false}
       />
 
@@ -106,7 +107,7 @@ export default function SalesPipelineTrackerPage() {
       <SheetPreview />
 
       <Section>
-        <H2>What the sheet already does</H2>
+        <H2>What this sales pipeline template already does</H2>
         <CheckList items={DOES} />
       </Section>
 
@@ -136,10 +137,16 @@ export default function SalesPipelineTrackerPage() {
           <p>
             This one has a <strong>Next step</strong> and a <strong>Due</strong>{" "}
             date on every row, and the row turns pink when that date arrives.
-            The National Association of Home Builders reckons contractors lose
-            somewhere between 40 and 60 percent of bids purely because nobody
-            followed up. Not because the price was wrong. Because the second
-            call never happened.
+            Most deals are not lost on price. They are lost because the second
+            call never happened, which is the exact failure this one column is
+            built to stop. It is why trades like{" "}
+            <Link
+              href="/for/contractors"
+              className="font-semibold text-[var(--brand)] hover:underline"
+            >
+              contractors
+            </Link>{" "}
+            live or die on their follow-up.
           </p>
           <p>
             One column fixes most of that, and it costs nothing to add.

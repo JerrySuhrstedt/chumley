@@ -163,6 +163,10 @@ export default function ReplaceSpreadsheetGuide() {
       <RelatedLinks
         links={[
           {
+            title: "A free sales pipeline template for Google Sheets and Excel",
+            path: "/tools/sales-pipeline-tracker",
+          },
+          {
             title: "Keeping track of customers without a spreadsheet or a rolodex",
             path: "/guides/keep-track-of-customers-without-a-spreadsheet",
           },

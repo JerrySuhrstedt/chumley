@@ -50,6 +50,7 @@ const GUIDES = [
   { href: "/guides/how-to-keep-track-of-sales-leads", label: "Keep track of sales leads" },
   { href: "/guides/sales-follow-up-app", label: "Sales follow-ups" },
   { href: "/guides/replace-spreadsheet-with-crm", label: "Replace a spreadsheet" },
+  { href: "/tools/sales-pipeline-tracker", label: "Free pipeline template" },
 ];
 
 export function SiteFooter() {

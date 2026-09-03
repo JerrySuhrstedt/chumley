@@ -40,6 +40,7 @@ export const PUBLIC_ROUTES: PublicRoute[] = [
   { path: "/guides/sales-follow-up-app", priority: 0.7, changeFrequency: "monthly", summary: "The simplest way to track sales follow-ups from your phone." },
   { path: "/guides/run-your-sales-day-from-your-phone", priority: 0.6, changeFrequency: "monthly", summary: "How to run your whole sales day from your phone." },
   { path: "/guides/keep-track-of-customers-without-a-spreadsheet", priority: 0.6, changeFrequency: "monthly", summary: "Keeping track of customers without a spreadsheet or a rolodex." },
+  { path: "/guides/do-i-need-a-crm", priority: 0.6, changeFrequency: "monthly", summary: "An honest answer to whether you need a CRM yet, and the four signs you do." },
   { path: "/guides/replace-spreadsheet-with-crm", priority: 0.7, changeFrequency: "monthly", summary: "When a spreadsheet stops working for sales, and what replaces it." },
   { path: "/guides/why-reps-quit-their-crm", priority: 0.6, changeFrequency: "monthly", summary: "Why most reps quit their CRM in the first month." },
 

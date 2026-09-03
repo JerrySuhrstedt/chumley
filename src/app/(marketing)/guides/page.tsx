@@ -43,6 +43,11 @@ const GUIDES = [
     path: "/guides/keep-track-of-customers-without-a-spreadsheet",
   },
   {
+    title: "Do I Need a CRM? A Straight Answer for Solo Reps and Small Teams",
+    sub: "Probably not yet. The four signs you have crossed the line, what a CRM actually is, and what to look for if you do.",
+    path: "/guides/do-i-need-a-crm",
+  },
+  {
     title: "When a Spreadsheet Stops Working for Sales, and What Replaces It",
     sub: "When a spreadsheet is fine, the exact signs it has stopped working, and how to switch in an afternoon.",
     path: "/guides/replace-spreadsheet-with-crm",
