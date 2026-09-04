@@ -59,7 +59,9 @@ export function SiteFooter() {
       <div className="mx-auto max-w-6xl px-5 py-14 lg:px-8">
         <div className="flex flex-col gap-10 md:flex-row md:justify-between">
           <div className="max-w-sm">
-            <ChumleyLogo variant="light" className="h-7 w-auto" />
+            <Link href="/" aria-label="Chumley home" className="inline-block">
+              <ChumleyLogo variant="light" className="h-7 w-auto" />
+            </Link>
             <p className="mt-4 text-[15px] leading-relaxed text-white/70">
               Nothing to set up, nothing to learn. The sales CRM built for
               people who would rather be selling than typing.

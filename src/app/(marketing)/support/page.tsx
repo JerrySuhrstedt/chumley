@@ -56,7 +56,7 @@ export default function SupportPage() {
         <div className="mt-8 flex flex-col gap-10">
           {groups.map((group) => (
             <div key={group.topic}>
-              <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--ink-muted)]">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--brand)]">
                 {group.topic}
               </h3>
               <ul className="mt-4 flex flex-col divide-y divide-[var(--rule)] rounded-2xl border border-[var(--rule)] bg-white">
