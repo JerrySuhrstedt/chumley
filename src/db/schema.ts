@@ -354,7 +354,14 @@ export const leads = pgTable("leads", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}, (t) => [
+  // Every board, contact and dashboard query filters by org first; the
+  // pipeline groups by stage within it, and org_id alone is served by this
+  // index's leftmost prefix.
+  index("leads_org_stage_idx").on(t.orgId, t.stage),
+  // The calendar and the "due today" count filter an org's leads by date.
+  index("leads_org_due_idx").on(t.orgId, t.nextActionDue),
+]);
 
 /**
  * One submitted test run from the hidden /uat page. No org, no user: the
@@ -569,7 +576,12 @@ export const activities = pgTable("activities", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}, (t) => [
+  // A lead's timeline loads its own activities by lead_id.
+  index("activities_lead_idx").on(t.leadId),
+  // The dashboard's recent-activity feed is an org's activities, newest first.
+  index("activities_org_created_idx").on(t.orgId, t.createdAt.desc()),
+]);
 
 /**
  * A team's subscription, mirrored from Paddle.
