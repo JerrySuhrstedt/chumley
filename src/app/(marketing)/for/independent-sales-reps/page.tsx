@@ -77,9 +77,9 @@ export default function IndependentSalesRepsPage() {
           sold anything. So it matters a great deal whose system they sit in.
         </p>
         <p className="mt-4 text-[17px] leading-relaxed text-[var(--ink-soft)]">
-          Reps who work a principal's CRM find this out at the worst possible
+          Reps who work a principal&rsquo;s CRM find this out at the worst possible
           moment. The agreement ends, the login stops working the same week, and
-          a decade of notes about who buys what and when is now somebody else's
+          a decade of notes about who buys what and when is now somebody else&rsquo;s
           property. Your Chumley account is in your name. Nobody can switch it
           off, and you can export the whole thing, notes and history included,
           any day you like.
