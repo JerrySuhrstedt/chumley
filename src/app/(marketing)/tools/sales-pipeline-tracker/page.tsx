@@ -55,6 +55,10 @@ const FAQS = [
     a: "Yes. We ask for an email address so we can send you a copy, and that is the only thing we ask for. No card, no trial, no call. The file downloads straight from this page and it is yours to keep.",
   },
   {
+    q: "Can I use it as a lead tracking spreadsheet?",
+    a: "Yes. A lead tracking spreadsheet and a sales pipeline tracker are the same thing under two names: a list of the people you are working, what stage each is at, and what you owe them next. This template does exactly that, so whether you call it a lead tracker or a pipeline template, it is the file you want.",
+  },
+  {
     q: "Does it work in Excel as well as Google Sheets?",
     a: "Both. It downloads as a normal .xlsx, so it opens in Excel, Numbers, or LibreOffice. If you would rather work in Google Sheets there is a link for that too, and everything survives either way: the formulas, the stage dropdown and the colour rules.",
   },
@@ -133,6 +137,12 @@ export default function SalesPipelineTrackerPage() {
             Nearly every sales pipeline template tracks the deal. Name, company,
             value, stage. All useful, all backward-looking, and none of it tells
             you what to do when you sit down on Monday.
+          </p>
+          <p>
+            Some people call this a lead tracking spreadsheet, some a lead
+            tracking template, some a sales pipeline template. It is the same
+            file and it does the same job whatever you type into Google. The
+            difference that matters is not the name, it is the next column.
           </p>
           <p>
             This one has a <strong>Next step</strong> and a <strong>Due</strong>{" "}
