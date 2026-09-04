@@ -3,11 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { stages } from "@/db/schema";
+import { leads, stages } from "@/db/schema";
 import { getWritableOrg } from "@/lib/gate";
 import {
   MAX_OPEN_STAGES,
-  emptyStageInto,
   getStages,
   nextOpenPosition,
 } from "@/lib/stages";
@@ -163,19 +162,36 @@ export async function deleteStage(id: string, destinationKey: string) {
     return { error: "Pick somewhere for the deals to go." };
   }
 
-  // Move first, delete second. The other order would leave deals pointing
-  // at a bucket the board will not draw if the move then failed.
-  await emptyStageInto(current.org.id, target.key, destination.key);
-  await db
-    .delete(stages)
-    .where(and(eq(stages.id, id), eq(stages.orgId, current.org.id)));
-
-  // Close the gap so positions stay 0..n-1.
-  const left = (await getStages(current.org.id)).filter(
-    (s) => s.kind === "open"
-  );
+  /**
+   * Move, delete and renumber in one transaction.
+   *
+   * These used to be three separate statements. A lead created in the gap
+   * between the move and the delete would point at a bucket the board no
+   * longer draws, and the renumber re-read the stages outside any lock, so
+   * a stage added concurrently could end up with a stale or duplicate
+   * position. Doing it all in one transaction, and re-reading the survivors
+   * inside it, closes both windows.
+   */
+  const orgId = current.org.id;
   await db.transaction(async (tx) => {
-    for (const [i, s] of left.entries()) {
+    await tx
+      .update(leads)
+      .set({ stage: destination.key, updatedAt: new Date() })
+      .where(and(eq(leads.orgId, orgId), eq(leads.stage, target.key)));
+
+    await tx
+      .delete(stages)
+      .where(and(eq(stages.id, id), eq(stages.orgId, orgId)));
+
+    // Re-read inside the transaction so anything added concurrently is
+    // included, then close the gap so positions stay 0..n-1.
+    const remaining = await tx
+      .select()
+      .from(stages)
+      .where(and(eq(stages.orgId, orgId), eq(stages.kind, "open")))
+      .orderBy(stages.position);
+
+    for (const [i, s] of remaining.entries()) {
       await tx.update(stages).set({ position: i }).where(eq(stages.id, s.id));
     }
   });

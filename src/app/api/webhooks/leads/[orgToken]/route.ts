@@ -50,6 +50,16 @@ export async function POST(
     return NextResponse.json({ error: "Unknown webhook URL" }, { status: 404 });
   }
 
+  // A deactivated team is locked and untouched, and the public form path
+  // already refuses these. The webhook must match, otherwise an integration
+  // keeps writing leads into an account that is supposed to be frozen.
+  if (org.deactivatedAt) {
+    return NextResponse.json(
+      { error: "This webhook is no longer active" },
+      { status: 403 }
+    );
+  }
+
   if (await overIngestCap(org.id)) {
     // 429 tells a well-behaved integration to back off and retry.
     return NextResponse.json(

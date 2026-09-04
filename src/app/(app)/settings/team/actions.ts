@@ -32,6 +32,23 @@ export async function removeMember(membershipId: string) {
     return { error: "Only the team owner can remove members." };
   }
 
+  // Never remove an owner, which includes the owner removing themselves.
+  // An org with no owner is stranded: nobody can manage billing, seats or
+  // the team. The UI hides the button for the owner, but a Server Action is
+  // callable directly, so the rule has to live here, not only in the page.
+  const target = await db.query.memberships.findFirst({
+    where: and(
+      eq(memberships.id, membershipId),
+      eq(memberships.orgId, current.org.id)
+    ),
+  });
+  if (!target) {
+    return { error: "That person is not on your team." };
+  }
+  if (target.role === "owner") {
+    return { error: "The team owner cannot be removed." };
+  }
+
   await db
     .delete(memberships)
     .where(
