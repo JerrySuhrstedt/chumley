@@ -84,6 +84,27 @@ export async function POST(req: Request) {
     );
   }
 
+  // A valid tester link is now required, not optional. The token used to be
+  // accepted when missing or unknown, which left an anonymous door into a
+  // table that shares the database with every team's leads. Every real
+  // tester arrives through /uat/{token} and the client always sends it, so
+  // this rejects only callers who have no business here. Checked before the
+  // bytes are read and before the usage query, so a flood costs nothing.
+  const tester = token
+    ? await db
+        .select({ id: uatTesters.id })
+        .from(uatTesters)
+        .where(eq(uatTesters.token, token))
+        .limit(1)
+    : [];
+  const testerId = tester[0]?.id ?? null;
+  if (!testerId) {
+    return NextResponse.json(
+      { error: "This upload needs a valid tester link." },
+      { status: 401 }
+    );
+  }
+
   const [usage] = (await db.execute(sql`
     SELECT count(*)::int AS files,
            coalesce(sum(octet_length(data)), 0)::bigint AS bytes
@@ -108,20 +129,18 @@ export async function POST(req: Request) {
     );
   }
 
-  let testerId: string | null = null;
-  if (token) {
-    const tester = await db
-      .select({ id: uatTesters.id })
-      .from(uatTesters)
-      .where(eq(uatTesters.token, token))
-      .limit(1);
-    testerId = tester[0]?.id ?? null;
-  }
-
   const [row] = await db
     .insert(uatAttachments)
     .values({ testerId, checkId, contentType: file.type, data })
     .returning({ id: uatAttachments.id });
+
+  // Opportunistic retention. This table lives in the shared database, and
+  // test evidence has no reason to sit there forever, so each write clears
+  // anything older than 30 days. At UAT volume this is a trivial sweep, and
+  // it bounds a table that otherwise only ever grew.
+  await db.execute(
+    sql`DELETE FROM uat_attachments WHERE created_at < now() - interval '30 days'`
+  );
 
   return NextResponse.json(
     { id: row.id },

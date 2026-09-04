@@ -16,8 +16,9 @@ import { users, sessions, accounts, verifications, rateLimits } from "@/db/auth-
  * Supabase incident took logins and the database down together, the whole
  * point of this file is that auth now only goes down when the app does.
  *
- * Existing users keep their Supabase-era uuids (see scripts/seed-auth-users
- * and generateId below), which is what spares memberships from a remap.
+ * Existing users keep their Supabase-era uuids (the one-off migration seed
+ * has since been removed; see generateId below), which is what spares
+ * memberships from a remap.
  *
  * Passwords deliberately did not migrate: Supabase kept the hashes in a
  * scheme worth leaving behind, every affected account belongs to the alpha
