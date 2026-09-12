@@ -50,6 +50,16 @@ describe("reportError", () => {
     expect(sent).toHaveLength(0);
   });
 
+  it("stays quiet on a stale-deploy Server Action miss", () => {
+    reportError(
+      new Error(
+        "Failed to find Server Action. This request might be from an older or newer deployment."
+      ),
+      "/(marketing)/page"
+    );
+    expect(sent).toHaveLength(0);
+  });
+
   it("gives the same fault the same key, so repeats collapse", () => {
     reportError(new Error("Database timeout"), "/pipeline");
     reportError(new Error("Database timeout"), "/pipeline");

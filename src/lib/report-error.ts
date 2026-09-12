@@ -33,10 +33,15 @@ const EXPECTED = new Set([
 
 const NEXT_CONTROL_FLOW = /^(NEXT_REDIRECT|NEXT_NOT_FOUND|NEXT_HTTP_ERROR_FALLBACK)/;
 
+// A stale tab POSTing a Server Action whose id changed on the last deploy.
+// The client heals on refresh; it is a deploy artifact, not a bug.
+const STALE_DEPLOY = /Failed to find Server Action/;
+
 function isExpected(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error ?? "");
   if (EXPECTED.has(message)) return true;
   if (NEXT_CONTROL_FLOW.test(message)) return true;
+  if (STALE_DEPLOY.test(message)) return true;
   // Next tags its own control-flow throws on a digest property too.
   const digest = (error as { digest?: unknown } | null)?.digest;
   return typeof digest === "string" && NEXT_CONTROL_FLOW.test(digest);
